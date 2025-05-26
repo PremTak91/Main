@@ -29,14 +29,4 @@ public class LoginController {
 		return "temp";
 		
 	}
-	
-	@RequestMapping("/inqentry")
-	public String inqueryPage() {
-		
-		return "inqueryEntry";
-		
-	}
-	
-	
-
 }

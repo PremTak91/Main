@@ -16,7 +16,7 @@
 	<!-- Custom styles for this template-->
 </head>
 
-<body>
+<body id="page-top">
 
     <!-- Page Wrapper -->
     <div id="wrapper">
