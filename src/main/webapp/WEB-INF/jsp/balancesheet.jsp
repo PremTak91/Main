@@ -20,7 +20,7 @@
 
 </head>
 
-<body>
+<body id="page-top">
 
     <!-- Page Wrapper -->
     <div id="wrapper">
@@ -38,46 +38,11 @@
 
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
-                  <div class="row">
-									    <div class = "col-md-4">
-											   <div class="form-group">
-												    <label for="statusId">Status</label>
-												    <select name="statusId" class="form-control" id="statusId">
-													  <option value="">Select</option>
-													  <option value="Pending">Pending</option>
-													  <option value="Processed">Processed</option>
-													</select>
-												  </div>
-									    </div>
-									    <div class = "col-md-4">
-											  <div class="form-group">
-												    <label for="giventoId">Given to</label>
-												    <select name="giventoId" class="form-control" id="giventoId">
-													  <option value="">Select</option>
-													  <option value="Pending">Yogesh Meena</option>
-													  <option value="Processed">Vikram Kansara</option>
-													</select>
-											  </div>
-									    </div>		  
-										
-									  <div class = "col-md-4">
-											   <div class="form-group">
-												    <label for="statusId">Branch</label>
-												    <select name="statusId" class="form-control" id="statusId">
-													  <option value="">Select</option>
-													  <option value="Pending">Ahmedabad</option>
-													  <option value="Processed">Sirohi</option>
-													</select>
-												  </div>
-									    </div>	
-									</div>	
-				<button type="submit" class="btn btn-success">Search</button>					
 				
 				<div class="card-header py-3">
                   
                                 
-                 <button type="button" class="btn btn-primary btn-md float-right mt-0" data-toggle="modal" data-target="#myModal"> Add Entry</button>
-                 <br><br>
+                 <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal"> Add Entry</button>
                  </div>
 					<table id="blcTableId" class="table table-striped table-bordered" style="width:100%">
 				     
@@ -128,13 +93,12 @@
 							        <div class="modal-body">
 							          
 									<form>
-									<div id="blcsheetId">
 										<div class = "row">
 											 
 											 <div class = "col-md-6">  
 												  <div class="form-group">
 												    <label for="paymentDesc">Payment Description</label>
-												    <input type="text" class="form-control" id="payment_desc" maxlength =64 >
+												    <input type="email" class="form-control" id="paymentDesc" maxlength =64 >
 												    <small id="Description" class="form-text text-muted">payment description should be short</small>
 												  </div>
 											  </div>
@@ -142,7 +106,7 @@
 											<div class = "col-md-6"> 
 												  <div class="form-group">
 												    <label for="totalAmt">Total Amount</label>
-												    <input type="text" class="form-control" id="total_amt">
+												    <input type="password" class="form-control" id="totalAmt">
 												  </div>
 											</div>
 										</div>
@@ -150,14 +114,14 @@
 											<div class = "col-md-6">
 											  <div class="form-group">
 											    <label for="advancedAmt">Advanced Amount</label>
-											    <input type="text" class="form-control" id="advance_amt">
+											    <input type="password" class="form-control" id="advancedAmt">
 											  </div>
 											</div>  
 										    
 										    <div class = "col-md-6">
 											  <div class="form-group">
 			        							<label for="advancedAmt">Date</label>
-			        								<input type="date" class="form-control" id="entrydate" name="entrydate">
+			        								<input type="date" class="form-control" id="paymentDateId" name="paymentDateId">
 			                                  </div>
 											</div>  
 									  </div>
@@ -165,7 +129,7 @@
 									    <div class = "col-md-6">
 											   <div class="form-group">
 												    <label for="statusId">Status</label>
-												    <select name="statusId" class="form-control" id="status">
+												    <select name="statusId" class="form-control" id="statusId">
 													  <option value="">Select</option>
 													  <option value="Pending">Pending</option>
 													  <option value="Processed">Processed</option>
@@ -175,29 +139,15 @@
 									    <div class = "col-md-6">
 											  <div class="form-group">
 												    <label for="giventoId">Given to</label>
-												    <select name="giventoId" class="form-control" id="given_to">
+												    <select name="giventoId" class="form-control" id="giventoId">
 													  <option value="">Select</option>
-													  <option value=1>Yogesh Meena</option>
-													  <option value=2>Vikram Kansara</option>
+													  <option value="Pending">Yogesh Meena</option>
+													  <option value="Processed">Vikram Kansara</option>
 													</select>
 											  </div>
 									    </div>		  
-									</div>	
-									
-									<div class="row">
-									    <div class = "col-md-6">
-											   <div class="form-group">
-												    <label for="statusId">Branch</label>
-												    <select name="statusId" class="form-control" id="branch">
-													  <option value="">Select</option>
-													  <option value=1>Ahmedabad</option>
-													  <option value=2>Sirohi</option>
-													</select>
-												  </div>
-									    </div>
-									</div>	  
-						<a href="#" type="submit" onclick ="saveBalanceSheet();" class="btn btn-primary">Save</a>
-						</div>
+									</div>		  
+						<button type="submit" class="btn btn-primary">Submit</button>
 						</form>
 							         			
 							        </div>
@@ -219,7 +169,13 @@
             <!-- End of Main Content -->
 
             <!-- Footer -->
-             <jsp:include page="footer.jsp"/>
+            <footer class="sticky-footer bg-white">
+                <div class="container my-auto">
+                    <div class="copyright text-center my-auto">
+                        <span>Copyright &copy; Your Website 2020</span>
+                    </div>
+                </div>
+            </footer>
             <!-- End of Footer -->
 
         </div>
@@ -266,8 +222,6 @@
     <!-- Page level plugins -->
     <script src="vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
-    <script src="js/toastr/toastr.js" type="text/javascript"></script>
-	<script src="js/custom.js/common.js"></script>
 	<script src="js/custom.js/balancesheet.js"></script>
 
 

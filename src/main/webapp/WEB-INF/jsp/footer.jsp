@@ -1,8 +1,7 @@
- <footer class="py-4 bg-light mt-auto p-3  bg-dark text-white">
-                    <div class="container-fluid px-4">
-                        <div class="d-flex align-items-center justify-content-between small">
-                            <div class="text-muted">Copyright &copy; NRS SOLAR SOLUTION 2021</div>
-                            
-                        </div>
+<footer class="py-4 bg-light mt-auto p-3  bg-dark text-white">
+                <div class="container my-auto">
+                    <div class="copyright text-center my-auto">
+                        <span>Copyright &copy; NRS SOLAR SOLUTION</span>
                     </div>
-                </footer>
+                </div>
+</footer>
