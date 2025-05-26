@@ -10,18 +10,37 @@
     <meta name="author" content="">
 
     <title>NRS SOLAR SOLUTION</title>
-	
-	<jsp:include page="uppercommon.jsp"/>
 
-	<!-- Custom styles for this template-->
+    <jsp:include page="uppercommon.jsp"/>
+
+    <!-- Custom styles for this page -->
+    <link href="vendor/jquery/jquery.min.js" rel="stylesheet">
+    <link href="vendor/bootstrap/js/bootstrap.min.js" rel="stylesheet">
+    
+
 </head>
+<style>
+  body{
+   
+    background:#eee;
+}
 
-<body>
+.type-document{
+    width:100%; 
+    margin-bottom:20px;
+}
+
+.documents {
+    padding:20px;    
+}
+
+</style>
+<body id="page-top">
 
     <!-- Page Wrapper -->
     <div id="wrapper">
 
-        <jsp:include page="sideBar.jsp"/>
+		<jsp:include page="sideBar.jsp"/>
 
         <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
@@ -31,39 +50,45 @@
 
 				<jsp:include page="header.jsp"/>
 
+
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
+				
+				   <div class="modal-body">
+							          
+						<form>
+						  <label for="myfile">Select a Policy Document:</label>
+						  <input type="file" id="myfile" name="myfile"><br><br>
+						  <input type="submit" value = "Upload Document">
+						</form>
+							         			
+			     </div>
 
-                  <h3 class="shado"> <center>Notification</center></h3><br>
-      
-      
-          <br><div style="background-size: 80%; background-color: #efefef;border-radius: 2%; "><br>
-              <h5 style="margin-left: 3%;  background-color: #28a4c9; color: #efefef"><text style="font-family: serif">Prem kumer</text> </h5><br>
-			     <p><center> TExt type here
-			     HTML is a language for describing web pages.
-			HTML stands for Hyper Text Markup Language 
-			HTML is not a programming language, it is a markup language 
-			A markup language is a set of markup tags 
-			HTML uses markup tags to describe web pages 
-			HTML file save with .htm or .html extension
-
-	     </center> </p><br>
-	     <center> <img src="assets/img/undraw_profile_2.svg" height="200px" width="400px"/></center>
-	     <br><br>
-	     <h7 style="color:black;"> <label style="margin-left: 2%;">Like</label> <label href="" id="isCommented" style="margin-left: 2%;">Comment</label> </h7>
-	     <div class="row" id="commentDivId">
-		 
-		  <div class="col-md-9">
-	       <input type="text" class="form-control form-control-user mt-1" id="commentId">
-	      </div>
-	      <div class="col-md-2">
-	       <a href="#" class="btn btn-primary btn-user btn-block"> Post</a>
-	      </div>
-	      <div class="col-md-1"></div>
-	     </div>
-	     <hr></div>
-
-
+    				
+    			<!-- Template start -->
+    			
+    				
+    				
+		<div class="container">
+		            <div class="row">
+		                    <div class="tab-pane active documents documents-panel">
+		                        <div class="document success">
+		                        <div class="document danger">
+		                            <div class="document-body">
+		                                <i class="fa fa-file-pdf-o text-danger"></i>
+		                            </div>
+		                            <div class="document-footer">
+		                                <span class="document-name"> PDF file 2017 </span>
+		                                <span class="document-description"> 5.3 MB </span>
+		                            </div>
+		                        </div>
+		                    </div>
+			            </div>
+			        </div>
+		</div>			
+    			<!-- Template end  -->
+    			
+    				
                 </div>
                 <!-- /.container-fluid -->
 
@@ -71,8 +96,7 @@
             <!-- End of Main Content -->
 
             <!-- Footer -->
-            <jsp:include page="footer.jsp"/>
-            
+             <jsp:include page="footer.jsp"/>
             <!-- End of Footer -->
 
         </div>
@@ -116,8 +140,13 @@
     <!-- Custom scripts for all pages-->
     <script src="js/nrs-admin-2.min.js"></script>
 
-    
-    <script src="js/custom.js/home.js"></script>
+    <!-- Page level plugins -->
+    <script src="vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
+	<script src="js/custom.js/balancesheet.js"></script>
+
+
+
 
 </body>
 

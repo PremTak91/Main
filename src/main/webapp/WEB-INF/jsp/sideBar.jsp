@@ -1,22 +1,20 @@
         <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
+			</br>
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
-                <div class="sidebar-brand-icon rotate-n-15">
-                    <i class="fas fa-laugh-wink"></i>
-                </div>
-                <div class="sidebar-brand-text mx-3">
-                   <img src="assets/img/nrslogopng.png" align="left" class = " border-0 rounded-lg"  width="" height="67">
+            <a class=" d-flex align-items-center justify-content-center" href="/NRS/home">
+                <div class="sidebar-brand-icon">
+                   <img src="assets/img/nrslogopng.png"    width="130" height="75">
                 </div>
             </a>
-
+			</br>
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
-                <a class="nav-link" href="index.html">
+                <a class="nav-link" href="/NRS/home">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
@@ -57,7 +55,8 @@
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Personal Use:</h6>
                         <a class="collapse-item" href="/NRS/blc">Balance Sheet</a>
-                        <a class="collapse-item" href="utilities-border.html">AHMEDABAD OFFICE</a>
+                       <!--  <a class="collapse-item" href="utilities-border.html">Site Expenses</a> -->
+                        <a class="collapse-item" href="/NRS/addEmp">Add Employee</a>
                     </div>
                 </div>
             </li>
@@ -72,17 +71,23 @@
                 <div id="collapsePages" class="collapse" aria-labelledby="headingPages" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Leave And Holiday:</h6>
-                        <a class="collapse-item" href="login.html">Apply Leave</a>
-                        <a class="collapse-item" href="register.html">Leave Balance</a>
-                        <a class="collapse-item" href="forgot-password.html">Leave Role</a>
+                        <a class="collapse-item" href="/NRS/leaveForm">Apply Leave</a>
+                        <a class="collapse-item" href="/NRS/leavebal">Leave Balance And Status</a>
+                        <a class="collapse-item" href="/NRS/leaverole">Leave Role</a>
                     </div>
                 </div>
             </li>
 
 			<li class="nav-item">
-                <a class="nav-link" href="tables.html">
+                <a class="nav-link" href="/NRS/exps">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Expenses</span></a>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link" href="/NRS/inqentry">
+                    <i class="fas fa-fw fa-table"></i>
+                    <span>Inquery Entry</span></a>
             </li>
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -96,14 +101,14 @@
 
             <!-- Nav Item - Charts -->
             <li class="nav-item">
-                <a class="nav-link" href="charts.html">
-                    <i class="fas fa-fw fa-chart-area"></i>
+                <a class="nav-link" href="/NRS/profileUpdate">
+                    <i class="fas fa-fw fa-table"></i>
                     <span>Profile Updates </span></a>
             </li>
 
             <!-- Nav Item - Tables -->
             <li class="nav-item">
-                <a class="nav-link" href="tables.html">
+                <a class="nav-link" href="/NRS/companyDoc">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Company Policies</span></a>
             </li>

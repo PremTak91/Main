@@ -38,46 +38,11 @@
 
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
-                  <div class="row">
-									    <div class = "col-md-4">
-											   <div class="form-group">
-												    <label for="statusId">Status</label>
-												    <select name="statusId" class="form-control" id="statusId">
-													  <option value="">Select</option>
-													  <option value="Pending">Pending</option>
-													  <option value="Processed">Processed</option>
-													</select>
-												  </div>
-									    </div>
-									    <div class = "col-md-4">
-											  <div class="form-group">
-												    <label for="giventoId">Given to</label>
-												    <select name="giventoId" class="form-control" id="giventoId">
-													  <option value="">Select</option>
-													  <option value="Pending">Yogesh Meena</option>
-													  <option value="Processed">Vikram Kansara</option>
-													</select>
-											  </div>
-									    </div>		  
-										
-									  <div class = "col-md-4">
-											   <div class="form-group">
-												    <label for="statusId">Branch</label>
-												    <select name="statusId" class="form-control" id="statusId">
-													  <option value="">Select</option>
-													  <option value="Pending">Ahmedabad</option>
-													  <option value="Processed">Sirohi</option>
-													</select>
-												  </div>
-									    </div>	
-									</div>	
-				<button type="submit" class="btn btn-success">Search</button>					
 				
 				<div class="card-header py-3">
                   
                                 
-                 <button type="button" class="btn btn-primary btn-md float-right mt-0" data-toggle="modal" data-target="#myModal"> Add Entry</button>
-                 <br><br>
+                 <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal"> Add Entry</button>
                  </div>
 					<table id="blcTableId" class="table table-striped table-bordered" style="width:100%">
 				     
@@ -85,12 +50,12 @@
 				     
 				                       <tr>
                                             <th>No.</th>
-                                            <th>Description</th>
-											<th>Total Amt.</th>
-                                            <th>Advanced Amt.</th>
-                                            <th>Due Amt.</th>
-                                            <th>Date</th>
-                                            <th>Status</th>
+                                            <th>Employee Name</th>
+                                            <th>Phone No.</th>
+											<th>position</th>
+                                            <th>Date Of Joining</th>
+											<th>Mainter</th>	
+                                            <th>Employee Status</th>
                                             <th></th>
                                         </tr>
 				     
@@ -100,12 +65,12 @@
 
 								      <tr>
                                             <th>1</th>
-                                            <th>2 System order</th>
-                                            <th>50000</th>
-                                            <th>30000</th>
-                                            <th>20000</th>
-                                            <th>30/10/2021</th>
-                                            <th>Pending</th>
+                                            <th>Yuveraj</th>
+                                            <th>7019374747</th>
+                                            <th>Weldar</th>
+                                            <th>10/10/2021</th>
+                                            <th>Vikram</th>
+                                            <th>Under Review</th>												
                                             <th></th>
                                         </tr>
 					    </tbody>
@@ -128,76 +93,129 @@
 							        <div class="modal-body">
 							          
 									<form>
-									<div id="blcsheetId">
 										<div class = "row">
 											 
-											 <div class = "col-md-6">  
+											 <div class = "col-md-4">  
 												  <div class="form-group">
-												    <label for="paymentDesc">Payment Description</label>
-												    <input type="text" class="form-control" id="payment_desc" maxlength =64 >
-												    <small id="Description" class="form-text text-muted">payment description should be short</small>
+												    <label for="paymentDesc">First Name</label>
+												    <input type="email" class="form-control" id="paymentDesc" maxlength =64 >
+												  </div>
+											  </div>
+											
+											<div class = "col-md-4">  
+												  <div class="form-group">
+												    <label for="paymentDesc">Middle Name</label>
+												    <input type="email" class="form-control" id="paymentDesc" maxlength =64 >
 												  </div>
 											  </div>
 											  
-											<div class = "col-md-6"> 
+											<div class = "col-md-4">  
 												  <div class="form-group">
-												    <label for="totalAmt">Total Amount</label>
-												    <input type="text" class="form-control" id="total_amt">
+												    <label for="paymentDesc">Last Name</label>
+												    <input type="email" class="form-control" id="paymentDesc" maxlength =64 >
 												  </div>
-											</div>
-										</div>
-										<div class="row">	
-											<div class = "col-md-6">
-											  <div class="form-group">
-											    <label for="advancedAmt">Advanced Amount</label>
-											    <input type="text" class="form-control" id="advance_amt">
 											  </div>
-											</div>  
-										    
-										    <div class = "col-md-6">
-											  <div class="form-group">
-			        							<label for="advancedAmt">Date</label>
-			        								<input type="date" class="form-control" id="entrydate" name="entrydate">
-			                                  </div>
-											</div>  
-									  </div>
-									  <div class="row">
-									    <div class = "col-md-6">
+										</div>
+										
+										<div class = "row">
+											 
+											 <div class = "col-md-8">  
+												  <div class="form-group">
+												    <label for="paymentDesc">Address</label>
+												    <input type="email" class="form-control" id="paymentDesc" maxlength =64 >
+												  </div>
+											  </div>
+											
+											<div class = "col-md-4">  
+												  <div class="form-group">
+												    <label for="paymentDesc">Phone No.</label>
+												    <input type="email" class="form-control" id="paymentDesc" maxlength =64 >
+												  </div>
+											  </div>
+											  
+									</div>
+									<div class = "row">
+											 
+											 <div class = "col-md-6">  
+												  <div class="form-group">
+												    <label for="paymentDesc">City</label>
+												    <input type="email" class="form-control" id="paymentDesc" maxlength =64 >
+												  </div>
+											  </div>
+											
+											<div class = "col-md-6">  
+												  <div class="form-group">
+												    <label for="paymentDesc">State</label>
+												    <input type="email" class="form-control" id="paymentDesc" maxlength =64 >
+												  </div>
+											  </div>
+											  
+									</div>
+									  <div class="row">	
+										
+									   <div class = "col-md-6">  
+												  <div class="form-group">
+												    <label for="paymentDesc">Email</label>
+												    <input type="email" class="form-control" id="paymentDesc" maxlength =64 >
+												  </div>
+									   </div>
+										<div class = "col-md-6">
 											   <div class="form-group">
-												    <label for="statusId">Status</label>
-												    <select name="statusId" class="form-control" id="status">
+												    <label for="statusId">Position</label>
+												    <select name="statusId" class="form-control" id="statusId">
 													  <option value="">Select</option>
-													  <option value="Pending">Pending</option>
-													  <option value="Processed">Processed</option>
+													  <option value="Pending">Site Engineer</option>
+													  <option value="Processed">Weldar</option>
 													</select>
 												  </div>
 									    </div>
-									    <div class = "col-md-6">
+									    
+											 
+									  </div>
+									  <div class="row">
+									  
+									  <div class = "col-md-6">
 											  <div class="form-group">
-												    <label for="giventoId">Given to</label>
-												    <select name="giventoId" class="form-control" id="given_to">
+			        							<label for="advancedAmt">Date Of Joining</label>
+			        								<input type="date" class="form-control" id="paymentDateId" name="paymentDateId">
+			                                  </div>
+									   </div>  
+									    <div class = "col-md-6">
+											   <div class="form-group">
+												    <label for="statusId">Employee Status</label>
+												    <select name="statusId" class="form-control" id="statusId">
 													  <option value="">Select</option>
-													  <option value=1>Yogesh Meena</option>
-													  <option value=2>Vikram Kansara</option>
+													  <option value="Pending">Under Review</option>
+													  <option value="Processed">Confirmed</option>
 													</select>
-											  </div>
-									    </div>		  
+												  </div>
+									    </div>
 									</div>	
 									
+
 									<div class="row">
+										<div class = "col-md-6">
+												  <div class="form-group">
+													    <label for="giventoId">Employee Mainter</label>
+													    <select name="giventoId" class="form-control" id="giventoId">
+														  <option value="">Select</option>
+														  <option value="Pending">Yogesh Meena</option>
+														  <option value="Processed">Vikram Kansara</option>
+														</select>
+												  </div>
+										    </div>	
 									    <div class = "col-md-6">
 											   <div class="form-group">
 												    <label for="statusId">Branch</label>
-												    <select name="statusId" class="form-control" id="branch">
+												    <select name="statusId" class="form-control" id="statusId">
 													  <option value="">Select</option>
-													  <option value=1>Ahmedabad</option>
-													  <option value=2>Sirohi</option>
+													  <option value="Pending">Ahmedabad</option>
+													  <option value="Processed">Sirohi</option>
 													</select>
 												  </div>
 									    </div>
 									</div>	  
-						<a href="#" type="submit" onclick ="saveBalanceSheet();" class="btn btn-primary">Save</a>
-						</div>
+						<button type="submit" class="btn btn-primary">Submit</button>
 						</form>
 							         			
 							        </div>
@@ -221,7 +239,6 @@
             <!-- Footer -->
              <jsp:include page="footer.jsp"/>
             <!-- End of Footer -->
-
         </div>
         <!-- End of Content Wrapper -->
 
@@ -266,8 +283,6 @@
     <!-- Page level plugins -->
     <script src="vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
-    <script src="js/toastr/toastr.js" type="text/javascript"></script>
-	<script src="js/custom.js/common.js"></script>
 	<script src="js/custom.js/balancesheet.js"></script>
 
 
