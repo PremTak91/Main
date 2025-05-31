@@ -23,7 +23,7 @@
             </div>
             <div class="col-md-4 form-group">
                 <label for="solarType">Solar Type:</label>
-                <input type="text" class="form-control" id="solarType" placeholder="Enter Solar Type" value="Residential Solar" required>
+                <input type="text" class="form-control" id="solarType" placeholder="Enter Solar Type" value="Residential" required>
             </div>
             <div class="col-md-4 form-group">
                 <label for="panelsName">Panels Name:</label>
@@ -77,35 +77,34 @@
 </div>
 </body>
 <script>
-		$("#rateKw").on("blur", function(){
-			var totalKw = $("#kw").val();
-			var perKw = $(this).val();
-			if(totalKw && perKw){
-				var totalPrice = perKw * totalKw;
-				$("#value").val(totalPrice);	
-			}
-			 
-		});
-		
-		$("#discomMeter , #pqHsCost").on("blur", function(){
-			CalculateActualPrice();
-		});
-
-		function CalculateActualPrice(){
-			// Retrieve values and convert them to numbers
-			   var discomMeterCharge = parseFloat($("#discomMeter").val()) || 0; // Default to 0 if NaN
-			   var totalPrice = parseFloat($("#value").val()) || 0; // Default to 0 if NaN
-			   var pqHsCost = parseFloat($("#pqHsCost").val()) || 0; // Default to 0 if NaN
-			   // Calculate actual price
-			   var actualPrice = Math.round(totalPrice + pqHsCost + discomMeterCharge);
-			   $("#actualPrice").val(actualPrice);
-			   // Retrieve subsidy and convert to number
-			   var subsidy = parseFloat($("#subsidy").val()) || 0; // Default to 0 if NaN
-			   // Calculate effective price
-			   var effectivePrice = actualPrice - subsidy;    
-			   $("#effectivePrice").val(effectivePrice);
+	$(document).off("keydown","#rateKw, #kw, #discomMeter , #pqHsCost, #subsidy").on("keydown","#rateKw, #kw, #discomMeter , #pqHsCost, #subsidy", function(){
+		CalculateActualPrice();
+	});
+	function calculateGSTPrice(){
+		var totalKw = $("#kw").val();
+		var perKw = $("#rateKw").val();
+		if(totalKw && perKw){
+			var totalPrice = perKw * totalKw;
+			$("#value").val(totalPrice);	
 		}
-		
+	}
+
+	function CalculateActualPrice(){
+		calculateGSTPrice();
+		// Retrieve values and convert them to numbers
+		   var discomMeterCharge = parseFloat($("#discomMeter").val()) || 0; // Default to 0 if NaN
+		   var totalPrice = parseFloat($("#value").val()) || 0; // Default to 0 if NaN
+		   var pqHsCost = parseFloat($("#pqHsCost").val()) || 0; // Default to 0 if NaN
+		   // Calculate actual price
+		   var actualPrice = Math.round(totalPrice + pqHsCost + discomMeterCharge);
+		   $("#actualPrice").val(actualPrice);
+		   // Retrieve subsidy and convert to number
+		   var subsidy = parseFloat($("#subsidy").val()) || 0; // Default to 0 if NaN
+		   // Calculate effective price
+		   var effectivePrice = actualPrice - subsidy;    
+		   $("#effectivePrice").val(effectivePrice);
+	}
+
 		 // Method for Quation Generate
 		 
 		 $(document).ready(function() {

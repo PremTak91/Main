@@ -38,7 +38,7 @@ public class QuotationServiceImpl implements QuotationService{
         document.add(logo);
 
         // Title
-        Paragraph title = new Paragraph(quotation.getKw() + " Kw Residential Solar System", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.BLACK)); 
+        Paragraph title = new Paragraph(quotation.getKw() + " Kw "+quotation.getSolarType()+" Solar System", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.BLACK)); 
         title.setAlignment(Element.ALIGN_LEFT);
         document.add(title);
         document.add(createHalfLineSpace());
@@ -159,12 +159,11 @@ public class QuotationServiceImpl implements QuotationService{
         docContentCell.setBorder(PdfPCell.NO_BORDER);
         docContentCell.setPadding(5); // Padding inside this content cell
 
-        docContentCell.addElement(new Paragraph("1. Latest Municipality Tax Bill / Index 2", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
-        docContentCell.addElement(new Paragraph("2. Passport Size Photograph", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
-        docContentCell.addElement(new Paragraph("3. Recent Electricity Bill", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK))); 
-        docContentCell.addElement(new Paragraph("4. Pan Card", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK))); 
-        docContentCell.addElement(new Paragraph("5. Aadhar Card", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
-        docContentCell.addElement(new Paragraph("6. Cancel Cheque/Bank Details", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
+        docContentCell.addElement(new Paragraph("1. Light Bill", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
+        docContentCell.addElement(new Paragraph("2. Pan Card", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK))); 
+        docContentCell.addElement(new Paragraph("3. Taxt bill & index copy", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
+        docContentCell.addElement(new Paragraph("4. Aadhar Card", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
+        docContentCell.addElement(new Paragraph("5. Cancel Cheque/Bank Details", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         docDetailsTable.addCell(docContentCell);
 
         // Add the two tables to the mainBankDocTable
@@ -188,7 +187,7 @@ public class QuotationServiceImpl implements QuotationService{
         document.add(createHalfLineSpace()); // Consistent half-line space after this section
 
         // Footer
-        Paragraph footer = new Paragraph("Submitted By: Amit Vyas   Contact No: 8866389038", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.BLACK));
+        Paragraph footer = new Paragraph("Submitted By: "+quotation.getSubmittedBy()+"   Contact No: "+quotation.getSubmittedNumber(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.BLACK));
         footer.setAlignment(Element.ALIGN_CENTER);
         document.add(footer);        
         
