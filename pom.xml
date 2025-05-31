@@ -28,7 +28,7 @@
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
-			<version>5.1.6</version>
+			<version>8.0.33</version>
 		</dependency>
        <dependency>
 			<groupId>org.hibernate</groupId>
@@ -76,6 +76,12 @@
     <dependency>
         <groupId>javax.servlet</groupId>
         <artifactId>jstl</artifactId>
+    </dependency>
+       <!-- OpenPDF -->
+    <dependency>
+        <groupId>com.github.librepdf</groupId>
+        <artifactId>openpdf</artifactId>
+        <version>1.3.30</version>
     </dependency>
    	<!--  for JSP Compilation - end-->
 	</dependencies>
