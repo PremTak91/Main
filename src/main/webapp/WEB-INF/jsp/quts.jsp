@@ -19,7 +19,7 @@
         <div class="row">
             <div class="col-md-4 form-group">
                 <label for="kw">Kw:</label>
-                <input type="text" class="form-control" id="kw" placeholder="Enter Kw" required>
+                <input type="text" class="form-control" id="kw" placeholder="Enter Kw"  onkeyup="CalculateActualPrice()" required>
             </div>
             <div class="col-md-4 form-group">
                 <label for="solarType">Solar Type:</label>
@@ -33,35 +33,35 @@
         <div class="row">
             <div class="col-md-4 form-group">
                 <label for="rateKw">Rate/Kw (Including GST):</label>
-                <input type="number" class="form-control" id="rateKw" placeholder="Enter Rate/Kw" required>
+                <input type="number" class="form-control" id="rateKw" onkeyup="CalculateActualPrice()" placeholder="Enter Rate/Kw" required>
             </div>
             <div class="col-md-4 form-group">
                 <label for="value">Value:</label>
-                <input type="text" class="form-control" id="value" placeholder="Enter Value" required>
+                <input type="text" class="form-control" id="value" placeholder="Enter Value"  onkeyup="CalculateActualPrice()" required>
             </div>
             <div class="col-md-4 form-group">
                 <label for="discomMeter">Discom Meter:</label>
-                <input type="number" class="form-control" id="discomMeter" placeholder="Enter Discom Meter" value="0" required>
+                <input type="number" class="form-control" id="discomMeter" placeholder="Enter Discom Meter"  onkeyup="CalculateActualPrice()" value="0" required>
             </div>
         </div>
         <div class="row">
             <div class="col-md-4 form-group">
                 <label for="pqHs">P.Q. and H.S. cost:</label>
-                <input type="number" class="form-control" id="pqHsCost" placeholder="Enter P.Q. and H.S." value="0" required>
+                <input type="number" class="form-control" id="pqHsCost" placeholder="Enter P.Q. and H.S."  onkeyup="CalculateActualPrice()" value="0" required>
             </div>
             <div class="col-md-4 form-group">
                 <label for="actualPrice">Actual Price:</label>
-                <input type="text" class="form-control" id="actualPrice" placeholder="Enter Actual Price" required>
+                <input type="text" class="form-control" id="actualPrice" placeholder="Enter Actual Price"  onkeyup="CalculateActualPrice()" required>
             </div>
             <div class="col-md-4 form-group">
                 <label for="subsidy">Subsidy:</label>
-                <input type="number" class="form-control" id="subsidy" placeholder="Enter Subsidy" value="78000" required>
+                <input type="number" class="form-control" id="subsidy" placeholder="Enter Subsidy"  onkeyup="CalculateActualPrice()" value="78000" required>
             </div>
         </div>
         <div class="row">
             <div class="col-md-4 form-group">
                 <label for="effectivePrice">Effective Price:</label>
-                <input type="number" class="form-control" id="effectivePrice" placeholder="Enter Effective Price" required>
+                <input type="number" class="form-control" id="effectivePrice" placeholder="Enter Effective Price"  onkeyup="CalculateActualPrice()" required>
             </div>
             <div class="col-md-4 form-group">
                 <label for="submittedBy">Submitted By:</label>
@@ -77,33 +77,30 @@
 </div>
 </body>
 <script>
-	$(document).off("keydown","#rateKw, #kw, #discomMeter , #pqHsCost, #subsidy").on("keydown","#rateKw, #kw, #discomMeter , #pqHsCost, #subsidy", function(){
-		CalculateActualPrice();
-	});
-	function calculateGSTPrice(){
-		var totalKw = $("#kw").val();
-		var perKw = $("#rateKw").val();
-		if(totalKw && perKw){
-			var totalPrice = perKw * totalKw;
-			$("#value").val(totalPrice);	
-		}
+
+
+	function CalculateActualPrice() {
+		debugger;
+	    // Retrieve values and convert them to numbers
+	    var totalKw = parseFloat($("#kw").val() || 0); // Default to 0 if NaN
+	    var perKw = parseFloat($("#rateKw").val() || 0); // Default to 0 if NaN
+	    var discomMeterCharge = parseFloat($("#discomMeter").val() || 0); // Default to 0 if NaN
+	    var pqHsCost = parseFloat($("#pqHsCost").val() || 0); // Default to 0 if NaN
+	    var subsidy = parseFloat($("#subsidy").val() || 0); // Default to 0 if NaN
+
+	    // Calculate total price
+	    var totalPrice = perKw * totalKw;
+	    $("#value").val(totalPrice);
+	  
+	    // Calculate actual price
+	    var actualPrice = Math.round(totalPrice + pqHsCost + discomMeterCharge);
+	    $("#actualPrice").val(actualPrice);
+	  
+	    // Calculate effective price
+	    var effectivePrice = Math.round(actualPrice - subsidy); // To ensure the effective price doesn't go negative
+	    $("#effectivePrice").val(effectivePrice);
 	}
 
-	function CalculateActualPrice(){
-		calculateGSTPrice();
-		// Retrieve values and convert them to numbers
-		   var discomMeterCharge = parseFloat($("#discomMeter").val()) || 0; // Default to 0 if NaN
-		   var totalPrice = parseFloat($("#value").val()) || 0; // Default to 0 if NaN
-		   var pqHsCost = parseFloat($("#pqHsCost").val()) || 0; // Default to 0 if NaN
-		   // Calculate actual price
-		   var actualPrice = Math.round(totalPrice + pqHsCost + discomMeterCharge);
-		   $("#actualPrice").val(actualPrice);
-		   // Retrieve subsidy and convert to number
-		   var subsidy = parseFloat($("#subsidy").val()) || 0; // Default to 0 if NaN
-		   // Calculate effective price
-		   var effectivePrice = actualPrice - subsidy;    
-		   $("#effectivePrice").val(effectivePrice);
-	}
 
 		 // Method for Quation Generate
 		 
