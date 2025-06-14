@@ -13,6 +13,10 @@ public class SolarQuotation {
     private double effectivePrice;
     private String submittedBy;
     private String submittedNumber;
+    private String customerName;
+    private String customerAddress;
+    private String quationNumber;
+    private String createdDate;
 	public double getKw() {
 		return kw;
 	}
@@ -85,5 +89,30 @@ public class SolarQuotation {
 	public void setSubmittedNumber(String submittedNumber) {
 		this.submittedNumber = submittedNumber;
 	}
+	public String getCustomerName() {
+		return customerName;
+	}
+	public void setCustomerName(String customerName) {
+		this.customerName = customerName;
+	}
+	public String getCustomerAddress() {
+		return customerAddress;
+	}
+	public void setCustomerAddress(String customerAddress) {
+		this.customerAddress = customerAddress;
+	}
+	public String getQuationNumber() {
+		return quationNumber;
+	}
+	public void setQuationNumber(String quationNumber) {
+		this.quationNumber = quationNumber;
+	}
+	public String getCreatedDate() {
+		return createdDate;
+	}
+	public void setCreatedDate(String createdDate) {
+		this.createdDate = createdDate;
+	}
 
+	
 }

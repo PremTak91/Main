@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NRS Solar Solution - Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Open Sans', sans-serif;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            display: flex;
+            flex-direction: column; /* For sticky footer */
+        }
+        .main-content {
+            flex-grow: 1; /* Allow main content to expand */
+            display: flex; /* For centering content within it */
+            align-items: center; /* Vertically center children */
+            justify-content: center; /* Horizontally center children */
+            background-color: #1a237e; /* Deep Indigo - Custom Primary Background */
+            padding: 2rem 0; /* Add some vertical padding */
+        }
+        .left-section {
+            background-color: #1a237e; /* Deep Indigo */
+            color: #ffffff; /* White text */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 3rem; /* More padding for better spacing */
+            min-height: 80vh; /* Ensure it takes substantial height */
+        }
+        .left-section h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .left-section p {
+            font-size: 1.1rem;
+            max-width: 400px;
+            margin-top: 1.5rem;
+            line-height: 1.6;
+        }
+        .nrs-logo-container {
+            margin-bottom: 2rem;
+        }
+        .nrs-logo-container img {
+            max-width: 150px; /* Adjust logo size */
+            height: auto;
+        }
+        .nrs-logo-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.5rem; /* Adjust font size for 'NRS' */
+            font-weight: 700;
+            line-height: 1;
+            margin-top: 0.5rem;
+            color: #ffffff;
+        }
+        .nrs-logo-subtext {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.2rem; /* Adjust font size for 'SOLAR SOLUTION' */
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            color: #ffffff;
+            margin-top: 0.2rem;
+        }
+        .right-section {
+            background-color: #ffffff; /* White background for form */
+            padding: 3rem; /* Generous padding */
+            border-radius: 10px; /* Soft rounded corners */
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); /* Soft shadow */
+            max-width: 450px; /* Max width for form card */
+            width: 100%; /* Ensure it takes full width of its column */
+        }
+        .right-section h2 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: #333; /* Darker color for heading */
+        }
+        .form-control:focus {
+            border-color: #6a1b9a; /* Custom focus color (can be primary blue) */
+            box-shadow: 0 0 0 0.25rem rgba(106, 27, 154, 0.25); /* Custom shadow focus color */
+        }
+        .btn-primary {
+            background-color: #6a1b9a; /* Deep Purple - Accent color for button */
+            border-color: #6a1b9a;
+            width: 100%; /* Make button full width */
+            padding: 0.75rem; /* Larger button padding */
+            font-size: 1.1rem;
+        }
+        .btn-primary:hover {
+            background-color: #511575; /* Darker shade on hover */
+            border-color: #511575;
+        }
+        .form-check-input:checked {
+            background-color: #6a1b9a; /* Checkbox color */
+            border-color: #6a1b9a;
+        }
+        a {
+            color: #6a1b9a; /* Link color */
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            background-color: #121212; /* Very dark gray for footer */
+            color: rgba(255, 255, 255, 0.7); /* Lighter text for copyright */
+            padding: 1rem 0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 767.98px) {
+            .main-content {
+                flex-direction: column; /* Stack on small screens */
+            }
+            .left-section {
+                padding: 2rem;
+                min-height: auto; /* Allow height to adjust */
+                width: 100%;
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .right-section {
+                margin: 2rem auto; /* Add margin on small screens */
+                border-top-left-radius: 0;
+                border-top-right-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container-fluid main-content">
+        <div class="row w-100 justify-content-center align-items-center">
+            <div class="col-12 col-md-6 col-lg-6 left-section">
+                <div class="nrs-logo-container">
+                    <svg width="150" height="100" viewBox="0 0 150 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="120" cy="20" r="15" fill="#FFD700"/>
+                        <path d="M120 0L122 5L120 10L118 5L120 0Z" fill="#FFD700"/>
+                        <path d="M135 20L130 22L125 20L130 18L135 20Z" fill="#FFD700"/>
+                        <path d="M120 40L122 35L120 30L118 35L120 40Z" fill="#FFD700"/>
+                        <path d="M105 20L110 22L115 20L110 18L105 20Z" fill="#FFD700"/>
+
+                        <path d="M30 50L75 10L120 50H100V90H50V50H30Z" fill="#FFD700"/>
+                        <rect x="65" y="60" width="20" height="30" fill="#E6AF2E"/> <rect x="10" y="55" width="20" height="30" rx="3" fill="#607D8B"/>
+                        <rect x="120" y="55" width="20" height="30" rx="3" fill="#607D8B"/>
+                        <rect x="70" y="45" width="20" height="30" rx="3" fill="#607D8B"/>
+
+                        <path d="M15 85L20 80L25 85" stroke="#424242" stroke-width="2"/>
+                        <path d="M125 85L130 80L135 85" stroke="#424242" stroke-width="2"/>
+                        <path d="M75 75L80 70L85 75" stroke="#424242" stroke-width="2"/>
+
+                        <line x1="20" y1="85" x2="20" y2="90" stroke="#424242" stroke-width="2"/>
+                        <line x1="130" y1="85" x2="130" y2="90" stroke="#424242" stroke-width="2"/>
+                        <line x1="80" y1="75" x2="80" y2="80" stroke="#424242" stroke-width="2"/>
+                    </svg>
+                    <div class="nrs-logo-text">NRS</div>
+                    <div class="nrs-logo-subtext">SOLAR SOLUTION</div>
+                </div>
+                <p>"SUCCESS IS A GAME AND WE HAVE TO PLAY THE ROLE"</p>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4 d-flex justify-content-center">
+                <div class="right-section">
+                    <h2>Login</h2>
+                    <form>
+                        <div class="mb-3">
+                            <label for="emailInput" class="form-label">Email address</label>
+                            <input type="email" class="form-control" id="emailInput" aria-describedby="emailHelp" placeholder="Enter your email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="passwordInput" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="passwordInput" placeholder="Enter your password">
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="rememberMe">
+                                <label class="form-check-label" for="rememberMe">Remember Password</label>
+                            </div>
+                            <a href="#" class="text-decoration-none">Forgot Password?</a>
+                        </div>
+                        <button type="submit" class="btn btn-primary mb-3">Login</button>
+                        <p class="text-center">Need an account? <a href="#" class="text-decoration-none">Sign up!</a></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p class="mb-0">Copyright © NRS SOLAR SOLUTION 2024</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+</html>

@@ -3,7 +3,6 @@ package com.web.nrs.repo.impl;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.persistence.EntityManagerFactory;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -15,6 +14,8 @@ import org.springframework.stereotype.Repository;
 import com.web.nrs.pojo.UserInfo;
 import com.web.nrs.repo.dao.UserRepository;
 import com.web.nrs.util.TextEncryptDecrypt;
+
+import jakarta.persistence.EntityManagerFactory;
 
 @Repository("UserRepository")
 public class UserRepositoryImpl implements UserRepository{

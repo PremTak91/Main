@@ -4,7 +4,7 @@ package com.web.nrs.controller;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
+
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -22,6 +22,8 @@ import com.web.nrs.pojo.BalanceSheet;
 import com.web.nrs.service.BalanceSheetService;
 import com.web.nrs.util.CommonDatatTableBean;
 
+import jakarta.servlet.http.HttpServletRequestWrapper;
+
 import org.springframework.ui.Model;
 
 @Controller
@@ -30,7 +32,7 @@ public class BalansheetController extends CommonDatatTableBean {
 	@Autowired
 	BalanceSheetService blcService;
 	
-	@RequestMapping("/blc")
+	@RequestMapping("/balancesheet")
 	public String loginHome() {
 		
 		return "balancesheet";
@@ -41,7 +43,7 @@ public class BalansheetController extends CommonDatatTableBean {
 
 
 	@RequestMapping(value = "/searchblcDetailsByAjax")
-	public String searchCitymasterByAjax(Model model, Pageable pageable, HttpServletRequest request) {
+	public String searchCitymasterByAjax(Model model, Pageable pageable, HttpServletRequestWrapper request) {
 
 		iDisplayLength = request.getParameter("iDisplayLength");
 		iDisplayStart = request.getParameter("iDisplayStart");

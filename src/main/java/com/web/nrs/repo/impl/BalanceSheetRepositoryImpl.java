@@ -5,9 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceContext;
 
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -17,10 +14,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import com.mysql.cj.Query;
 import com.web.nrs.pojo.BalanceSheet;
 import com.web.nrs.repo.dao.BalanceSheetRepository;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceContext;
+
 import org.springframework.data.jpa.repository.JpaRepository;
-import javax.persistence.Query;
 import org.springframework.data.repository.query.Param;
 
 
@@ -85,9 +87,9 @@ public class BalanceSheetRepositoryImpl implements  BalanceSheetRepository {
 				+ "limit "+pageable;
 		try {
 		
-			q = entityManager.createNativeQuery(strQuery);
-			
-			return  q.getResultList();
+			//q = entityManager.createNativeQuery(strQuery);
+			return null;
+			//return  q.getResultList();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

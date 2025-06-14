@@ -16,9 +16,9 @@ public class QuationController {
 	@Autowired
 	private QuotationService quotationService;
 	
-	@GetMapping("/quts")
+	@GetMapping("/qutotation")
 	public String loginHome() {
-		return "quts";
+		return "quotation";
 	}
 	
 	@PostMapping("/quts")
@@ -32,7 +32,7 @@ public class QuationController {
             headers.setContentType(MediaType.APPLICATION_PDF);
             headers.setContentDisposition(ContentDisposition
                     .attachment()
-                    .filename("quotation.pdf")
+                    .filename(quotation.getQuationNumber())
                     .build());
 
             return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
