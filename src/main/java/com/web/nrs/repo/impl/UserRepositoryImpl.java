@@ -3,8 +3,8 @@ package com.web.nrs.repo.impl;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.persistence.EntityManagerFactory;
 
+import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.slf4j.Logger;
