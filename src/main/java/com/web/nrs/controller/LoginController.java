@@ -1,42 +1,28 @@
 package com.web.nrs.controller;
 
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.web.nrs.model.LoginRequest;
 
 @Controller
 public class LoginController {
 
-	
-	
-	@RequestMapping("/login")
-	public String loginHome() {
+	@GetMapping("/login")
+	public String loginPage() {
 		
 		return "login";
 		
 	}
 	
-	@RequestMapping("/home")
-	public String homePage() {
-		
-		return "home";
-		
-	}
-	
-	
-	@RequestMapping("/temp")
-	public String tempPage() {
-		
-		return "temp";
+	@PostMapping("/login/auth")
+	public @ResponseBody String loginAuthentication(@RequestBody LoginRequest loginRequest) {
+		System.out.println("User Name: " + loginRequest.getUserName());
+		return "login";
 		
 	}
-	
-	@RequestMapping("/inqentry")
-	public String inqueryPage() {
-		
-		return "inqueryEntry";
-		
-	}
-	
-	
 
 }
