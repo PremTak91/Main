@@ -2,13 +2,17 @@ package com.web.nrs.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.HashSet;
 import java.util.Set;
 
-@Entity
+
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity(name="user_login")
+@Access(AccessType.FIELD)
 public class LoginEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,11 +30,11 @@ public class LoginEntity {
     @Column(name = "login_time")
     private java.sql.Timestamp loginTime;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
     )
-    private Set<RoleEntity> roles;
+    private Set<UserRoleEntity> userRoles = new HashSet<>();
 }

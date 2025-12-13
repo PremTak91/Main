@@ -26,7 +26,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/NRS/login/**",
+                    "/login/**",
                     "/login",
                     "/js/**",
                     "/css/**",

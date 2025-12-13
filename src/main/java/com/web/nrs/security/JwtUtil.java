@@ -1,21 +1,44 @@
 package com.web.nrs.security;
 
+import com.web.nrs.entity.RoleEntity;
+import com.web.nrs.entity.UserRoleEntity;
+
+import com.web.nrs.repository.RoleRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
-    private final String jwtSecret = "ReplaceWithASecureSecretKeyForJWTs1234567890ReplaceWithASecureSecretKeyForJWTs"; // 64 chars
-    private final long jwtExpirationMs = 86400000; // 1 day
-    private final Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    @Value("${jwt.expiration}")
+    private long jwtExpirationMs;
+    @Value("${jwt.secret}")
+    private String secret;
+    private Key key;
+    @Autowired
+    RoleRepository roleRepository;
 
-    public String generateToken(String username, Set<String> roles) {
+    @PostConstruct
+    public void initKey() {
+        key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public String generateToken(String username, Set<UserRoleEntity> userRoles) {
+
+        List<String> roles = userRoles.stream()
+                .map(ur -> "ROLE_" + ur.getRoles().getRoleId().toUpperCase()) // since roleId = roleName
+                .toList();
         return Jwts.builder()
                 .setSubject(username)
                 .claim("roles", roles)
@@ -26,13 +49,18 @@ public class JwtUtil {
     }
 
     public String getUsernameFromToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();
+        } catch (JwtException e) {
+            return null;
+        }
     }
+
 
     public Set<String> getRolesFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
@@ -41,15 +69,18 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
 
-        Object rolesObj = claims.get("roles");
-        if (rolesObj instanceof java.util.Collection<?>) {
-            java.util.Collection<?> rolesCollection = (java.util.Collection<?>) rolesObj;
-            return rolesCollection.stream()
-                    .map(Object::toString)
+        // Directly get roles as List<String>
+        List<String> roles = claims.get("roles", List.class);
+
+        if (roles != null) {
+            return roles.stream()
+                    .map(String::valueOf)
                     .collect(Collectors.toSet());
         }
+
         return Set.of();
     }
+
 
     public boolean validateToken(String token) {
         try {

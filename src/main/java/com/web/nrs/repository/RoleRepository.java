@@ -7,5 +7,5 @@ import com.web.nrs.entity.RoleEntity;
 import java.util.Optional;
 
 public interface RoleRepository extends JpaRepository<RoleEntity, Long> {
-    Optional<RoleEntity> findByRoleName(String roleName);
+    Optional<RoleEntity> findByRoleId(String roleId);
 }
