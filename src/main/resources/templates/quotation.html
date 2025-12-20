@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NRS Solar Solution - Create Quotation</title>
+    <!-- Bootstrap CSS (Version 5.3.3 for consistency) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Custom CSS (for main layout like sidebar, navbar positioning) -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- jQuery (still needed for your existing JS logic, keep for compatibility) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+    <!-- Inline styles for form improvements -->
+    <style>
+        /* Optional: Add some padding/margin around the form within the card */
+        .quotation-form-card {
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        /* Style for form groups to ensure proper spacing */
+        .quotation-form-group .form-group {
+            margin-bottom: 1rem; /* Adjust as needed for spacing */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-wrapper">
+        <!-- Include the sidebar fragment -->
+        <div th:replace="fragments/sidebar :: sidebarMenu"></div>
+
+        <div class="d-flex flex-column w-100">
+            <!-- Include the header fragment -->
+            <div th:replace="fragments/header :: headerPart"></div>
+
+            <main class="main-content-area flex-grow-1">
+                <h3 class="mb-4">Create Solar Quotation</h3>
+
+                <div class="card p-4 quotation-form-card">
+                    <h5 class="card-title mb-4">Quotation Details</h5>
+                    <form>
+						<div class="row g-3">
+						    <div class="col-md-4">
+						        <label for="quationNumber" class="form-label">Quoation No:</label>
+						        <input type="text" class="form-control" id="quationNumber" placeholder="Enter Quoation No" required>
+						    </div>
+						    <div class="col-md-4">
+						        <label for="customerName" class="form-label">Customer Name:</label>
+						        <input type="text" class="form-control" id="customerName" placeholder="Enter Customer Name">
+						    </div>
+						    <div class="col-md-4">
+						        <label for="customerAddress" class="form-label">Customer Address:</label>
+						        <input type="text" class="form-control" id="customerAddress" placeholder="Enter Customer Address">
+						    </div>
+						</div>
+                        <div class="row g-3 mt-2"> <!-- Using Bootstrap 5 gutter classes -->
+                            <div class="col-md-4">
+                                <label for="kw" class="form-label">Kw:</label>
+                                <input type="text" class="form-control" id="kw" placeholder="Enter Kw" onkeyup="CalculateActualPrice()" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="solarType" class="form-label">Solar Type:</label>
+                                <input type="text" class="form-control" id="solarType" placeholder="Enter Solar Type" value="Residential" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="panelsName" class="form-label">Panels Name:</label>
+                                <input type="text" class="form-control" id="panelsName" placeholder="Enter Panels Name" value="ADANI TOPCON, ADANI BIFACIAL , RAYZON" required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-4">
+                                <label for="rateKw" class="form-label">Rate/Kw (Including GST):</label>
+                                <input type="number" class="form-control" id="rateKw" onkeyup="CalculateActualPrice()" placeholder="Enter Rate/Kw" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="value" class="form-label">Value:</label>
+                                <input type="text" class="form-control" id="value" placeholder="Enter Value" onkeyup="CalculateActualPrice()" required readonly> <!-- Added readonly as this is calculated -->
+                            </div>
+                            <div class="col-md-4">
+                                <label for="discomMeter" class="form-label">Discom Meter:</label>
+                                <input type="number" class="form-control" id="discomMeter" placeholder="Enter Discom Meter" onkeyup="CalculateActualPrice()" value="0" required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-4">
+                                <label for="pqHsCost" class="form-label">P.Q. and H.S. cost:</label>
+                                <input type="number" class="form-control" id="pqHsCost" placeholder="Enter P.Q. and H.S." onkeyup="CalculateActualPrice()" value="0" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="actualPrice" class="form-label">Actual Price:</label>
+                                <input type="text" class="form-control" id="actualPrice" placeholder="Enter Actual Price" onkeyup="CalculateActualPrice()" required readonly> <!-- Added readonly -->
+                            </div>
+                            <div class="col-md-4">
+                                <label for="subsidy" class="form-label">Subsidy:</label>
+                                <input type="number" class="form-control" id="subsidy" placeholder="Enter Subsidy" onkeyup="CalculateActualPrice()" value="78000" required>
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-4">
+                                <label for="effectivePrice" class="form-label">Effective Price:</label>
+                                <input type="number" class="form-control" id="effectivePrice" placeholder="Enter Effective Price" onkeyup="CalculateActualPrice()" required readonly> <!-- Added readonly -->
+                            </div>
+                            <div class="col-md-4">
+                                <label for="submittedBy" class="form-label">Submitted By:</label>
+                                <input type="text" class="form-control" id="submittedBy" placeholder="Enter Submitted By" value="Amit Vyas" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="submittedNumber" class="form-label">Submitted Number:</label>
+                                <input type="text" class="form-control" id="submittedNumber" placeholder="Enter Submitted Number" value="+91-8866389038" required>
+                            </div>
+                        </div>
+						<div class="row g-3 mt-2">
+						                         
+						      <div class="col-md-4">
+						          <label for="submittedNumber" class="form-label">Created Date:</label>
+						          <input type="text" class="form-control" id="createdDate" placeholder="Enter Date" value="">
+						      </div>
+						</div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-file-export me-2"></i>Export</button>
+                        </div>
+                    </form>
+                </div>
+            </main>
+
+            <!-- Include the footer fragment -->
+            <div th:replace="fragments/footer :: footerPart"></div>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper (Version 5.3.3) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+	<script src="/NRS/js/quotation.js"></script>
+</body>
+</html>
