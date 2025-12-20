@@ -4,7 +4,7 @@ import java.util.Map;
 
 import com.web.nrs.pojo.UserInfo;
 
-public interface UserRepository {
+public interface UserRepositoryTemp {
 
 	public Map<String,Object> saveUser(UserInfo user);
 }

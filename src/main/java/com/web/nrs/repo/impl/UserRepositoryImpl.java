@@ -13,11 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import com.web.nrs.pojo.UserInfo;
-import com.web.nrs.repo.dao.UserRepository;
+import com.web.nrs.repo.dao.UserRepositoryTemp;
 import com.web.nrs.util.TextEncryptDecrypt;
 
 @Repository("UserRepository")
-public class UserRepositoryImpl implements UserRepository{
+public class UserRepositoryImpl implements UserRepositoryTemp {
 
 	@Autowired
 	EntityManagerFactory emf;
@@ -30,20 +30,20 @@ public class UserRepositoryImpl implements UserRepository{
 		
 		Map<String, Object> map = new HashMap<>();
 		
-		Session session = emf.createEntityManager().unwrap(Session.class);
-		Transaction transaction = session.beginTransaction();
-		try {
-			
-			user.setPassword(encryotDecrypt.encrypt(user.getPassword()));
-			session.save(user);
-			session.flush();
-			transaction.commit();
-			map.put("error","N");
-		} catch (Exception e) {
-			transaction.rollback();
-			map.put("error", "Please Contact Administrator" + e.getMessage());
-			logger.error("Error in save ",e);
-		}
+//		Session session = emf.createEntityManager().unwrap(Session.class);
+//		Transaction transaction = session.beginTransaction();
+//		try {
+//			
+//			user.setPassword(encryotDecrypt.encrypt(user.getPassword()));
+//			session.save(user);
+//			session.flush();
+//			transaction.commit();
+//			map.put("error","N");
+//		} catch (Exception e) {
+//			transaction.rollback();
+//			map.put("error", "Please Contact Administrator" + e.getMessage());
+//			logger.error("Error in save ",e);
+//		}
 		return map;
 	}
 

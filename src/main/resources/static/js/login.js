@@ -3,7 +3,6 @@ $(document).ready(function() {
         event.preventDefault();
         var username = $("#emailInput").val();
         var password = $("#passwordInput").val();
-		debugger;
         $.ajax({
             url: "/NRS/login/auth",
             type: "POST",
@@ -13,7 +12,7 @@ $(document).ready(function() {
                 // Save JWT token to localStorage or cookie
                 localStorage.setItem("jwtToken", response);
                 // Redirect to home or dashboard
-                window.location.href = "/home";
+                window.location.href = "/NRS/home";
             },
             error: function(xhr) {
                 alert("Login failed: " + (xhr.responseText || "Invalid credentials"));
