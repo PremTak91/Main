@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="sidebarMenu" id="sidebarMenu" class="sidebar offcanvas offcanvas-start" tabindex="-1" aria-labelledby="sidebarMenuLabel">
+    <div class="offcanvas-header d-lg-none">
+        <h5 class="offcanvas-title text-white" id="sidebarMenuLabel">NRS Dashboard</h5>
+        <button type="button" class="btn-close text-reset btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="sidebar-header">
+        <img src="/NRS/images/nrslogo.png" alt="NRS Solar Solution Logo" class="sidebar-logo">
+    </div>
+
+    <div class="offcanvas-body p-0">
+        <ul class="nav flex-column sidebar-nav">
+            <li class="nav-item">
+                <a class="nav-link active" th:href="@{/home}">
+                    <i class="fas fa-fw fa-tachometer-alt"></i> Dashboard
+                </a>
+            </li>
+            <li class="sidebar-heading">COMPANY MODULE</li>
+			<li class="nav-item">
+			    <a class="nav-link active" th:href="@{/qutotation}">
+			    	<i class="fas fa-fw fa-tachometer-alt"></i> Quotation Generate
+			    </a>
+			</li>
+			<!--  <li class="nav-item">
+                <a class="nav-link collapsed" href="#quotationSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                    <i class="fas fa-fw fa-file-invoice-dollar"></i> Quotation Management
+                    <i class="fas fa-angle-right ms-auto"></i>
+                </a>
+                <div class="collapse" id="quotationSubmenu">
+                    <ul class="nav flex-column ms-3">
+                        <li class="nav-item"><a class="nav-link" href="#">Quotation List</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">Create Quotation</a></li>
+                    </ul>
+                </div>
+            </li>-->
+            <li class="nav-item">
+                <a class="nav-link collapsed" href="#adminSubmenu" data-bs-toggle="collapse" aria-expanded="false">
+                    <i class="fas fa-fw fa-user-shield"></i> Admin
+                    <i class="fas fa-angle-right ms-auto"></i>
+                </a>
+                <div class="collapse" id="adminSubmenu">
+                    <ul class="nav flex-column ms-3">
+                        <li class="nav-item"><a class="nav-link" th:href="@{/employee}">Employee Management</a></li>
+						<li class="nav-item"><a class="nav-link" th:href="@{/leaveRole}">Leave Role</a></li>
+						<li class="nav-item"><a class="nav-link" href="#">Roles & Permissions</a></li>
+                    </ul>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/leaveBalance}">
+                    <i class="fas fa-fw fa-plane-departure"></i> Leave
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/expenses}">
+                    <i class="fas fa-fw fa-money-bill-wave"></i> Expenses
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/inquery}">
+                    <i class="fas fa-fw fa-keyboard"></i> Inquiry Entry
+                </a>
+            </li>
+            <li class="sidebar-heading">PERSONAL INFORMATION</li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/profile}">
+                    <i class="fas fa-fw fa-user-edit"></i> Profile Updates
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" th:href="@{/download-hr-policy}">
+                    <i class="fas fa-fw fa-building"></i> Company Policies
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+</body>
+</html>
