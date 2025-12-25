@@ -1,5 +1,6 @@
 package com.web.nrs.security;
 
+import com.web.nrs.entity.EmployeeEntity;
 import com.web.nrs.entity.RoleEntity;
 import com.web.nrs.entity.UserRoleEntity;
 
@@ -16,8 +17,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class JwtUtil {
@@ -34,14 +37,16 @@ public class JwtUtil {
         key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username, Set<UserRoleEntity> userRoles) {
+    public String generateToken(String username, Set<UserRoleEntity> userRoles, Optional<EmployeeEntity> employeeEntity) {
 
+        String userName = employeeEntity.isPresent() ? getUserName(employeeEntity.get().getFirstName(), employeeEntity.get().getMiddleName(), employeeEntity.get().getLastName()) : "";
         List<String> roles = userRoles.stream()
                 .map(ur -> "ROLE_" + ur.getRoles().getRoleId().toUpperCase()) // since roleId = roleName
                 .toList();
         return Jwts.builder()
                 .setSubject(username)
                 .claim("roles", roles)
+                .claim("userName", userName)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(SignatureAlgorithm.HS256, key)
@@ -93,5 +98,11 @@ public class JwtUtil {
             // token invalid, expired, or signature issue
             return false;
         }
+    }
+
+    private String getUserName(String firstName, String middleName, String lastName){
+        return Stream.of(firstName, middleName, lastName)
+                .filter(s -> s != null && !s.isBlank()) // remove null or empty
+                .collect(Collectors.joining(" "));
     }
 }

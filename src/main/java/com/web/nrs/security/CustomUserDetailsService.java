@@ -1,7 +1,7 @@
 package com.web.nrs.security;
 
 import com.web.nrs.entity.LoginEntity;
-import com.web.nrs.service.UserService;
+import com.web.nrs.service.LoginService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
     @Autowired
-    private UserService userService;
+    private LoginService userService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

@@ -1,15 +1,14 @@
 package com.web.nrs.entity;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "roles")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Access(AccessType.FIELD)

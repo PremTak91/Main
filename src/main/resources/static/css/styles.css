@@ -183,3 +183,179 @@ h1, h2, h3, h4, h5, h6 {
     border: 3px solid var(--nrs-primary); /* Use primary color for border */
     box-shadow: 0 0 0 5px rgba(26, 35, 126, 0.1); /* Subtle glow effect */
 }
+
+
+    /* Custom styles */
+        body {
+            font-family: 'Open Sans', sans-serif;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            display: flex;
+            flex-direction: column; /* For sticky footer */
+        }
+        .main-content {
+            flex-grow: 1; /* Allow main content to expand */
+            display: flex; /* For centering content within it */
+            align-items: center; /* Vertically center children */
+            justify-content: center; /* Horizontally center children */
+            background-color: #1a237e; /* Deep Indigo - Custom Primary Background */
+        }
+        .left-section {
+            background-color: #1a237e; /* Deep Indigo */
+            color: #ffffff; /* White text */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 3rem; /* More padding for better spacing */
+            min-height: 80vh; /* Ensure it takes substantial height */
+        }
+        .left-section h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        .left-section p {
+            font-size: 1.1rem;
+            max-width: 400px;
+            margin-top: 1.5rem;
+            line-height: 1.6;
+        }
+        .nrs-logo-container {
+            margin-bottom: 2rem;
+        }
+        .nrs-logo-container img {
+            max-width: 150px; /* Adjust logo size */
+            height: auto;
+        }
+        .nrs-logo-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.5rem; /* Adjust font size for 'NRS' */
+            font-weight: 700;
+            line-height: 1;
+            margin-top: 0.5rem;
+            color: #ffffff;
+        }
+        .nrs-logo-subtext {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.2rem; /* Adjust font size for 'SOLAR SOLUTION' */
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            color: #ffffff;
+            margin-top: 0.2rem;
+        }
+        .right-section {
+            background-color: #ffffff; /* White background for form */
+            padding: 3rem; /* Generous padding */
+            border-radius: 10px; /* Soft rounded corners */
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15); /* Soft shadow */
+            max-width: 450px; /* Max width for form card */
+            width: 100%; /* Ensure it takes full width of its column */
+        }
+        .right-section h2 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+            color: #333; /* Darker color for heading */
+        }
+        .form-control:focus {
+            border-color: #6a1b9a; /* Custom focus color (can be primary blue) */
+            box-shadow: 0 0 0 0.25rem rgba(106, 27, 154, 0.25); /* Custom shadow focus color */
+        }
+        .btn-primary {
+            background-color: #6a1b9a; /* Deep Purple - Accent color for button */
+            border-color: #6a1b9a;
+            width: 100%; /* Make button full width */
+            padding: 0.75rem; /* Larger button padding */
+            font-size: 1.1rem;
+        }
+        .btn-primary:hover {
+            background-color: #511575; /* Darker shade on hover */
+            border-color: #511575;
+        }
+        .form-check-input:checked {
+            background-color: #6a1b9a; /* Checkbox color */
+            border-color: #6a1b9a;
+        }
+        a {
+            color: #6a1b9a; /* Link color */
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            background-color: #121212; /* Very dark gray for footer */
+            color: rgba(255, 255, 255, 0.7); /* Lighter text for copyright */
+            padding: 1rem 0;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 767.98px) {
+            .main-content {
+                flex-direction: column; /* Stack on small screens */
+            }
+            .left-section {
+                padding: 2rem;
+                min-height: auto; /* Allow height to adjust */
+                width: 100%;
+                border-bottom-left-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            .right-section {
+                margin: 2rem auto; /* Add margin on small screens */
+                border-top-left-radius: 0;
+                border-top-right-radius: 0;
+            }
+        }
+
+
+/*For User avtar*/
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+}
+
+.avatar-letter {
+    line-height: 1;
+}
+
+/* Background colors per letter */
+.avatar-circle.letter-A { background-color: #F44336; } /* red */
+.avatar-circle.letter-B { background-color: #E91E63; } /* pink */
+.avatar-circle.letter-C { background-color: #9C27B0; } /* purple */
+.avatar-circle.letter-D { background-color: #673AB7; } /* deep purple */
+.avatar-circle.letter-E { background-color: #3F51B5; } /* indigo */
+.avatar-circle.letter-F { background-color: #2196F3; } /* blue */
+.avatar-circle.letter-G { background-color: #03A9F4; } /* light blue */
+.avatar-circle.letter-H { background-color: #00BCD4; } /* cyan */
+.avatar-circle.letter-I { background-color: #009688; } /* teal */
+.avatar-circle.letter-J { background-color: #4CAF50; } /* green */
+.avatar-circle.letter-K { background-color: #8BC34A; } /* light green */
+.avatar-circle.letter-L { background-color: #CDDC39; } /* lime */
+.avatar-circle.letter-M { background-color: #FFEB3B; } /* yellow */
+.avatar-circle.letter-N { background-color: #FFC107; } /* amber */
+.avatar-circle.letter-O { background-color: #FF9800; } /* orange */
+.avatar-circle.letter-P { background-color: #FF5722; } /* deep orange */
+.avatar-circle.letter-Q { background-color: #795548; } /* brown */
+.avatar-circle.letter-R { background-color: #9E9E9E; } /* grey */
+.avatar-circle.letter-S { background-color: #607D8B; } /* blue grey */
+.avatar-circle.letter-T { background-color: #F06292; } /* pink lighten */
+.avatar-circle.letter-U { background-color: #BA68C8; } /* purple lighten */
+.avatar-circle.letter-V { background-color: #64B5F6; } /* blue lighten */
+.avatar-circle.letter-W { background-color: #4DB6AC; } /* teal lighten */
+.avatar-circle.letter-X { background-color: #81C784; } /* green lighten */
+.avatar-circle.letter-Y { background-color: #FFD54F; } /* yellow lighten */
+.avatar-circle.letter-Z { background-color: #FF8A65; } /* orange lighten */
+
