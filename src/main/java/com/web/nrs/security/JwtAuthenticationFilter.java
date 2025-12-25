@@ -27,6 +27,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
+        String path = request.getServletPath();
+
+        // Skip static resources
+        if (path.startsWith("/css/") || path.startsWith("/js/") ||
+                path.startsWith("/images/") || path.startsWith("/webjars/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String token = null;
         String username = null;
 
@@ -39,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 2️⃣ If not in header, check cookies
         if (token == null && request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
-                if ("jwtToken".equals(cookie.getName())) { // name of your cookie
+                if ("jwtToken".equals(cookie.getName())) {
                     token = cookie.getValue();
                     break;
                 }
@@ -64,5 +73,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
 
 }

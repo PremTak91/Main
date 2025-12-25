@@ -1,12 +1,14 @@
 package com.web.nrs.controller;
 
+import com.web.nrs.entity.EmployeeEntity;
 import com.web.nrs.entity.LoginEntity;
 import com.web.nrs.model.LoginRequest;
 import com.web.nrs.security.JwtUtil;
-import com.web.nrs.service.UserService;
+import com.web.nrs.service.EmployeeService;
+import com.web.nrs.service.LoginService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,26 +20,22 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
+@AllArgsConstructor
 @Controller
 public class LoginController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final AuthenticationManager authenticationManager;
+    private final JwtUtil jwtUtil;
+    private final LoginService loginService;
+    private final EmployeeService employeeService;
 
-    @Autowired
-    private UserService userService;
 
     @GetMapping("/login")
     public String loginPage() {
 
         return "login";
-
     }
 
     @PostMapping("/login/auth")
@@ -48,10 +46,10 @@ public class LoginController {
                         loginRequest.getPassword()
                 )
         );
-        Optional<LoginEntity> user = userService.findByUsername(loginRequest.getUsername());
+        Optional<LoginEntity> user = loginService.findByUsername(loginRequest.getUsername());
+        Optional<EmployeeEntity> employeeEntity = employeeService.getEmployeeByEmailId(loginRequest.getUsername());
 
-
-        String token = jwtUtil.generateToken(loginRequest.getUsername(), user.get().getUserRoles());
+        String token = jwtUtil.generateToken(loginRequest.getUsername(), user.get().getUserRoles(),employeeEntity);
         if (token != null) {
             // Set token as HttpOnly cookie
             Cookie cookie = new Cookie("jwtToken", token);
