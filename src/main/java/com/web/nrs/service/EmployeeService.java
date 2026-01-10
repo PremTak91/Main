@@ -23,4 +23,7 @@ public interface EmployeeService {
     boolean updateEmployee(EmployeeEntity employee, EmployeeRegistrationRequest employeeDetails, MultipartFile photo);
     Optional<EmployeeEntity> findEmployeeById(long id);
 
+    String punchIn(Long employeeId);
+    String punchOut(Long employeeId);
+    String getAttendanceStatus(Long employeeId);
 }

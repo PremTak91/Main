@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.List;
@@ -32,6 +33,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final DesignationRepository designationRepository;
+    private final EmployeeAttendanceRepository employeeAttendanceRepository;
 
     @Override
     @Transactional
@@ -155,5 +157,61 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public Optional<EmployeeEntity> findEmployeeById(long id) {
         return employeeRepository.findById(id);
+    }
+
+    @Override
+    public String punchIn(Long employeeId) {
+        // Check if already punched in (active session)
+        Optional<EmployeeAttendanceEntity> activeSession = employeeAttendanceRepository.findTopByEmployeeIdAndOutTimeIsNullOrderByInTimeDesc(employeeId);
+        if (activeSession.isPresent()) {
+            return "ALREADY_IN";
+        }
+
+        EmployeeAttendanceEntity attendance = EmployeeAttendanceEntity.builder()
+                .employeeId(employeeId)
+                .inTime(LocalDateTime.now())
+                .attendanceDate(LocalDate.now())
+                .status("IN_PROGRESS")
+                .build();
+        
+        employeeAttendanceRepository.save(attendance);
+        return "PUNCHED_IN";
+    }
+
+    @Override
+    public String punchOut(Long employeeId) {
+        // Find active session
+        Optional<EmployeeAttendanceEntity> activeSession = employeeAttendanceRepository.findTopByEmployeeIdAndOutTimeIsNullOrderByInTimeDesc(employeeId);
+        if (activeSession.isEmpty()) {
+            return "ALREADY_OUT";
+        }
+
+        EmployeeAttendanceEntity attendance = activeSession.get();
+        LocalDateTime outTime = LocalDateTime.now();
+        attendance.setOutTime(outTime);
+
+        // Calculate Working Hours
+        java.time.Duration duration = java.time.Duration.between(attendance.getInTime(), outTime);
+        long hours = duration.toHours();
+        long minutes = duration.toMinutesPart();
+        String workingHours = String.format("%02d:%02d", hours, minutes);
+        attendance.setWorkingHours(workingHours);
+
+        // Update Status based on 8 hours
+        if (hours >= 8) {
+            attendance.setStatus("PRESENT");
+        } else {
+            attendance.setStatus("PARTIAL"); // Or "ABSENT" depending on strictness, using PARTIAL for now
+        }
+
+        employeeAttendanceRepository.save(attendance);
+        
+        return "PUNCHED_OUT";
+    }
+
+    @Override
+    public String getAttendanceStatus(Long employeeId) {
+        Optional<EmployeeAttendanceEntity> activeSession = employeeAttendanceRepository.findTopByEmployeeIdAndOutTimeIsNullOrderByInTimeDesc(employeeId);
+        return activeSession.isPresent() ? "IN" : "OUT";
     }
 }
