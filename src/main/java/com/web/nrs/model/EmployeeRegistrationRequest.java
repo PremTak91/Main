@@ -12,6 +12,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmployeeRegistrationRequest {
+    private long employeeId;
     private String firstName;
     private String middleName;
     private String lastName;
@@ -21,4 +22,10 @@ public class EmployeeRegistrationRequest {
     private Long roleId;
     private Long designationId;
     private LocalDate dateOfJoining;
+    private String address;
+    private String phoneNo;
+    private String designation;
+    private String qualification;
+    private Long postalCode;
+    private Integer previousExperience;
 }

@@ -14,7 +14,6 @@ import java.util.stream.Stream;
 @Entity
 @Table(name = "employeeinfo")
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmployeeEntity {
@@ -27,15 +26,18 @@ public class EmployeeEntity {
     private String middleName;
     private String lastName;
 
-    @Lob
-    private byte[] photo;
+
+    private String photo;
+
+    private String qualification;
 
     @Column(name = "Address")
     private String address;
 
     @Column(name = "phoneno")
     private String phoneNo;
-
+    private String dateOfBirth;
+    private Long postalCode;
     private String email;
     private String city;
     private String state;
@@ -47,5 +49,8 @@ public class EmployeeEntity {
     private Long createId;
     private Long auditUserId;
     private LocalDateTime auditTimeStamp;
+    private int previousExperience;
+
+
 
 }

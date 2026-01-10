@@ -65,4 +65,16 @@ public class LoginController {
 
     }
 
+    @GetMapping("/logout")
+    public String logoutUser(HttpServletResponse response) {
+        Cookie cookie = new Cookie("jwtToken", null);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);     // must match original
+        cookie.setPath("/");        // must match original
+        cookie.setMaxAge(0);        // 🔴 delete immediately
+        response.addCookie(cookie);
+        return "redirect:/login";
+    }
+
+
 }
