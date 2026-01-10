@@ -21,11 +21,8 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring()
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**");
-    }
+    // WebSecurityCustomizer removed to avoid conflict with filterChain security
+    // Static resources are handled in filterChain via permitAll()
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -35,12 +32,13 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/login/**",
                         "/registration/**",
-                        "/css/**", "/js/**", "/images/**", "/webjars/**",
+                        "/css/**", "/js/**", "/images/**","/images/employeePhoto/**", "/webjars/**",
                         "/login",
                         "/registration"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
+            .logout(logout -> logout.disable())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

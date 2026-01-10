@@ -3,6 +3,7 @@ $(document).ready(function() {
         event.preventDefault();
         var username = $("#emailInput").val();
         var password = $("#passwordInput").val();
+        showLoader();
         $.ajax({
             url: "/NRS/login/auth",
             type: "POST",
@@ -11,6 +12,7 @@ $(document).ready(function() {
             success: function(response) {
                 // Save JWT token to localStorage or cookie
                 localStorage.setItem("jwtToken", response);
+                hideLoader();
                 // Redirect to home or dashboard
                 window.location.href = "/NRS/home";
             },
