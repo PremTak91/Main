@@ -1,124 +1,191 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NRS Solar Solution - User List</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body>
 
     <div class="dashboard-wrapper">
 
-		<div th:replace="fragments/sidebar :: sidebarMenu"> </div>
+        <div th:replace="fragments/sidebar :: sidebarMenu"> </div>
 
         <div class="d-flex flex-column w-100">
 
-			<div th:replace="fragments/header :: headerPart"> </div>
+            <div th:replace="fragments/header :: headerPart"> </div>
 
             <main class="main-content-area flex-grow-1">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="mb-0">User List</h3>
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
-                        <i class="fas fa-plus me-2"></i> Add Entry
-                    </button>
+                    <h3 class="mb-0">Employee Management</h3>
                 </div>
 
                 <div class="card p-4 mb-4">
                     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
                         <div class="d-flex align-items-center mb-2 mb-md-0">
                             <label for="showEntries" class="form-label me-2 mb-0">Show</label>
-                            <select class="form-select form-select-sm" id="showEntries" style="width: auto;">
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
+                            <select class="form-select form-select-sm" id="showEntries" style="width: auto;"
+                                onchange="changePageSize(this.value)">
+                                <option value="10" th:selected="${pageSize == 10}">10</option>
+                                <option value="25" th:selected="${pageSize == 25}">25</option>
+                                <option value="50" th:selected="${pageSize == 50}">50</option>
+                                <option value="100" th:selected="${pageSize == 100}">100</option>
                             </select>
                             <span class="ms-2">entries</span>
                         </div>
                         <div class="ms-md-auto">
                             <label for="searchTable" class="form-label me-2 mb-0">Search:</label>
-                            <input type="text" class="form-control form-control-sm d-inline-block" id="searchTable" placeholder="" style="width: auto;">
+                            <input type="text" class="form-control form-control-sm d-inline-block" id="searchTable"
+                                placeholder="" style="width: auto;">
                         </div>
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-hover table-striped align-middle">
+                        <table class="table table-hover table-striped align-middle" id="employeeTable">
                             <thead class="table-light">
                                 <tr>
-                                    <th scope="col">No. <i class="fas fa-sort-up text-muted ms-1"></i></th>
-                                    <th scope="col">Employee Name <i class="fas fa-sort-up text-muted ms-1"></i></th>
-                                    <th scope="col">Phone No. <i class="fas fa-sort-up text-muted ms-1"></i></th>
-                                    <th scope="col">Position <i class="fas fa-sort-up text-muted ms-1"></i></th>
-                                    <th scope="col">Date Of Joining <i class="fas fa-sort-up text-muted ms-1"></i></th>
-                                    <th scope="col">Maintner <i class="fas fa-sort-up text-muted ms-1"></i></th>
-                                    <th scope="col">Employee Status <i class="fas fa-sort-up text-muted ms-1"></i></th>
+                                    <th scope="col">
+                                        <a th:href="@{/employee(page=${currentPage}, size=${pageSize}, sortBy='id', sortDir=${sortBy == 'id' ? reverseSortDir : 'asc'})}"
+                                            class="text-decoration-none text-dark">
+                                            No. <i
+                                                th:classappend="${sortBy == 'id'} ? (${sortDir == 'asc'} ? 'fa-sort-up text-primary' : 'fa-sort-down text-primary') : 'fa-sort text-muted'"
+                                                class="fas ms-1"></i>
+                                        </a>
+                                    </th>
+                                    <th scope="col">
+                                        <a th:href="@{/employee(page=${currentPage}, size=${pageSize}, sortBy='firstName', sortDir=${sortBy == 'firstName' ? reverseSortDir : 'asc'})}"
+                                            class="text-decoration-none text-dark">
+                                            Employee Name <i
+                                                th:classappend="${sortBy == 'firstName'} ? (${sortDir == 'asc'} ? 'fa-sort-up text-primary' : 'fa-sort-down text-primary') : 'fa-sort text-muted'"
+                                                class="fas ms-1"></i>
+                                        </a>
+                                    </th>
+                                    <th scope="col">
+                                        <a th:href="@{/employee(page=${currentPage}, size=${pageSize}, sortBy='phoneNo', sortDir=${sortBy == 'phoneNo' ? reverseSortDir : 'asc'})}"
+                                            class="text-decoration-none text-dark">
+                                            Phone No. <i
+                                                th:classappend="${sortBy == 'phoneNo'} ? (${sortDir == 'asc'} ? 'fa-sort-up text-primary' : 'fa-sort-down text-primary') : 'fa-sort text-muted'"
+                                                class="fas ms-1"></i>
+                                        </a>
+                                    </th>
+                                    <th scope="col">
+                                        <a th:href="@{/employee(page=${currentPage}, size=${pageSize}, sortBy='designation', sortDir=${sortBy == 'designation' ? reverseSortDir : 'asc'})}"
+                                            class="text-decoration-none text-dark">
+                                            Position <i
+                                                th:classappend="${sortBy == 'designation'} ? (${sortDir == 'asc'} ? 'fa-sort-up text-primary' : 'fa-sort-down text-primary') : 'fa-sort text-muted'"
+                                                class="fas ms-1"></i>
+                                        </a>
+                                    </th>
+                                    <th scope="col">
+                                        <a th:href="@{/employee(page=${currentPage}, size=${pageSize}, sortBy='dateOfJoining', sortDir=${sortBy == 'dateOfJoining' ? reverseSortDir : 'asc'})}"
+                                            class="text-decoration-none text-dark">
+                                            Date Of Joining <i
+                                                th:classappend="${sortBy == 'dateOfJoining'} ? (${sortDir == 'asc'} ? 'fa-sort-up text-primary' : 'fa-sort-down text-primary') : 'fa-sort text-muted'"
+                                                class="fas ms-1"></i>
+                                        </a>
+                                    </th>
+                                    <th scope="col">
+                                        <a th:href="@{/employee(page=${currentPage}, size=${pageSize}, sortBy='maintainer', sortDir=${sortBy == 'maintainer' ? reverseSortDir : 'asc'})}"
+                                            class="text-decoration-none text-dark">
+                                            Maintner <i
+                                                th:classappend="${sortBy == 'maintainer'} ? (${sortDir == 'asc'} ? 'fa-sort-up text-primary' : 'fa-sort-down text-primary') : 'fa-sort text-muted'"
+                                                class="fas ms-1"></i>
+                                        </a>
+                                    </th>
+                                    <th scope="col">
+                                        <a th:href="@{/employee(page=${currentPage}, size=${pageSize}, sortBy='employeeStatus', sortDir=${sortBy == 'employeeStatus' ? reverseSortDir : 'asc'})}"
+                                            class="text-decoration-none text-dark">
+                                            Employee Status <i
+                                                th:classappend="${sortBy == 'employeeStatus'} ? (${sortDir == 'asc'} ? 'fa-sort-up text-primary' : 'fa-sort-down text-primary') : 'fa-sort text-muted'"
+                                                class="fas ms-1"></i>
+                                        </a>
+                                    </th>
                                     <th scope="col">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>1</td>
-                                    <td>Yuveraj</td>
-                                    <td>7019374747</td>
-                                    <td>Welder</td>
-                                    <td>10/10/2021</td>
-                                    <td>Vikram</td>
-                                    <td><span class="badge bg-warning text-dark">Under Review</span></td>
+                                <tr th:each="employee, iterStat : ${employees}">
+                                    <td th:text="${(currentPage * pageSize) + iterStat.index + 1}">1</td>
+                                    <td th:text="${employee.employeeName != null ? employee.employeeName : '-'}">Name
+                                    </td>
+                                    <td th:text="${employee.phoneNo != null ? employee.phoneNo : '-'}">Phone</td>
+                                    <td th:text="${employee.designation != null ? employee.designation : '-'}">Position
+                                    </td>
+                                    <td
+                                        th:text="${employee.dateOfJoining != null ? #temporals.format(employee.dateOfJoining, 'MM/dd/yyyy') : '-'}">
+                                        Date</td>
+                                    <td
+                                        th:text="${employee.maintainer != null && employee.maintainer != '' ? employee.maintainer : '-'}">
+                                        Maintainer</td>
                                     <td>
-                                        <button class="btn btn-sm btn-info text-white me-1" title="Edit"><i class="fas fa-edit"></i></button>
-                                        <button class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                                        <span th:if="${employee.employeeStatus == 'Active'}"
+                                            class="badge bg-success">Active</span>
+                                        <span th:if="${employee.employeeStatus == 'Inactive'}"
+                                            class="badge bg-secondary">Inactive</span>
+                                        <span th:if="${employee.employeeStatus == 'Under Review'}"
+                                            class="badge bg-warning text-dark">Under Review</span>
+                                        <span th:if="${employee.employeeStatus == 'Terminated'}"
+                                            class="badge bg-danger">Terminated</span>
+                                        <span th:if="${employee.employeeStatus == 'Unknown'}"
+                                            class="badge bg-secondary">Unknown</span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info text-white me-1" title="Edit"
+                                            th:onclick="'editEmployee(' + ${employee.id} + ')'"><i
+                                                class="fas fa-edit"></i></button>
+                                        <button th:if="${employee.employeeStatus != 'Inactive'}"
+                                            class="btn btn-sm btn-danger" title="Delete"
+                                            th:onclick="'deleteEmployee(' + ${employee.id} + ')'"><i
+                                                class="fas fa-trash-alt"></i></button>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td>2</td>
-                                    <td>Aarav Sharma</td>
-                                    <td>9876543210</td>
-                                    <td>Engineer</td>
-                                    <td>01/15/2022</td>
-                                    <td>Priya Singh</td>
-                                    <td><span class="badge bg-success">Active</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-info text-white me-1" title="Edit"><i class="fas fa-edit"></i></button>
-                                        <button class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash-alt"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>3</td>
-                                    <td>Diya Patel</td>
-                                    <td>7654321098</td>
-                                    <td>Technician</td>
-                                    <td>03/20/2023</td>
-                                    <td>Rahul Kumar</td>
-                                    <td><span class="badge bg-danger">Terminated</span></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-info text-white me-1" title="Edit"><i class="fas fa-edit"></i></button>
-                                        <button class="btn btn-sm btn-danger" title="Delete"><i class="fas fa-trash-alt"></i></button>
-                                    </td>
+                                <tr th:if="${#lists.isEmpty(employees)}">
+                                    <td colspan="8" class="text-center">No employees found</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <nav aria-label="Page navigation" class="mt-3">
-                        <ul class="pagination justify-content-end mb-0">
-                            <li class="page-item disabled">
-                                <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
-                            </li>
-                            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                            <li class="page-item"><a class="page-link" href="#">2</a></li>
-                            <li class="page-item"><a class="page-link" href="#">3</a></li>
-                            <li class="page-item">
-                                <a class="page-link" href="#">Next</a>
-                            </li>
-                        </ul>
-                    </nav>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            Showing <span th:text="${totalItems > 0 ? (currentPage * pageSize) + 1 : 0}">0</span>
+                            to <span
+                                th:text="${(currentPage + 1) * pageSize > totalItems ? totalItems : (currentPage + 1) * pageSize}">0</span>
+                            of <span th:text="${totalItems}">0</span> entries
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination mb-0">
+                                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                    <a class="page-link"
+                                        th:href="@{/employee(page=${currentPage - 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir})}">Previous</a>
+                                </li>
+                                <th:block th:each="i : ${#numbers.sequence(0, totalPages > 0 ? totalPages - 1 : 0)}">
+                                    <li class="page-item" th:if="${i >= currentPage - 2 and i <= currentPage + 2}"
+                                        th:classappend="${i == currentPage} ? 'active'">
+                                        <a class="page-link"
+                                            th:href="@{/employee(page=${i}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir})}"
+                                            th:text="${i + 1}">1</a>
+                                    </li>
+                                </th:block>
+                                <li class="page-item" th:classappend="${currentPage >= totalPages - 1} ? 'disabled'">
+                                    <a class="page-link"
+                                        th:href="@{/employee(page=${currentPage + 1}, size=${pageSize}, sortBy=${sortBy}, sortDir=${sortDir})}">Next</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
             </main>
 
-       			<div th:replace="fragments/footer :: footerPart"> </div>
+            <div th:replace="fragments/footer :: footerPart"> </div>
         </div>
     </div>
 
@@ -126,11 +193,12 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addUserModalLabel">Add User</h5>
+                    <h5 class="modal-title" id="employeeModalTitle">Add User</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form>
+                    <form id="employeeForm">
+                        <input type="hidden" id="employeeId" value="">
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <label for="firstName" class="form-label">First Name</label>
@@ -165,13 +233,13 @@
                                 <input type="email" class="form-control" id="email" placeholder="Email">
                             </div>
                             <div class="col-md-6">
-                                <label for="position" class="form-label">Position</label>
-                                <select class="form-select" id="position">
+                                <label for="designationId" class="form-label">Position</label>
+                                <select class="form-select" id="designationId">
                                     <option selected disabled value="">Select</option>
-                                    <option>Welder</option>
-                                    <option>Engineer</option>
-                                    <option>Technician</option>
-                                    <option>Manager</option>
+                                    <option value="1">Welder</option>
+                                    <option value="2">Engineer</option>
+                                    <option value="3">Technician</option>
+                                    <option value="4">Manager</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -182,44 +250,53 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label for="employeeStatus" class="form-label">Employee Status</label>
-                                <select class="form-select" id="employeeStatus">
+                                <label for="empStatus" class="form-label">Employee Status</label>
+                                <select class="form-select" id="empStatus">
                                     <option selected disabled value="">Select</option>
-                                    <option>Active</option>
-                                    <option>Inactive</option>
-                                    <option>Under Review</option>
-                                    <option>Terminated</option>
+                                    <option value="1">Active</option>
+                                    <option value="2">Inactive</option>
+                                    <option value="3">Under Review</option>
+                                    <option value="0">Terminated</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
-                                <label for="employeeMaintner" class="form-label">Employee Maintner</label>
-                                <select class="form-select" id="employeeMaintner">
+                                <label for="empMainterId" class="form-label">Employee Maintner</label>
+                                <select class="form-select" id="empMainterId">
                                     <option selected disabled value="">Select</option>
-                                    <option>Vikram</option>
-                                    <option>Priya Singh</option>
-                                    <option>Rahul Kumar</option>
+                                    <option th:each="mainter : ${maintainers}" th:value="${mainter.id}"
+                                        th:text="${mainter.name}">Maintainer Name</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label for="branch" class="form-label">Branch</label>
                                 <select class="form-select" id="branch">
                                     <option selected disabled value="">Select</option>
-                                    <option>Branch A</option>
-                                    <option>Branch B</option>
-                                    <option>Branch C</option>
+                                    <option value="0">Ahmedabad</option>
                                 </select>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary">Submit</button>
+                    <button type="button" class="btn btn-primary" id="saveEmployeeBtn"
+                        onclick="saveEmployee()">Submit</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <div th:replace="fragments/commonUI :: loader"></div>
+    <div th:replace="fragments/commonUI :: toaster"></div>
+
+    <div th:replace="~{fragments/commonJquery :: commonJquery}"></div>
+    <script th:src="@{/js/employee.js}"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const currentSortBy = /*[[${sortBy}]]*/ 'id';
+        const currentSortDir = /*[[${sortDir}]]*/ 'asc';
+        const currentPageSize = /*[[${pageSize}]]*/ 10;
+        /*]]>*/
+    </script>
 </body>
+
 </html>

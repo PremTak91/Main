@@ -28,4 +28,9 @@ public class EmployeeRegistrationRequest {
     private String qualification;
     private Long postalCode;
     private Integer previousExperience;
+    private String city;
+    private String state;
+    private String branch;
+    private Long empMainterId;
+    private Integer empStatus;
 }

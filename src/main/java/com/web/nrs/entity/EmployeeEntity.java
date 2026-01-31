@@ -43,13 +43,13 @@ public class EmployeeEntity {
     private String state;
     private Long designationId;
     private LocalDate dateOfJoining;
-    private int empStatus;
+    private Integer empStatus;
     private Long empMainterId;
     private String branch;
     private Long createId;
     private Long auditUserId;
     private LocalDateTime auditTimeStamp;
-    private int previousExperience;
+    private Integer previousExperience;
 
 
 

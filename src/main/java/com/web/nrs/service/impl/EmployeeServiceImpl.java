@@ -1,6 +1,7 @@
 package com.web.nrs.service.impl;
 
 import com.web.nrs.DTO.EmployeeDTO;
+import com.web.nrs.DTO.EmployeeListDTO;
 import com.web.nrs.entity.*;
 import com.web.nrs.model.EmployeeRegistrationRequest;
 import com.web.nrs.repository.*;
@@ -9,6 +10,8 @@ import com.web.nrs.utils.ConstantUtils;
 import com.web.nrs.utils.ValidationUtils;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +26,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @AllArgsConstructor
@@ -34,6 +39,61 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final UserRoleRepository userRoleRepository;
     private final DesignationRepository designationRepository;
     private final EmployeeAttendanceRepository employeeAttendanceRepository;
+
+    @Override
+    public Page<EmployeeListDTO> getAllEmployees(Pageable pageable) {
+        Page<EmployeeEntity> employeePage = employeeRepository.findAll(pageable);
+        
+        return employeePage.map(employee -> {
+            // Merge firstName and lastName for name column
+            String employeeName = Stream.of(employee.getFirstName(), employee.getLastName())
+                    .filter(s -> s != null && !s.isBlank())
+                    .collect(Collectors.joining(" "));
+            
+            // Get designation name
+            String designationName = "";
+            if (employee.getDesignationId() != null) {
+                designationName = designationRepository.findById(employee.getDesignationId())
+                        .map(DesignationEntity::getDesignation)
+                        .orElse("");
+            }
+            
+            // Get maintainer name (if empMainterId is set)
+            String maintainerName = "";
+            if (employee.getEmpMainterId() != null) {
+                maintainerName = employeeRepository.findById(employee.getEmpMainterId())
+                        .map(e -> Stream.of(e.getFirstName(), e.getLastName())
+                                .filter(s -> s != null && !s.isBlank())
+                                .collect(Collectors.joining(" ")))
+                        .orElse("");
+            }
+            
+            // Map employee status (handle null)
+            Integer empStatus = employee.getEmpStatus();
+            String status;
+            if (empStatus == null) {
+                status = "Unknown";
+            } else {
+                status = switch (empStatus) {
+                    case 1 -> "Active";
+                    case 2 -> "Inactive";
+                    case 3 -> "Under Review";
+                    case 0 -> "Terminated";
+                    default -> "Unknown";
+                };
+            }
+            
+            return EmployeeListDTO.builder()
+                    .id(employee.getId())
+                    .employeeName(employeeName)
+                    .phoneNo(employee.getPhoneNo())
+                    .designation(designationName)
+                    .dateOfJoining(employee.getDateOfJoining())
+                    .maintainer(maintainerName)
+                    .employeeStatus(status)
+                    .build();
+        });
+    }
 
     @Override
     @Transactional
@@ -214,4 +274,76 @@ public class EmployeeServiceImpl implements EmployeeService {
         Optional<EmployeeAttendanceEntity> activeSession = employeeAttendanceRepository.findTopByEmployeeIdAndOutTimeIsNullOrderByInTimeDesc(employeeId);
         return activeSession.isPresent() ? "IN" : "OUT";
     }
+
+    @Override
+    public EmployeeEntity getEmployeeDetailsById(Long id) {
+        return employeeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
+    }
+
+    @Override
+    @Transactional
+    public boolean updateEmployeeById(Long id, EmployeeRegistrationRequest request) {
+        EmployeeEntity employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
+
+        if (request.getFirstName() != null && !request.getFirstName().isEmpty()) {
+            employee.setFirstName(request.getFirstName());
+        }
+        if (request.getMiddleName() != null) {
+            employee.setMiddleName(request.getMiddleName());
+        }
+        if (request.getLastName() != null && !request.getLastName().isEmpty()) {
+            employee.setLastName(request.getLastName());
+        }
+        if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+            employee.setEmail(request.getEmail());
+        }
+        if (request.getPhoneNo() != null && !request.getPhoneNo().isEmpty()) {
+            employee.setPhoneNo(request.getPhoneNo());
+        }
+        if (request.getAddress() != null) {
+            employee.setAddress(request.getAddress());
+        }
+        if (request.getCity() != null) {
+            employee.setCity(request.getCity());
+        }
+        if (request.getState() != null) {
+            employee.setState(request.getState());
+        }
+        if (request.getPostalCode() != null) {
+            employee.setPostalCode(request.getPostalCode());
+        }
+        if (request.getDateOfJoining() != null) {
+            employee.setDateOfJoining(request.getDateOfJoining());
+        }
+        if (request.getDesignationId() != null) {
+            employee.setDesignationId(request.getDesignationId());
+        }
+        if (request.getBranch() != null) {
+            employee.setBranch(request.getBranch());
+        }
+        if (request.getEmpMainterId() != null) {
+            employee.setEmpMainterId(request.getEmpMainterId());
+        }
+        if (request.getEmpStatus() != null) {
+            employee.setEmpStatus(request.getEmpStatus());
+        }
+
+        employeeRepository.save(employee);
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean softDeleteEmployee(Long id) {
+        EmployeeEntity employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Employee not found with id: " + id));
+        
+        // Set status to 2 (Inactive)
+        employee.setEmpStatus(2);
+        employeeRepository.save(employee);
+        return true;
+    }
 }
+

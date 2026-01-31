@@ -65,14 +65,15 @@ public class EmployeeDTO {
                 period.getDays());
     }
 
-    public static String calculateExperience(LocalDate dateOfJoining, int previousExperience) {
-        if (dateOfJoining == null) return previousExperience + " Years 0 Months 0 Days";
+    public static String calculateExperience(LocalDate dateOfJoining, Integer previousExperience) {
+        int prevExp = previousExperience != null ? previousExperience : 0;
+        if (dateOfJoining == null) return prevExp + " Years 0 Months 0 Days";
         
         LocalDate today = LocalDate.now();
         Period period = Period.between(dateOfJoining, today);
         
         // Add previous experience (assuming it's in years) to the calculated years
-        int totalYears = period.getYears() + previousExperience;
+        int totalYears = period.getYears() + prevExp;
         
         return String.format("%d Years %d Months %d Days",
                 totalYears,
