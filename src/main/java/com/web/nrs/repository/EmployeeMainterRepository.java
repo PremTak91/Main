@@ -12,4 +12,5 @@ public interface EmployeeMainterRepository extends JpaRepository<EmployeeMainter
     List<EmployeeMainterEntity> findByActive(Integer active);
     List<EmployeeMainterEntity> findByActiveNot(Integer active);
     Optional<EmployeeMainterEntity> findByDesignationIdAndActiveNot(Long designationId, Integer active);
+    List<EmployeeMainterEntity> findByMainterId(Long mainterId);
 }
