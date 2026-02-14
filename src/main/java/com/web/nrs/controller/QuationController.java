@@ -1,27 +1,28 @@
 package com.web.nrs.controller;
 
+import com.web.nrs.model.SolarQuotation;
+import com.web.nrs.service.QuotationService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.http.*;
-import com.web.nrs.model.SolarQuotation;
-import com.web.nrs.service.QuotationService;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
+@RequestMapping("/quts")
 public class QuationController {
 	
 	@Autowired
 	private QuotationService quotationService;
 	
-	@GetMapping("/quts")
+	@GetMapping
 	public String loginHome() {
 		return "quts";
 	}
 	
-	@PostMapping("/quts")
+	@PostMapping
 	public ResponseEntity<byte[]> generateQuation(@RequestBody SolarQuotation quotation) {
 		
         try {
@@ -42,8 +43,6 @@ public class QuationController {
                     .body(("PDF Generation Error: " + e.getMessage()).getBytes());
         }
     }
-	
-	
-	
+
 
 }

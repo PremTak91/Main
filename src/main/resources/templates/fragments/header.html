@@ -3,48 +3,89 @@
 
 <body>
 
-    <nav th:fragment="headerPart" class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
-        <div class="container-fluid">
-            <button class="btn btn-primary d-lg-none me-3" type="button" data-bs-toggle="offcanvas"
-                data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+    <div th:fragment="headerPart">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm sticky-top">
+            <div class="container-fluid">
+                <button class="btn btn-primary d-lg-none me-3" type="button" data-bs-toggle="offcanvas"
+                    data-bs-target="#sidebarMenu" aria-controls="sidebarMenu">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
 
-            <a class="navbar-brand d-lg-none" href="#">
-                <span class="text-primary fw-bold">NRS Home</span>
-            </a>
+                <a class="navbar-brand d-lg-none" href="#">
+                    <span class="text-primary fw-bold">NRS Home</span>
+                </a>
 
-            <div class="ms-auto d-flex align-items-center">
-                <button id="attendanceBtn" class="badge bg-danger rounded-pill me-3 d-none d-sm-block border-0"
-                    onclick="toggleAttendance()">IN</button>
-                <div class="dropdown">
-                    <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" id="userDropdown"
-                        role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="avatar-circle"
-                            th:classappend="' letter-' + ${#strings.toUpperCase(#strings.substring(currentUserName, 0, 1))}">
-                            <span class="avatar-letter"
-                                th:text="${#strings.toUpperCase(#strings.substring(currentUserName, 0, 1))}"></span>
-                        </div>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                        <li>
-                            <h6 class="dropdown-header" th:text="${currentUserName != null ? currentUserName : ''}">
-                            </h6>
-                        </li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        <li><a class="dropdown-item" th:href="@{/profile}"><i
-                                    class="fas fa-user-circle me-2"></i>Profile</a></li>
-                        <li><a class="dropdown-item" th:href="@{/logout}"><i
-                                    class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                    </ul>
+                <div class="ms-auto d-flex align-items-center">
+                    <button type="button" class="btn btn-outline-primary btn-sm me-2 rounded-pill"
+                        data-bs-toggle="modal" data-bs-target="#createPostModal" title="Create Post">
+                        <i class="fas fa-edit me-1"></i> Post
+                    </button>
+                    <button id="attendanceBtn" class="badge bg-danger rounded-pill me-3 d-none d-sm-block border-0"
+                        onclick="toggleAttendance()">IN</button>
+                    <div class="dropdown">
+                        <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#"
+                            id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="avatar-circle"
+                                th:classappend="' letter-' + ${#strings.toUpperCase(#strings.substring(currentUserName, 0, 1))}">
+                                <span class="avatar-letter"
+                                    th:text="${#strings.toUpperCase(#strings.substring(currentUserName, 0, 1))}"></span>
+                            </div>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li>
+                                <h6 class="dropdown-header" th:text="${currentUserName != null ? currentUserName : ''}">
+                                </h6>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" th:href="@{/profile}"><i
+                                        class="fas fa-user-circle me-2"></i>Profile</a></li>
+                            <li><a class="dropdown-item" th:href="@{/logout}"><i
+                                        class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Create Post Modal -->
+        <div class="modal fade" id="createPostModal" tabindex="-1" aria-labelledby="createPostModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="createPostModalLabel">Create Post</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="createPostForm" enctype="multipart/form-data">
+                            <input type="hidden" id="editPostId" name="id">
+                            <div class="mb-3">
+                                <textarea class="form-control" id="postText" name="postText" rows="4"
+                                    placeholder="What's on your mind?"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="postImage" class="form-label">Add a photo</label>
+                                <input class="form-control" type="file" id="postImage" name="postImage" accept="image/*"
+                                    onchange="previewImage(this)">
+                            </div>
+                            <div id="imagePreviewContainer" class="mb-3 d-none">
+                                <img id="imagePreview" src="#" alt="Image Preview" class="img-fluid rounded border">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" onclick="submitPost()">Post</button>
+                    </div>
                 </div>
             </div>
         </div>
-        <script th:src="@{/js/attendance.js}"></script>
-    </nav>
 
+        <script th:src="@{/js/attendance.js}"></script>
+        <script th:src="@{/js/post.js}"></script>
+    </div>
 </body>
 
 </html>

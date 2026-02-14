@@ -32,7 +32,7 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/login/**",
                         "/registration/**",
-                        "/css/**", "/js/**", "/images/**","/images/employeePhoto/**", "/webjars/**",
+                        "/css/**", "/js/**", "/images/**","/images/employeePhoto/**", "/images/postImages/**", "/webjars/**",
                         "/login",
                         "/registration"
                 ).permitAll()
