@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -78,6 +79,7 @@ public class LeaveController {
     }
 
     @GetMapping("/approval")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public String viewLeaveRequestApproval(Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
@@ -90,6 +92,7 @@ public class LeaveController {
     }
 
     @PutMapping("/approve/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> approveLeave(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
@@ -106,6 +109,7 @@ public class LeaveController {
     }
 
     @PutMapping("/reject/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> rejectLeave(@PathVariable Long id, @RequestBody Map<String, Object> request) {
         Map<String, Object> response = new HashMap<>();

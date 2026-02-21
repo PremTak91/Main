@@ -14,9 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 @Controller
 @RequestMapping("/roles-permissions")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('SUPERADMIN')")
 public class RolesPermissionsController {
 
     private final RolesPermissionsService rolesPermissionsService;
@@ -27,7 +30,7 @@ public class RolesPermissionsController {
         
         // Tab visibility: Only SuperAdmin and Admin
         String role = rolesPermissionsService.getAssignableRoles().stream()
-                .anyMatch(r -> r.getRoleId().equals("SuperAdmin")) ? "User" : "Manager"; 
+                .anyMatch(r -> r.getRoleId().equals("SUPERADMIN")) ? "User" : "Manager"; 
         // Improvement: Use hierarchy index to check if current user is >= Admin
         // For now, let's keep it simple and provide the attribute
         model.addAttribute("canManageMasterRoles", true); // Default to true, will refine if needed

@@ -6,6 +6,7 @@ import com.web.nrs.entity.EmployeeMainterEntity;
 import com.web.nrs.model.EmployeeRegistrationRequest;
 import com.web.nrs.repository.EmployeeMainterRepository;
 import com.web.nrs.repository.EmployeeRepository;
+import com.web.nrs.repository.LoginRepository;
 import com.web.nrs.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,21 +17,26 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import com.web.nrs.entity.RoleEntity;
+import com.web.nrs.entity.DesignationEntity;
 
 @Controller
 @RequestMapping("/employee")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
 public class EmployeeController {
 
     private final EmployeeService employeeService;
     private final EmployeeMainterRepository employeeMainterRepository;
     private final EmployeeRepository employeeRepository;
+    private final LoginRepository loginRepository;
 
     @GetMapping
     public String viewEmployeeManagement(
@@ -46,14 +52,16 @@ public class EmployeeController {
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<EmployeeListDTO> employeePage = employeeService.getAllEmployees(pageable);
         
-        // Load active maintainers with their names
+        // Load active maintainers with their names (ensuring uniqueness)
         List<EmployeeMainterEntity> mainters = employeeMainterRepository.findByActive(1);
         List<Map<String, Object>> maintainerList = mainters.stream()
-                .map(mainter -> {
+                .map(EmployeeMainterEntity::getMainterId)
+                .distinct()
+                .map(mainterId -> {
                     Map<String, Object> maintainerMap = new HashMap<>();
-                    maintainerMap.put("id", mainter.getMainterId());
+                    maintainerMap.put("id", mainterId);
                     // Get maintainer name from employee table
-                    employeeRepository.findById(mainter.getMainterId())
+                    employeeRepository.findById(mainterId)
                             .ifPresent(emp -> {
                                 String name = Stream.of(emp.getFirstName(), emp.getLastName())
                                         .filter(s -> s != null && !s.isBlank())
@@ -74,16 +82,29 @@ public class EmployeeController {
         model.addAttribute("sortDir", sortDir);
         model.addAttribute("reverseSortDir", sortDir.equals("asc") ? "desc" : "asc");
         model.addAttribute("maintainers", maintainerList);
+        model.addAttribute("rolesList", employeeService.getAllRoles());
+        model.addAttribute("designationList", employeeService.getAllDesignation());
         
         return "employee";
     }
 
     @GetMapping("/{id}")
     @ResponseBody
-    public ResponseEntity<EmployeeEntity> getEmployeeById(@PathVariable Long id) {
+    public ResponseEntity<Map<String, Object>> getEmployeeById(@PathVariable Long id) {
         try {
             EmployeeEntity employee = employeeService.getEmployeeDetailsById(id);
-            return ResponseEntity.ok(employee);
+            Map<String, Object> response = new HashMap<>();
+            response.put("employee", employee);
+            
+            // Fetch roleId from LoginEntity
+            loginRepository.findById(id).ifPresent(login -> {
+                if (!login.getUserRoles().isEmpty()) {
+                    Long roleId = login.getUserRoles().iterator().next().getRoles().getId();
+                    response.put("roleId", roleId);
+                }
+            });
+            
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }

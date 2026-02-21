@@ -26,6 +26,10 @@ public class RegistrationController {
     @PostMapping()
     public ResponseEntity<?> registerEmployee(
             @ModelAttribute EmployeeRegistrationRequest employeeDetails) {
+        
+        if (employeeService.getEmployeeByEmailId(employeeDetails.getEmail()).isPresent()) {
+            return ResponseEntity.badRequest().body("Email id already available in db");
+        }
 
          employeeService.save(employeeDetails);
 

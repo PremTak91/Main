@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <body>
     <nav th:fragment="sidebarMenu" id="sidebarMenu" class="sidebar offcanvas offcanvas-start" tabindex="-1"
@@ -38,7 +37,7 @@
                     </ul>
                 </div>
             </li>-->
-                <li class="nav-item">
+                <li class="nav-item" sec:authorize="hasAnyRole('SUPERADMIN', 'ADMIN')">
                     <a class="nav-link collapsed" href="#adminSubmenu" data-bs-toggle="collapse" aria-expanded="false">
                         <i class="fas fa-fw fa-user-shield"></i> Admin
                         <i class="fas fa-angle-right ms-auto"></i>
@@ -49,8 +48,9 @@
                             <li class="nav-item"><a class="nav-link" th:href="@{/leaveRole}">Leave Role</a></li>
                             <li class="nav-item"><a class="nav-link" th:href="@{/leave/approval}">Leave Request
                                     Approval</a></li>
-                            <li class="nav-item"><a class="nav-link" th:href="@{/roles-permissions}">Roles &
-                                    Permissions</a></li>
+                            <li class="nav-item" sec:authorize="hasRole('SUPERADMIN')">
+                                <a class="nav-link" th:href="@{/roles-permissions}">Roles & Permissions</a>
+                            </li>
                         </ul>
                     </div>
                 </li>

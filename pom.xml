@@ -106,6 +106,12 @@
 	    <scope>provided</scope>
 	</dependency>
 
+	<!-- Thymeleaf extras for Spring Security 6 -->
+	<dependency>
+		<groupId>org.thymeleaf.extras</groupId>
+		<artifactId>thymeleaf-extras-springsecurity6</artifactId>
+	</dependency>
+
 	</dependencies>
 
 	<build>
