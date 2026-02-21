@@ -32,7 +32,7 @@ public class QuotationServiceImpl implements QuotationService{
         document.open();
 
         // Logo
-        Image logo = Image.getInstance("src/main/resources/static/assets/img/NRS_pdf_header.jpg");
+        Image logo = Image.getInstance("src/main/resources/static/images/NRS_pdf_header.jpg");
         logo.scaleToFit(500, 500);
         logo.setAlignment(Image.ALIGN_CENTER);
         document.add(logo);
@@ -218,7 +218,7 @@ public class QuotationServiceImpl implements QuotationService{
         document.add(priceAndPaymentTable);
         document.add(createHalfLineSpace());
 
-        Image footerImg = Image.getInstance("src/main/resources/static/assets/img/NRS_quts_footer.jpg");
+        Image footerImg = Image.getInstance("src/main/resources/static/images/NRS_quts_footer.jpg");
         footerImg.scaleAbsolute(500f, 10f);
         logo.setAlignment(Image.ALIGN_CENTER);
         document.add(footerImg);

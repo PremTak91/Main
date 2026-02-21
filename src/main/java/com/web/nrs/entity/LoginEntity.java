@@ -1,5 +1,6 @@
 package com.web.nrs.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -38,5 +39,6 @@ public class LoginEntity {
             orphanRemoval = true,
             fetch = FetchType.LAZY
     )
+    @JsonIgnore
     private Set<UserRoleEntity> userRoles = new HashSet<>();
 }

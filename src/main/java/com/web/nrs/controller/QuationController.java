@@ -18,12 +18,12 @@ public class QuationController {
 	private QuotationService quotationService;
 	
 	@GetMapping
-	public String loginHome() {
-		return "quts";
+	public String viewQuotationPage() {
+		return "quotation";
 	}
 	
 	@PostMapping
-	public ResponseEntity<byte[]> generateQuation(@RequestBody SolarQuotation quotation) {
+	public ResponseEntity<byte[]> generateQuotation(@RequestBody SolarQuotation quotation) {
 		
         try {
             byte[] pdfBytes = quotationService.generateQuotationPdf(quotation);

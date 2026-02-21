@@ -23,7 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         LoginEntity user = userService.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
         Set<GrantedAuthority> authorities = user.getUserRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRoles().getUserRoles()))
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRoles().getRoleId()))
                 .collect(Collectors.toSet());
         return new org.springframework.security.core.userdetails.User(
                 user.getUsername(),
