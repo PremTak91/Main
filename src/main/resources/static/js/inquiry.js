@@ -59,15 +59,24 @@ function editInquiry(id) {
             }
             return response.json();
         })
-        .then(data => {
+        .then(res => {
             hideLoader();
-            populateEditForm(data);
+            if (res.success) {
+                populateEditForm(res.data);
+            } else {
+                showToast(res.message || 'Error loading inquiry data', 'error');
+                return;
+            }
 
             // Update modal title
             document.getElementById('addInquiryModalLabel').textContent = 'Edit Inquiry';
 
             // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('addInquiryModal'));
+            const modalElement = document.getElementById('addInquiryModal');
+            let modal = bootstrap.Modal.getInstance(modalElement);
+            if (!modal) {
+                modal = new bootstrap.Modal(modalElement);
+            }
             modal.show();
         })
         .catch(error => {

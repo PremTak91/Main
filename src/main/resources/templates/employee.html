@@ -26,6 +26,9 @@
             <main class="main-content-area flex-grow-1">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h3 class="mb-0">Employee Management</h3>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                        <i class="fas fa-plus"></i> Add New Employee
+                    </button>
                 </div>
 
                 <div class="card p-4 mb-4">
@@ -197,7 +200,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form id="employeeForm">
+                    <form id="employeeForm" autocomplete="off">
                         <input type="hidden" id="employeeId" value="">
                         <div class="row g-3">
                             <div class="col-md-4">
@@ -236,10 +239,18 @@
                                 <label for="designationId" class="form-label">Position</label>
                                 <select class="form-select" id="designationId">
                                     <option selected disabled value="">Select</option>
-                                    <option value="1">Welder</option>
-                                    <option value="2">Engineer</option>
-                                    <option value="3">Technician</option>
-                                    <option value="4">Manager</option>
+                                    <option th:each="designation : ${designationList}" th:value="${designation.id}"
+                                        th:text="${designation.designation}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="roleId" class="form-label">Role</label>
+                                <select class="form-select" id="roleId">
+                                    <option selected disabled value="">Select Role</option>
+                                    <option th:each="role : ${rolesList}" th:value="${role.id}"
+                                        th:text="${role.roleId}">
+                                    </option>
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -250,19 +261,24 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="password"
+                                    placeholder="Password (only for new users)" autocomplete="new-password">
+                            </div>
+                            <div class="col-md-6">
                                 <label for="empStatus" class="form-label">Employee Status</label>
                                 <select class="form-select" id="empStatus">
                                     <option selected disabled value="">Select</option>
-                                    <option value="1">Active</option>
-                                    <option value="2">Inactive</option>
-                                    <option value="3">Under Review</option>
-                                    <option value="0">Terminated</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                    <option value="Under Review">Under Review</option>
+                                    <option value="Terminated">Terminated</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label for="empMainterId" class="form-label">Employee Maintner</label>
                                 <select class="form-select" id="empMainterId">
-                                    <option selected disabled value="">Select</option>
+                                    <option selected value="">Select</option>
                                     <option th:each="mainter : ${maintainers}" th:value="${mainter.id}"
                                         th:text="${mainter.name}">Maintainer Name</option>
                                 </select>

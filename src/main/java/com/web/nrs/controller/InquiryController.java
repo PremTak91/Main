@@ -1,14 +1,13 @@
 package com.web.nrs.controller;
 
-import com.web.nrs.entity.EmployeeEntity;
 import com.web.nrs.entity.InquiryEntity;
 import com.web.nrs.repository.EmployeeRepository;
 import com.web.nrs.service.InquiryService;
+import com.web.nrs.utils.ApiResponse;
+import com.web.nrs.utils.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Controller
 @RequestMapping("/inquiry")
@@ -37,10 +35,7 @@ public class InquiryController {
             @RequestParam(defaultValue = "desc") String sortDir,
             Model model
     ) {
-        Sort sort = sortDir.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PaginationUtils.createPageable(page, size, sortBy, sortDir);
         Page<InquiryEntity> inquiryPage = inquiryService.getAllInquiries(pageable);
 
         // Load active employees for "Given By" dropdown
@@ -49,10 +44,7 @@ public class InquiryController {
                 .map(emp -> {
                     Map<String, Object> empMap = new HashMap<>();
                     empMap.put("id", emp.getId());
-                    String name = Stream.of(emp.getFirstName(), emp.getLastName())
-                            .filter(s -> s != null && !s.isBlank())
-                            .collect(Collectors.joining(" "));
-                    empMap.put("name", name);
+                    empMap.put("name", emp.getFullName());
                     return empMap;
                 })
                 .filter(m -> m.get("name") != null && !m.get("name").toString().isBlank())
@@ -73,67 +65,50 @@ public class InquiryController {
 
     @GetMapping("/{id}")
     @ResponseBody
-    public ResponseEntity<InquiryEntity> getInquiryById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> getInquiryById(@PathVariable Long id) {
         try {
             InquiryEntity inquiry = inquiryService.getInquiryById(id);
-            return ResponseEntity.ok(inquiry);
+            return ResponseEntity.ok(ApiResponse.success("Inquiry fetched", inquiry));
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(ApiResponse.error("Inquiry not found"));
         }
     }
 
     @PostMapping
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> createInquiry(@RequestBody Map<String, Object> request) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse> createInquiry(@RequestBody Map<String, Object> request) {
         try {
             InquiryEntity inquiry = mapRequestToEntity(request, new InquiryEntity());
             inquiryService.saveInquiry(inquiry);
-
-            response.put("success", true);
-            response.put("message", "Inquiry added successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Inquiry added successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
     @PutMapping("/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> updateInquiry(
+    public ResponseEntity<ApiResponse> updateInquiry(
             @PathVariable Long id,
             @RequestBody Map<String, Object> request) {
-        Map<String, Object> response = new HashMap<>();
         try {
             InquiryEntity existing = inquiryService.getInquiryById(id);
             mapRequestToEntity(request, existing);
             inquiryService.saveInquiry(existing);
-
-            response.put("success", true);
-            response.put("message", "Inquiry updated successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Inquiry updated successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
     @DeleteMapping("/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteInquiry(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse> deleteInquiry(@PathVariable Long id) {
         try {
             inquiryService.deleteInquiry(id);
-            response.put("success", true);
-            response.put("message", "Inquiry deleted successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Inquiry deleted successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
@@ -153,10 +128,7 @@ public class InquiryController {
             inquiry.setGivenById(empId);
             // Look up employee name
             employeeRepository.findById(empId).ifPresent(emp -> {
-                String empName = Stream.of(emp.getFirstName(), emp.getLastName())
-                        .filter(s -> s != null && !s.isBlank())
-                        .collect(Collectors.joining(" "));
-                inquiry.setGivenByName(empName);
+                inquiry.setGivenByName(emp.getFullName());
             });
         }
         if (request.containsKey("inquiryHistory")) {

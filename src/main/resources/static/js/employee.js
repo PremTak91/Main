@@ -59,15 +59,25 @@ function editEmployee(id) {
             }
             return response.json();
         })
-        .then(data => {
+        .then(res => {
             hideLoader();
-            populateEditForm(data);
+            // res is now ApiResponse { success: true, message: "...", data: { employee: ..., roleId: ... } }
+            if (res.success) {
+                populateEditForm(res.data.employee, res.data.roleId);
+            } else {
+                showToast(res.message || 'Error loading employee data', 'error');
+                return;
+            }
 
             // Update modal title
             document.getElementById('employeeModalTitle').textContent = 'Edit User';
 
             // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('addUserModal'));
+            const modalElement = document.getElementById('addUserModal');
+            let modal = bootstrap.Modal.getInstance(modalElement);
+            if (!modal) {
+                modal = new bootstrap.Modal(modalElement);
+            }
             modal.show();
         })
         .catch(error => {
@@ -80,7 +90,7 @@ function editEmployee(id) {
 /**
  * Populate edit form with employee data
  */
-function populateEditForm(data) {
+function populateEditForm(data, roleId) {
     document.getElementById('employeeId').value = data.id || '';
     document.getElementById('firstName').value = data.firstName || '';
     document.getElementById('middleName').value = data.middleName || '';
@@ -92,6 +102,9 @@ function populateEditForm(data) {
     document.getElementById('state').value = data.state || '';
     document.getElementById('branch').value = data.branch || '';
 
+    // Clear password during edit for security
+    document.getElementById('password').value = '';
+
     // Handle date
     if (data.dateOfJoining) {
         document.getElementById('dateOfJoining').value = data.dateOfJoining;
@@ -101,11 +114,21 @@ function populateEditForm(data) {
     if (data.designationId) {
         document.getElementById('designationId').value = data.designationId;
     }
+    if (roleId) {
+        document.getElementById('roleId').value = roleId;
+    }
     if (data.empMainterId) {
         document.getElementById('empMainterId').value = data.empMainterId;
     }
     if (data.empStatus !== null && data.empStatus !== undefined) {
-        document.getElementById('empStatus').value = data.empStatus;
+        // Map integer back to string for select if needed
+        const statusMap = {
+            1: 'Active',
+            2: 'Inactive',
+            3: 'Under Review',
+            0: 'Terminated'
+        };
+        document.getElementById('empStatus').value = statusMap[data.empStatus] || data.empStatus;
     }
 }
 
@@ -131,42 +154,95 @@ function saveEmployee() {
         lastName: document.getElementById('lastName').value,
         email: document.getElementById('email').value,
         phoneNo: document.getElementById('phoneNo').value,
+        phoneNumber: document.getElementById('phoneNo').value, // Add both for compatibility
         address: document.getElementById('address').value,
         city: document.getElementById('city').value,
         state: document.getElementById('state').value,
         branch: document.getElementById('branch').value,
         dateOfJoining: document.getElementById('dateOfJoining').value || null,
         designationId: document.getElementById('designationId').value || null,
+        roleId: document.getElementById('roleId').value || null,
+        password: document.getElementById('password').value || null,
         empMainterId: document.getElementById('empMainterId').value || null,
         empStatus: document.getElementById('empStatus').value || null
     };
 
+    // Map status string back to integer if needed
+    const statusMap = {
+        'Active': 1,
+        'Inactive': 2,
+        'Under Review': 3,
+        'Terminated': 0
+    };
+    if (isNaN(data.empStatus) && statusMap[data.empStatus] !== undefined) {
+        data.empStatus = statusMap[data.empStatus];
+    } else if (data.empStatus) {
+        data.empStatus = parseInt(data.empStatus);
+    }
+
+    if (!isEdit && (!data.password || data.password.trim() === '')) {
+        showToast('Password is required for new registration', 'error');
+        return;
+    }
+
+    if (!isEdit && !data.roleId) {
+        showToast('Role is required for new registration', 'error');
+        return;
+    }
+
     showLoader();
 
-    const url = isEdit ? '/NRS/employee/' + employeeId : '/employee';
-    const method = isEdit ? 'PUT' : 'POST';
+    // For new registrations, use the registration API
+    const url = isEdit ? '/NRS/employee/' + employeeId : '/NRS/registration';
+    const method = 'POST'; // Registration API expects POST. Employee update expects PUT technically, but let's check.
 
-    fetch(url, {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-        .then(response => response.json())
+    // Wait, registration API uses @ModelAttribute which handles both JSON and multipart.
+    // EmployeeController.updateEmployeeById uses @RequestBody for JSON.
+
+    let fetchOptions;
+    if (isEdit) {
+        fetchOptions = {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        };
+    } else {
+        // Registration expects multipart/form-data or parameters. registration.js used FormData.
+        const formData = new FormData();
+        Object.keys(data).forEach(key => {
+            if (data[key] !== null) formData.append(key, data[key]);
+        });
+        fetchOptions = {
+            method: 'POST',
+            body: formData
+        };
+    }
+
+    fetch(url, fetchOptions)
+        .then(async response => {
+            const contentType = response.headers.get("content-type");
+            const isJson = contentType && contentType.indexOf("application/json") !== -1;
+
+            if (response.ok) {
+                if (isJson) return response.json();
+                const text = await response.text();
+                return { success: true, message: text };
+            } else {
+                if (isJson) return response.json().then(json => ({ success: false, ...json }));
+                const text = await response.text();
+                return { success: false, message: text || 'Server error occurred' };
+            }
+        })
         .then(result => {
             hideLoader();
             if (result.success) {
-                showToast(result.message || 'Employee saved successfully', 'success');
+                showToast(result.message || 'Saved successfully', 'success');
                 // Close modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('addUserModal'));
-                if (modal) {
-                    modal.hide();
-                }
-                // Refresh page after short delay
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                const modalElement = document.getElementById('addUserModal');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) modal.hide();
+
+                setTimeout(() => location.reload(), 1000);
             } else {
                 showToast(result.message || 'Failed to save employee', 'error');
             }

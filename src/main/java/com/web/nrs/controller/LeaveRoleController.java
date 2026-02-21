@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -20,6 +21,7 @@ import java.util.stream.Stream;
 @Controller
 @RequestMapping("/leaveRole")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
 public class LeaveRoleController {
 
     private final EmployeeMainterRepository employeeMainterRepository;

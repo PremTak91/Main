@@ -53,4 +53,10 @@ public class EmployeeEntity {
 
 
 
+    @Transient
+    public String getFullName() {
+        return Stream.of(firstName, lastName)
+                .filter(s -> s != null && !s.isBlank())
+                .collect(Collectors.joining(" "));
+    }
 }

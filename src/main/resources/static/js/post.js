@@ -54,25 +54,33 @@ function editPost(id) {
     showLoader();
 
     fetch(`/NRS/api/posts/${id}`)
-        .then(response => response.json())
-        .then(post => {
+        .then(res => {
             hideLoader();
-            document.getElementById('editPostId').value = post.id;
-            document.getElementById('postText').value = post.postText || '';
-            document.getElementById('createPostModalLabel').textContent = 'Edit Post';
+            if (res.success) {
+                const post = res.data;
+                document.getElementById('editPostId').value = post.id;
+                document.getElementById('postText').value = post.postText || '';
+                document.getElementById('createPostModalLabel').textContent = 'Edit Post';
 
-            const previewContainer = document.getElementById('imagePreviewContainer');
-            const previewImage = document.getElementById('imagePreview');
+                const previewContainer = document.getElementById('imagePreviewContainer');
+                const previewImage = document.getElementById('imagePreview');
 
-            if (post.postImage) {
-                previewImage.src = `/NRS/images/postImages/${post.postImage}`;
-                previewContainer.classList.remove('d-none');
+                if (post.postImage) {
+                    previewImage.src = `/NRS/images/postImages/${post.postImage}`;
+                    previewContainer.classList.remove('d-none');
+                } else {
+                    previewContainer.classList.add('d-none');
+                }
+
+                const modalElement = document.getElementById('createPostModal');
+                let modal = bootstrap.Modal.getInstance(modalElement);
+                if (!modal) {
+                    modal = new bootstrap.Modal(modalElement);
+                }
+                modal.show();
             } else {
-                previewContainer.classList.add('d-none');
+                showToast(res.message || 'Error loading post details', 'error');
             }
-
-            const modal = new bootstrap.Modal(document.getElementById('createPostModal'));
-            modal.show();
         })
         .catch(error => {
             hideLoader();

@@ -16,8 +16,14 @@ function openAddUserRoleModal() {
         fetch('/NRS/roles-permissions/api/employees').then(res => res.json()),
         fetch('/NRS/roles-permissions/api/roles').then(res => res.json())
     ])
-        .then(([employees, roles]) => {
+        .then(([empRes, rolesRes]) => {
             hideLoader();
+            if (!empRes.success || !rolesRes.success) {
+                showToast('Error loading employees/roles', 'error');
+                return;
+            }
+            const employees = empRes.data;
+            const roles = rolesRes.data;
             allAssignableEmployees = employees;
 
             // Populate employee dropdown
@@ -58,17 +64,17 @@ function openAssignRoleModal(employeeId, employeeName) {
     // Load roles
     fetch('/NRS/roles-permissions/api/roles')
         .then(response => response.json())
-        .then(roles => {
+        .then(res => {
             hideLoader();
-            populateRolesCheckboxes(roles);
+            if (!res.success) throw new Error(res.message);
+            populateRolesCheckboxes(res.data);
 
-            // Find employee data to pre-check boxes
-            // We can fetch employees again or look at the table if we had stored it.
-            // For now, let's fetch the assignable list to get their roles.
             return fetch('/NRS/roles-permissions/api/employees');
         })
         .then(res => res.json())
-        .then(employees => {
+        .then(res => {
+            if (!res.success) throw new Error(res.message);
+            const employees = res.data;
             const emp = employees.find(e => e.employeeId == employeeId);
             if (emp && emp.roleIds) {
                 emp.roleIds.forEach(id => {
@@ -182,9 +188,13 @@ function loadAllRolesForManagement() {
     showLoader();
     fetch('/NRS/roles-permissions/api/roles/all')
         .then(response => response.json())
-        .then(roles => {
+        .then(res => {
             hideLoader();
-            const tbody = document.getElementById('allRolesTableBody');
+            if (!res.success) {
+                showToast(res.message || 'Error loading roles list', 'error');
+                return;
+            }
+            const roles = res.data;
             tbody.innerHTML = '';
 
             roles.forEach(role => {
@@ -285,7 +295,7 @@ function deleteSystemRole(id) {
 
     showLoader();
 
-    fetch(`/ NRS / roles - permissions / api / roles / ${id} `, {
+    fetch(`/NRS/roles-permissions/api/roles/${id}`, {
         method: 'DELETE'
     })
         .then(response => response.json())
