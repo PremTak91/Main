@@ -1,5 +1,6 @@
 package com.web.nrs.controller;
 
+import com.web.nrs.utils.ApiResponse;
 import com.web.nrs.entity.HolidayEntity;
 import com.web.nrs.service.LeaveService;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -58,8 +58,7 @@ public class LeaveController {
 
     @PostMapping
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> applyLeave(@RequestBody Map<String, Object> request) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse> applyLeave(@RequestBody Map<String, Object> request) {
         try {
             Long employeeId = Long.valueOf(request.get("employeeId").toString());
             String description = request.get("description").toString();
@@ -67,14 +66,9 @@ public class LeaveController {
             LocalDate toDate = LocalDate.parse(request.get("toDate").toString());
             
             leaveService.applyLeave(employeeId, description, fromDate, toDate);
-            
-            response.put("success", true);
-            response.put("message", "Leave application submitted successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Leave application submitted successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
@@ -94,35 +88,25 @@ public class LeaveController {
     @PutMapping("/approve/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> approveLeave(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse> approveLeave(@PathVariable Long id) {
         try {
             leaveService.approveLeave(id, "Accepted");
-            response.put("success", true);
-            response.put("message", "Leave approved successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Leave approved successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
     @PutMapping("/reject/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> rejectLeave(@PathVariable Long id, @RequestBody Map<String, Object> request) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse> rejectLeave(@PathVariable Long id, @RequestBody Map<String, Object> request) {
         try {
             String reason = request.get("reason").toString();
             leaveService.rejectLeave(id, reason);
-            response.put("success", true);
-            response.put("message", "Leave rejected successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Leave rejected successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 }

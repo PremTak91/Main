@@ -1,12 +1,12 @@
 package com.web.nrs.controller;
 
+import com.web.nrs.utils.ApiResponse;
+import com.web.nrs.utils.PaginationUtils;
 import com.web.nrs.entity.ExpensesEntity;
 import com.web.nrs.service.ExpensesService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,10 +32,7 @@ public class ExpensesController {
             @RequestParam(defaultValue = "desc") String sortDir,
             Model model
     ) {
-        Sort sort = sortDir.equalsIgnoreCase("desc")
-                ? Sort.by(sortBy).descending()
-                : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PaginationUtils.createPageable(page, size, sortBy, sortDir);
         Page<ExpensesEntity> expensesPage = expensesService.getAllExpenses(pageable);
 
         model.addAttribute("expenses", expensesPage.getContent());
@@ -52,67 +49,50 @@ public class ExpensesController {
 
     @GetMapping("/{id}")
     @ResponseBody
-    public ResponseEntity<ExpensesEntity> getExpenseById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> getExpenseById(@PathVariable Long id) {
         try {
             ExpensesEntity expense = expensesService.getExpenseById(id);
-            return ResponseEntity.ok(expense);
+            return ResponseEntity.ok(ApiResponse.success("Expense fetched", expense));
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(ApiResponse.error("Expense not found"));
         }
     }
 
     @PostMapping
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> createExpense(@RequestBody Map<String, Object> request) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse> createExpense(@RequestBody Map<String, Object> request) {
         try {
             ExpensesEntity expense = mapRequestToEntity(request, new ExpensesEntity());
             expensesService.saveExpense(expense);
-
-            response.put("success", true);
-            response.put("message", "Expense added successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Expense added successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
     @PutMapping("/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> updateExpense(
+    public ResponseEntity<ApiResponse> updateExpense(
             @PathVariable Long id,
             @RequestBody Map<String, Object> request) {
-        Map<String, Object> response = new HashMap<>();
         try {
             ExpensesEntity existing = expensesService.getExpenseById(id);
             mapRequestToEntity(request, existing);
             expensesService.saveExpense(existing);
-
-            response.put("success", true);
-            response.put("message", "Expense updated successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Expense updated successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 
     @DeleteMapping("/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteExpense(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse> deleteExpense(@PathVariable Long id) {
         try {
             expensesService.deleteExpense(id);
-            response.put("success", true);
-            response.put("message", "Expense deleted successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Expense deleted successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
 

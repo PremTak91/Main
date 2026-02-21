@@ -1,5 +1,6 @@
 package com.web.nrs.controller;
 
+import com.web.nrs.utils.ApiResponse;
 import com.web.nrs.DTO.RolesPermissionsDTO;
 import com.web.nrs.entity.RoleEntity;
 import com.web.nrs.service.RolesPermissionsService;
@@ -8,13 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import org.springframework.security.access.prepost.PreAuthorize;
 
 @Controller
 @RequestMapping("/roles-permissions")
@@ -40,58 +39,47 @@ public class RolesPermissionsController {
 
     @GetMapping("/api/employees")
     @ResponseBody
-    public ResponseEntity<List<RolesPermissionsDTO>> getEmployees() {
-        return ResponseEntity.ok(rolesPermissionsService.getAssignableEmployees());
+    public ResponseEntity<ApiResponse> getEmployees() {
+        return ResponseEntity.ok(ApiResponse.success("Employees fetched", rolesPermissionsService.getAssignableEmployees()));
     }
 
     @GetMapping("/api/roles")
     @ResponseBody
-    public ResponseEntity<List<RoleEntity>> getRoles() {
-        return ResponseEntity.ok(rolesPermissionsService.getAssignableRoles());
+    public ResponseEntity<ApiResponse> getRoles() {
+        return ResponseEntity.ok(ApiResponse.success("Roles fetched", rolesPermissionsService.getAssignableRoles()));
     }
 
     @GetMapping("/api/roles/all")
     @ResponseBody
-    public ResponseEntity<List<RoleEntity>> getAllRoles() {
-        return ResponseEntity.ok(rolesPermissionsService.getAllRoles());
+    public ResponseEntity<ApiResponse> getAllRoles() {
+        return ResponseEntity.ok(ApiResponse.success("All roles fetched", rolesPermissionsService.getAllRoles()));
     }
 
     @PostMapping("/api/roles/save")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> saveRole(@RequestBody RoleEntity role) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse> saveRole(@RequestBody RoleEntity role) {
         try {
             rolesPermissionsService.saveOrUpdateRole(role);
-            response.put("success", true);
-            response.put("message", "Role saved successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Role saved successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Error: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error: " + e.getMessage()));
         }
     }
 
     @DeleteMapping("/api/roles/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteRole(@PathVariable Long id) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse> deleteRole(@PathVariable Long id) {
         try {
             rolesPermissionsService.deleteRole(id);
-            response.put("success", true);
-            response.put("message", "Role deleted successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Role deleted successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Error: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error: " + e.getMessage()));
         }
     }
 
     @PostMapping("/api/assign")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> assignRoles(@RequestBody Map<String, Object> request) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<ApiResponse> assignRoles(@RequestBody Map<String, Object> request) {
         try {
             Long employeeId = Long.valueOf(request.get("employeeId").toString());
             List<Object> rawRoleIds = (List<Object>) request.get("roleIds");
@@ -100,14 +88,9 @@ public class RolesPermissionsController {
                     .collect(Collectors.toList());
             
             rolesPermissionsService.assignRoles(employeeId, roleIds);
-            
-            response.put("success", true);
-            response.put("message", "Roles assigned successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Roles assigned successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Error: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error("Error: " + e.getMessage()));
         }
     }
 }

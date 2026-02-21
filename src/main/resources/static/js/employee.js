@@ -59,10 +59,15 @@ function editEmployee(id) {
             }
             return response.json();
         })
-        .then(data => {
+        .then(res => {
             hideLoader();
-            // data now contains { employee: ..., roleId: ... }
-            populateEditForm(data.employee, data.roleId);
+            // res is now ApiResponse { success: true, message: "...", data: { employee: ..., roleId: ... } }
+            if (res.success) {
+                populateEditForm(res.data.employee, res.data.roleId);
+            } else {
+                showToast(res.message || 'Error loading employee data', 'error');
+                return;
+            }
 
             // Update modal title
             document.getElementById('employeeModalTitle').textContent = 'Edit User';
@@ -230,7 +235,7 @@ function saveEmployee() {
         })
         .then(result => {
             hideLoader();
-            if (result.success || (typeof result === 'string' && result.includes('success'))) {
+            if (result.success) {
                 showToast(result.message || 'Saved successfully', 'success');
                 // Close modal
                 const modalElement = document.getElementById('addUserModal');

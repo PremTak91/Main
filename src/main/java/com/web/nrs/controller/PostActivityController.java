@@ -1,5 +1,6 @@
 package com.web.nrs.controller;
 
+import com.web.nrs.utils.ApiResponse;
 import com.web.nrs.entity.EmployeeEntity;
 import com.web.nrs.repository.EmployeeRepository;
 import com.web.nrs.service.PostActivityService;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Controller
@@ -24,11 +24,9 @@ public class PostActivityController {
 
     @PostMapping
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> createPost(
+    public ResponseEntity<ApiResponse> createPost(
             @RequestParam(value = "postText", required = false) String postText,
             @RequestParam(value = "postImage", required = false) MultipartFile postImage) {
-        
-        Map<String, Object> response = new HashMap<>();
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String email = auth.getName();
@@ -36,45 +34,33 @@ public class PostActivityController {
                     .orElseThrow(() -> new RuntimeException("Logged in employee not found"));
 
             postActivityService.savePost(emp.getId(), postText, postImage);
-            
-            response.put("success", true);
-            response.put("message", "Post created successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Post created successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Failed to create post: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to create post: " + e.getMessage()));
         }
     }
 
     @PostMapping("/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> updatePost(
+    public ResponseEntity<ApiResponse> updatePost(
             @PathVariable Long id,
             @RequestParam(value = "postText", required = false) String postText,
             @RequestParam(value = "postImage", required = false) MultipartFile postImage) {
-        
-        Map<String, Object> response = new HashMap<>();
         try {
             postActivityService.updatePost(id, postText, postImage);
-            
-            response.put("success", true);
-            response.put("message", "Post updated successfully");
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("Post updated successfully"));
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Failed to update post: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to update post: " + e.getMessage()));
         }
     }
 
     @GetMapping("/{id}")
     @ResponseBody
-    public ResponseEntity<Object> getPost(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse> getPost(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(postActivityService.getPostById(id));
+            return ResponseEntity.ok(ApiResponse.success("Post fetched", postActivityService.getPostById(id)));
         } catch (Exception e) {
-            return ResponseEntity.notFound().build();
+            return ResponseEntity.status(404).body(ApiResponse.error("Post not found"));
         }
     }
 }

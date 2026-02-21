@@ -59,15 +59,24 @@ function editExpense(id) {
             }
             return response.json();
         })
-        .then(data => {
+        .then(res => {
             hideLoader();
-            populateEditForm(data);
+            if (res.success) {
+                populateEditForm(res.data);
+            } else {
+                showToast(res.message || 'Error loading expense data', 'error');
+                return;
+            }
 
             // Update modal title
             document.getElementById('addExpenseModalLabel').textContent = 'Edit Expense';
 
             // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('addExpenseModal'));
+            const modalElement = document.getElementById('addExpenseModal');
+            let modal = bootstrap.Modal.getInstance(modalElement);
+            if (!modal) {
+                modal = new bootstrap.Modal(modalElement);
+            }
             modal.show();
         })
         .catch(error => {
