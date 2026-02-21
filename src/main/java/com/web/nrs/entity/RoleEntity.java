@@ -1,5 +1,6 @@
 package com.web.nrs.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,10 +24,14 @@ public class RoleEntity {
     @Column
     private String description;
 
+    @Column(nullable = false)
+    private Integer priority;
+
     @OneToMany(
         mappedBy = "roles",
         cascade = CascadeType.ALL,
         fetch = FetchType.LAZY
     )
+    @JsonIgnore
     private Set<UserRoleEntity> userRoles = new HashSet<>();
 }
