@@ -9,8 +9,8 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.web</groupId>
-	<artifactId>NrsGroup</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<artifactId>nrsgroup</artifactId>
+	<version>0.0.1</version>
 	<name>nrsproject</name>
 	<description>Company workin</description>
 	<properties>
