@@ -72,7 +72,7 @@ function checkAttendanceStatus() {
             // If I am OUT, I see "IN" (to click).
             // If I am IN, I see "OUT" (to click).
 
-            if (data.status === "IN") {
+            if (data.message === "IN") {
                 btn.innerText = "OUT"; // Option to punch out
                 btn.classList.remove("btn-danger"); // Green for "You are IN, click to go OUT"? Or Red for "Stop"?
                 btn.classList.add("btn-success"); // Let's use Success for IN state, or maybe Keep it simple.
