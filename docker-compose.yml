@@ -1,0 +1,32 @@
+services:
+
+  app:
+    build:
+      context: .
+      dockerfile: nrs-docker.dockerfile
+    container_name: nrs_app
+    ports:
+      - "8084:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/nrsdb
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+
+  db:
+    image: mysql:8
+    container_name: nrs_db
+    environment:
+      MYSQL_DATABASE: nrsdb
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
