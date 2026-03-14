@@ -1,6 +1,7 @@
 package com.web.nrs.service.impl;
 
 import com.web.nrs.model.SolarQuotation;
+import com.web.nrs.service.DocumentSequenceService;
 import com.web.nrs.service.QuotationService;
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfPCell;
@@ -10,10 +11,16 @@ import com.lowagie.text.pdf.PdfWriter;
 import java.awt.Color;
 import java.io.*;
 
+import com.web.nrs.utils.ConstantUtils;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@AllArgsConstructor
 public class QuotationServiceImpl implements QuotationService{
+
+    private final DocumentSequenceService documentSequenceService;
+
 
     // Define a constant for the desired half line leading
     private static final float HALF_LINE_LEADING = 4f; // Adjust this value (in points) as needed
@@ -24,6 +31,15 @@ public class QuotationServiceImpl implements QuotationService{
         space.setLeading(HALF_LINE_LEADING); // Set the explicit leading
         return space;
     }
+
+    @Override
+    public String getDocumentSequence(){
+        return documentSequenceService.getSequenceForUpdate(ConstantUtils.DOC_TYPE_QUOTATION);
+    }
+
+    private void updateDocumentSequence(String sequenceNumber){
+        documentSequenceService.incrementSequence(ConstantUtils.DOC_TYPE_QUOTATION, sequenceNumber);
+    }
 	@Override
     public byte[] generateQuotationPdf(SolarQuotation quotation) throws BadElementException, IOException{
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -33,12 +49,12 @@ public class QuotationServiceImpl implements QuotationService{
 
         // Logo
         Image logo = Image.getInstance("src/main/resources/static/images/NRS_pdf_header.jpg");
-        logo.scaleToFit(500, 500);
+        logo.scaleToFit(480, 90);
         logo.setAlignment(Image.ALIGN_CENTER);
         document.add(logo);
 
         // Title
-        Paragraph title = new Paragraph(quotation.getKw() + " Kw "+quotation.getSolarType()+" Solar System", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.BLACK)); 
+        Paragraph title = new Paragraph(quotation.getKw() + " Kw "+quotation.getSolarType()+" Solar System", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.BLACK));
         title.setAlignment(Element.ALIGN_LEFT);
         document.add(title);
         document.add(createHalfLineSpace());
@@ -46,11 +62,11 @@ public class QuotationServiceImpl implements QuotationService{
         // Description and Remarks
         PdfPTable descTable = new PdfPTable(new float[]{4f, 6f});
         descTable.setWidthPercentage(100);
-        descTable.setSpacingAfter(10f);
+        descTable.setSpacingAfter(7f);
         descTable.addCell(getHeaderCell("Description of Supply Item", new Color(230, 240, 250)));
         descTable.addCell(getHeaderCell("Make and Remarks", new Color(230, 240, 250)));
-        
-        
+
+
 
         descTable.addCell(getCellColumn("Solar PV Modules", new Color(245, 245, 245)));
         descTable.addCell(getCellColumn(quotation.getPanelsName()+"\n(As per availability)", new Color(245, 245, 245)));
@@ -72,7 +88,7 @@ public class QuotationServiceImpl implements QuotationService{
         // System Offer Table
         PdfPTable systemTable = new PdfPTable(new float[]{5f, 2f, 3f});
         systemTable.setWidthPercentage(100);
-        descTable.setSpacingAfter(10f);
+        descTable.setSpacingAfter(7f);
         systemTable.addCell(getHeaderCell("Description", new Color(230, 240, 250)));
         systemTable.addCell(getHeaderCell("Offered System (KW)", new Color(230, 240, 250)));
         systemTable.addCell(getHeaderCell("Rate/KW (INR, incl GST)", new Color(230, 240, 250)));
@@ -94,23 +110,25 @@ public class QuotationServiceImpl implements QuotationService{
         // Price Breakdown
         PdfPTable priceTable = new PdfPTable(2);
         priceTable.setWidthPercentage(100);
-        
+
         priceTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
 
         priceTable.addCell(getCell("Customer Actual Payable", PdfPCell.ALIGN_LEFT, new Color(50, 100, 200), Color.WHITE, true));
         priceTable.addCell(getCell("₹" + quotation.getActualPrice(), PdfPCell.ALIGN_RIGHT, new Color(50, 100, 200), Color.BLACK, true));
         priceTable.addCell(getCell("Subsidy", PdfPCell.ALIGN_LEFT, Color.LIGHT_GRAY, Color.BLACK, false));
         priceTable.addCell(getCell("₹" + quotation.getSubsidy(), PdfPCell.ALIGN_RIGHT, Color.LIGHT_GRAY, Color.BLACK, false));
+        priceTable.addCell(getCell("Special Discount", PdfPCell.ALIGN_LEFT, new Color(245, 245, 245), Color.BLACK, true));
+        priceTable.addCell(getCell(formatAmount(quotation.getDiscountAmount()), PdfPCell.ALIGN_RIGHT, new Color(245, 245, 245), Color.BLACK, true));
         priceTable.addCell(getCell("Effective Price", PdfPCell.ALIGN_LEFT, new Color(245, 245, 245), Color.BLACK, true));
-        priceTable.addCell(getCell(formatAmount(quotation.getEffectivePrice()), PdfPCell.ALIGN_RIGHT, new Color(245, 245, 245), Color.BLACK, true)); 
-        
+        priceTable.addCell(getCell(formatAmount(quotation.getEffectivePrice()), PdfPCell.ALIGN_RIGHT, new Color(245, 245, 245), Color.BLACK, true));
+
         document.add(priceTable);
 
         // --- Bank & Document Details (Revised to match image layout) ---
         // Create a main table to hold the two sub-tables side-by-side
         PdfPTable mainBankDocTable = new PdfPTable(new float[]{0.48f, 0.04f, 0.48f}); // Column widths: Bank (left), Spacer, Documents (right)
         mainBankDocTable.setWidthPercentage(100);
-        mainBankDocTable.setSpacingBefore(20f); // Space before this main section
+        mainBankDocTable.setSpacingBefore(18f); // Space before this main section
 
         // 1. Create the Bank Details Table
         PdfPTable bankDetailsTable = new PdfPTable(1); // Single column for bank details
@@ -130,7 +148,7 @@ public class QuotationServiceImpl implements QuotationService{
         // Bank Details Content (using a cell to manage padding and internal structure)
         PdfPCell bankContentCell = new PdfPCell();
         bankContentCell.setBorder(PdfPCell.NO_BORDER);
-        bankContentCell.setPadding(5); // Padding inside this content cell
+        bankContentCell.setPadding(4); // Padding inside this content cell
 
         bankContentCell.addElement(new Paragraph("BANK : KALUPUR COMMERCIAL CO-OP BANK LTD", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         bankContentCell.addElement(new Paragraph("NAME : NRS SOLAR SOLUTION", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
@@ -150,17 +168,17 @@ public class QuotationServiceImpl implements QuotationService{
         PdfPCell docHeaderCell = new PdfPCell(new Phrase("Documents Required", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.WHITE)));
         docHeaderCell.setBackgroundColor(new Color(0, 51, 102)); // Dark blue [cite: 1]
         docHeaderCell.setHorizontalAlignment(Element.ALIGN_LEFT);
-        docHeaderCell.setPadding(5);
+        docHeaderCell.setPadding(4);
         docHeaderCell.setBorder(PdfPCell.NO_BORDER);
         docDetailsTable.addCell(docHeaderCell);
 
         // Documents Required Content
         PdfPCell docContentCell = new PdfPCell();
         docContentCell.setBorder(PdfPCell.NO_BORDER);
-        docContentCell.setPadding(5); // Padding inside this content cell
+        docContentCell.setPadding(4); // Padding inside this content cell
 
         docContentCell.addElement(new Paragraph("1. Light Bill", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
-        docContentCell.addElement(new Paragraph("2. Pan Card", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK))); 
+        docContentCell.addElement(new Paragraph("2. Pan Card", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         docContentCell.addElement(new Paragraph("3. Taxt bill & index copy", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         docContentCell.addElement(new Paragraph("4. Aadhar Card", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         docContentCell.addElement(new Paragraph("5. Cancel Cheque/Bank Details", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
@@ -187,12 +205,12 @@ public class QuotationServiceImpl implements QuotationService{
         document.add(createHalfLineSpace()); // Consistent half-line space after this section
 
         // Footer
-        Paragraph footer = new Paragraph("Submitted By: "+quotation.getSubmittedBy()+"   Contact No: "+quotation.getSubmittedNumber(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.BLACK));
+        Paragraph footer = new Paragraph("Submitted By: "+quotation.getSubmittedBy()+"   Contact No: "+quotation.getSubmittedNumber(), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.BLACK));
         footer.setAlignment(Element.ALIGN_CENTER);
-        document.add(footer);        
-        
+        document.add(footer);
+
         document.add(createHalfLineSpace()); // Consistent half-line space after this section
-        
+
         PdfPTable priceAndPaymentTable = new PdfPTable(1); // Single column for bank details
         priceAndPaymentTable.setWidthPercentage(100); // Make it take full width of its cell in main table
         priceAndPaymentTable.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
@@ -202,13 +220,13 @@ public class QuotationServiceImpl implements QuotationService{
         PdfPCell priceAndPaymentCell = new PdfPCell(new Phrase("PRICE AND PAYMENT", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, Color.WHITE)));
         priceAndPaymentCell.setBackgroundColor(new Color(0, 51, 102)); // Dark blue [cite: 1]
         priceAndPaymentCell.setHorizontalAlignment(Element.ALIGN_LEFT);
-        priceAndPaymentCell.setPadding(5);
+        priceAndPaymentCell.setPadding(4);
         bankHeaderCell.setBorder(PdfPCell.NO_BORDER);
         priceAndPaymentTable.addCell(priceAndPaymentCell);
-        
+
         PdfPCell priceAndPaymentContentCell = new PdfPCell();
         priceAndPaymentContentCell.setBorder(PdfPCell.NO_BORDER);
-        priceAndPaymentContentCell.setPadding(5); // Padding inside this content cell
+        priceAndPaymentContentCell.setPadding(4); // Padding inside this content cell
 
         priceAndPaymentContentCell.addElement(new Paragraph("The cost of RTS System will be_(to be decided mutually). The Applicant shall pay the total cost to the vendor as under.", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         priceAndPaymentContentCell.addElement(new Paragraph("20% as an advance on confirmation of the order.", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
@@ -223,8 +241,9 @@ public class QuotationServiceImpl implements QuotationService{
         logo.setAlignment(Image.ALIGN_CENTER);
         document.add(footerImg);
 
-        
+
         document.close();
+        updateDocumentSequence(null != quotation.getQuationNumber() ?quotation.getQuationNumber().split("/")[2]: "01");
         return outputStream.toByteArray();
     }
 
@@ -238,7 +257,7 @@ public class QuotationServiceImpl implements QuotationService{
 	        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
 	        return cell;
     }
-    
+
 	 private PdfPCell getCellColumn(String text, Color bgColor) {
 	        PdfPCell cell = new PdfPCell(new Phrase(text, FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
 	        cell.setBackgroundColor(bgColor);
@@ -250,10 +269,10 @@ public class QuotationServiceImpl implements QuotationService{
 	}
 
 	 private PdfPCell getCell(String text, int alignment, Color backgroudColor, Color textColor, boolean isBold) {
-	        Font font = isBold ? FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, textColor) : FontFactory.getFont(FontFactory.HELVETICA, 10, textColor);
+	        Font font = isBold ? FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, textColor) : FontFactory.getFont(FontFactory.HELVETICA, 8, textColor);
 	        Phrase phrase = new Phrase(text, font);
 	    	PdfPCell cell = new PdfPCell(phrase);
-	        cell.setPadding(8);
+	        cell.setPadding(4);
 	        cell.setBackgroundColor(backgroudColor);
 	        cell.setBorder(PdfPCell.NO_BORDER);
 	        cell.setHorizontalAlignment(alignment);
@@ -261,7 +280,7 @@ public class QuotationServiceImpl implements QuotationService{
 	        return cell;
 	}
 
-    
+
     private String formatAmount(double amount) {
         // Formats the amount to Indian Rupees with commas, similar to the PDF.
         return String.format("%,.2f", amount);

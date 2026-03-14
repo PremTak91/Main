@@ -46,7 +46,7 @@
 						<div class="row g-3">
 						    <div class="col-md-4">
 						        <label for="quationNumber" class="form-label">Quoation No:</label>
-						        <input type="text" class="form-control" id="quationNumber" placeholder="Enter Quoation No" required>
+						        <input type="text" class="form-control" id="quationNumber" th:value="${qtSequenceNumber}" placeholder="Enter Quoation No" required>
 						    </div>
 						    <div class="col-md-4">
 						        <label for="customerName" class="form-label">Customer Name:</label>
@@ -119,6 +119,12 @@
 						          <label for="submittedNumber" class="form-label">Created Date:</label>
 						          <input type="text" class="form-control" id="createdDate" placeholder="Enter Date" value="">
 						      </div>
+
+                            <div class="col-md-4">
+                                <label for="submittedNumber" class="form-label">Discount:</label>
+                                <input type="text" class="form-control" id="discount" placeholder="Enter offer in number" value="">
+                                <input type="hidden" class="form-control" id="discountAmount" placeholder="Enter offer in number" value="">
+                            </div>
 						</div>
                         <div class="mt-4">
                             <button type="submit" class="btn btn-primary"><i class="fas fa-file-export me-2"></i>Export</button>

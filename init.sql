@@ -430,5 +430,11 @@ CREATE TABLE `expenses` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
 
+CREATE TABLE document_sequence (
+    doc_type VARCHAR(50),
+    financial_year VARCHAR(10),
+    last_number INT,
+    PRIMARY KEY (doc_type, financial_year)
+);
 -- Dump completed on 2026-03-07 15:13:56
 

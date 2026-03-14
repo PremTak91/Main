@@ -8,5 +8,6 @@ import java.io.IOException;
 
 public interface QuotationService {
 	public byte[] generateQuotationPdf(SolarQuotation quotation) throws BadElementException, IOException;
+	String getDocumentSequence();
 
 }
