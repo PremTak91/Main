@@ -1,3 +1,6 @@
+let baseEffectivePrice = 0;
+
+
 // Keep the JavaScript logic exactly as provided
   function CalculateActualPrice() {
       // debugger; // Keep or remove debugger as per your needs
@@ -21,6 +24,20 @@
       $("#effectivePrice").val(effectivePrice);
   }
 
+
+$(document).on("focus", "#discount", function () {
+    baseEffectivePrice = parseFloat($("#effectivePrice").val()) || 0;
+});
+
+$(document).on("keyup", "#discount", function () {
+    let discount = parseFloat($(this).val());
+    if (!isNaN(discount) && baseEffectivePrice >= 0) {
+        let discountAmount = Math.round((baseEffectivePrice * discount) / 100);
+        let afterDiscountEffectivePrice = baseEffectivePrice - discountAmount;
+        $("#discountAmount").val(discountAmount);
+        $("#effectivePrice").val(Math.round(afterDiscountEffectivePrice.toFixed(2)));
+    }
+});
   $(document).ready(function() {
       // Initialize calculation on page load if values are present
       CalculateActualPrice(); 
@@ -44,7 +61,8 @@
               effectivePrice: parseFloat($("#effectivePrice").val()),
               submittedBy: $("#submittedBy").val(),
               submittedNumber: $("#submittedNumber").val(),
-			  createdDate: $("#createdDate").val()
+			  createdDate: $("#createdDate").val(),
+			  discountAmount: $("#discountAmount").val()
           };
 
           $.ajax({
@@ -64,6 +82,7 @@
                   document.body.appendChild(link);
                   link.click();
                   window.URL.revokeObjectURL(url);
+                  location.reload();
               },
               error: function(xhr, status, error) {
                   // Use a custom modal or message box instead of alert()

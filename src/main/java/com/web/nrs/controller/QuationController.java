@@ -2,9 +2,11 @@ package com.web.nrs.controller;
 
 import com.web.nrs.model.SolarQuotation;
 import com.web.nrs.service.QuotationService;
+import com.web.nrs.utils.ConstantUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,7 +20,9 @@ public class QuationController {
 	private QuotationService quotationService;
 	
 	@GetMapping
-	public String viewQuotationPage() {
+	public String viewQuotationPage(Model model)
+    {
+        model.addAttribute(ConstantUtils.QUOTATION_SEQUENCE_NUMBER_KEY, quotationService.getDocumentSequence());
 		return "quotation";
 	}
 	
