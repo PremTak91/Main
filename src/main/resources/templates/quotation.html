@@ -50,11 +50,11 @@
 						    </div>
 						    <div class="col-md-4">
 						        <label for="customerName" class="form-label">Customer Name:</label>
-						        <input type="text" class="form-control" id="customerName" placeholder="Enter Customer Name">
+						        <input type="text" class="form-control" id="customerName" placeholder="Enter Customer Name" required>
 						    </div>
 						    <div class="col-md-4">
-						        <label for="customerAddress" class="form-label">Customer Address:</label>
-						        <input type="text" class="form-control" id="customerAddress" placeholder="Enter Customer Address">
+						        <label for="customerMobileNumber" class="form-label">Customer Number:</label>
+						        <input type="text" class="form-control" id="customerMobileNumber" placeholder="Enter Customer Mobile Number" required>
 						    </div>
 						</div>
                         <div class="row g-3 mt-2"> <!-- Using Bootstrap 5 gutter classes -->
@@ -106,7 +106,11 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="submittedBy" class="form-label">Submitted By:</label>
-                                <input type="text" class="form-control" id="submittedBy" placeholder="Enter Submitted By" value="Amit Vyas" required>
+                                <input type="hidden" class="form-control" id="submittedByName" placeholder="Enter Submitted By" value="Amit Vyas" required>
+                                <select class="form-control" id="submittedBy" required>
+                                    <option value="+91-8866389038">Amit Vyas</option>
+                                    <option value="+91-8488953026">Pramod Kansara</option>
+                                </select>
                             </div>
                             <div class="col-md-4">
                                 <label for="submittedNumber" class="form-label">Submitted Number:</label>
