@@ -11,7 +11,7 @@ public class SolarQuotation {
     private String panelsName;
     private double rateKw;
     private double value;
-    private double discomMeter;
+    private String discomMeter;
     private double pqHsCost;
     private double actualPrice;
     private double subsidy;

@@ -131,8 +131,10 @@ public class QuotationServiceImpl implements QuotationService{
         priceTable.addCell(getCell("₹" + quotation.getActualPrice(), PdfPCell.ALIGN_RIGHT, new Color(50, 100, 200), Color.BLACK, true));
         priceTable.addCell(getCell("Subsidy", PdfPCell.ALIGN_LEFT, Color.LIGHT_GRAY, Color.BLACK, false));
         priceTable.addCell(getCell("₹" + quotation.getSubsidy(), PdfPCell.ALIGN_RIGHT, Color.LIGHT_GRAY, Color.BLACK, false));
-        priceTable.addCell(getCell("Special Discount", PdfPCell.ALIGN_LEFT, new Color(245, 245, 245), Color.BLACK, true));
-        priceTable.addCell(getCell(formatAmount(quotation.getDiscountAmount()), PdfPCell.ALIGN_RIGHT, new Color(245, 245, 245), Color.BLACK, true));
+        if(quotation.getDiscountAmount() > 0){
+            priceTable.addCell(getCell("Special Discount", PdfPCell.ALIGN_LEFT, new Color(245, 245, 245), Color.BLACK, true));
+            priceTable.addCell(getCell(formatAmount(quotation.getDiscountAmount()), PdfPCell.ALIGN_RIGHT, new Color(245, 245, 245), Color.BLACK, true));
+        }
         priceTable.addCell(getCell("Effective Price", PdfPCell.ALIGN_LEFT, new Color(245, 245, 245), Color.BLACK, true));
         priceTable.addCell(getCell(formatAmount(quotation.getEffectivePrice()), PdfPCell.ALIGN_RIGHT, new Color(245, 245, 245), Color.BLACK, true));
 
