@@ -6,7 +6,8 @@
       // Retrieve values and convert them to numbers
       var totalKw = parseFloat($("#kw").val() || 0); // Default to 0 if NaN
       var perKw = parseFloat($("#rateKw").val() || 0); // Default to 0 if NaN
-      var discomMeterCharge = parseFloat($("#discomMeter").val() || 0); // Default to 0 if NaN
+      var discomInputVal = $("#discomMeter").val();
+      var discomMeterCharge = parseFloat(discomInputVal); // Default to 0 if NaN
       var pqHsCost = parseFloat($("#pqHsCost").val() || 0); // Default to 0 if NaN
       var subsidy = parseFloat($("#subsidy").val() || 0); // Default to 0 if NaN
 
@@ -15,7 +16,13 @@
       $("#value").val(totalPrice);
     
       // Calculate actual price
-      var actualPrice = Math.round(totalPrice + pqHsCost + discomMeterCharge);
+      var actualPrice = 0;
+      if(!isNaN(discomMeterCharge)) {
+          actualPrice = Math.round(totalPrice + pqHsCost + discomMeterCharge);
+      }else{
+            actualPrice = Math.round(totalPrice + pqHsCost + 0);
+      }
+
       $("#actualPrice").val(actualPrice);
     
       // Calculate effective price
@@ -55,7 +62,7 @@ $(document).on("keyup", "#discount", function () {
               panelsName: $("#panelsName").val(),
               rateKw: parseFloat($("#rateKw").val()),
               value: parseFloat($("#value").val()),
-              discomMeter: parseFloat($("#discomMeter").val()),
+              discomMeter: $("#discomMeter").val(),
               pqHsCost: parseFloat($("#pqHsCost").val()),
               actualPrice: parseFloat($("#actualPrice").val()),
               subsidy: parseFloat($("#subsidy").val()),
