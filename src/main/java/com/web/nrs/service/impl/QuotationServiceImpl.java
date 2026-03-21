@@ -55,11 +55,22 @@ public class QuotationServiceImpl implements QuotationService{
         logo.scaleToFit(480, 90);
         logo.setAlignment(Image.ALIGN_CENTER);
         document.add(logo);
+        document.add(createHalfLineSpace());
 
-        // Title
-        Paragraph title = new Paragraph(quotation.getKw() + " Kw "+quotation.getSolarType()+" Solar System", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.BLACK));
-        title.setAlignment(Element.ALIGN_LEFT);
-        document.add(title);
+        // Customer Details
+        PdfPTable customerSection = new PdfPTable(1);
+        customerSection.setWidthPercentage(100);
+        customerSection.addCell(getCell("Customer Details", PdfPCell.ALIGN_CENTER, new Color(50, 100, 200), Color.WHITE, true));
+        document.add(customerSection);
+
+        PdfPTable customerDetailsTable = new PdfPTable(2);
+        customerDetailsTable.setWidthPercentage(100);
+        customerDetailsTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        customerDetailsTable.addCell(getCell("Customer Name", PdfPCell.ALIGN_LEFT, new Color(230, 240, 250), Color.BLACK, true));
+        customerDetailsTable.addCell(getCell(quotation.getCustomerName(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
+        customerDetailsTable.addCell(getCell("Customer Number", PdfPCell.ALIGN_LEFT, new Color(230, 240, 250), Color.BLACK, true));
+        customerDetailsTable.addCell(getCell(quotation.getCustomerMobileNumber(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
+        document.add(customerDetailsTable);
         document.add(createHalfLineSpace());
 
         // Description and Remarks
@@ -242,7 +253,7 @@ public class QuotationServiceImpl implements QuotationService{
         ClassPathResource footer2 = new ClassPathResource("static/images/NRS_quts_footer.jpg");
         byte[] footerBytes = footer2.getInputStream().readAllBytes();
         Image footerImg = Image.getInstance(footerBytes);
-        footerImg.scaleAbsolute(500f, 10f);
+        footerImg.scaleAbsolute(490f, 9f);
         logo.setAlignment(Image.ALIGN_CENTER);
         document.add(footerImg);
 
@@ -253,7 +264,7 @@ public class QuotationServiceImpl implements QuotationService{
     }
 
 	 private PdfPCell getHeaderCell(String text, Color bgColor) {
-	        PdfPCell cell = new PdfPCell(new Phrase(text, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, Color.BLACK)));
+	        PdfPCell cell = new PdfPCell(new Phrase(text, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.BLACK)));
 	        cell.setBackgroundColor(bgColor);
 	        cell.setPadding(8);
 	        cell.setBorder(PdfPCell.NO_BORDER);
@@ -264,9 +275,9 @@ public class QuotationServiceImpl implements QuotationService{
     }
 
 	 private PdfPCell getCellColumn(String text, Color bgColor) {
-	        PdfPCell cell = new PdfPCell(new Phrase(text, FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
+	        PdfPCell cell = new PdfPCell(new Phrase(text, FontFactory.getFont(FontFactory.HELVETICA, 9, Color.BLACK)));
 	        cell.setBackgroundColor(bgColor);
-	        cell.setPadding(7);
+	        cell.setPadding(5);
 	        cell.setBorder(PdfPCell.NO_BORDER);
 	        cell.setHorizontalAlignment(Element.ALIGN_LEFT);
 	        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
@@ -274,7 +285,7 @@ public class QuotationServiceImpl implements QuotationService{
 	}
 
 	 private PdfPCell getCell(String text, int alignment, Color backgroudColor, Color textColor, boolean isBold) {
-	        Font font = isBold ? FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, textColor) : FontFactory.getFont(FontFactory.HELVETICA, 8, textColor);
+	        Font font = isBold ? FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, textColor) : FontFactory.getFont(FontFactory.HELVETICA, 8, textColor);
 	        Phrase phrase = new Phrase(text, font);
 	    	PdfPCell cell = new PdfPCell(phrase);
 	        cell.setPadding(4);

@@ -20,4 +20,6 @@ public class SolarQuotation {
     private String submittedNumber;
 	private String quationNumber;
     private long discountAmount;
+    private String customerMobileNumber;
+    private String customerName;
 }

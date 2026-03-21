@@ -1,4 +1,3 @@
-let baseEffectivePrice = 0;
 
 
 // Keep the JavaScript logic exactly as provided
@@ -25,14 +24,13 @@ let baseEffectivePrice = 0;
   }
 
 
-$(document).on("focus", "#discount", function () {
-    baseEffectivePrice = parseFloat($("#effectivePrice").val()) || 0;
-});
 
 $(document).on("keyup", "#discount", function () {
     let discount = parseFloat($(this).val());
+    let actualAmount = parseFloat($("#actualPrice").val()) || 0;
+    let baseEffectivePrice = Math.round(actualAmount - parseFloat($("#subsidy").val())) || 0;
     if (!isNaN(discount) && baseEffectivePrice >= 0) {
-        let discountAmount = Math.round((baseEffectivePrice * discount) / 100);
+        let discountAmount = discount;
         let afterDiscountEffectivePrice = baseEffectivePrice - discountAmount;
         $("#discountAmount").val(discountAmount);
         $("#effectivePrice").val(Math.round(afterDiscountEffectivePrice.toFixed(2)));
@@ -45,10 +43,13 @@ $(document).on("keyup", "#discount", function () {
       $("form").on("submit", function(event) {
           event.preventDefault();
 
+        let quationsNumber = $("#quationNumber").val();
+        let name =  $("#customerName").val();
+        let filename = quationsNumber +"_"+ name;
           const formData = {
-			  quationNumber: $("#quationNumber").val(),
-			  customerName: $("#customerName").val(),
-			  customerAddress: $("#customerAddress").val(),
+			  quationNumber: quationsNumber,
+			  customerName: name,
+			  customerMobileNumber: $("#customerMobileNumber").val(),
               kw: parseFloat($("#kw").val()),
               solarType: $("#solarType").val(),
               panelsName: $("#panelsName").val(),
@@ -59,7 +60,7 @@ $(document).on("keyup", "#discount", function () {
               actualPrice: parseFloat($("#actualPrice").val()),
               subsidy: parseFloat($("#subsidy").val()),
               effectivePrice: parseFloat($("#effectivePrice").val()),
-              submittedBy: $("#submittedBy").val(),
+              submittedBy: $("#submittedByName").val(),
               submittedNumber: $("#submittedNumber").val(),
 			  createdDate: $("#createdDate").val(),
 			  discountAmount: $("#discountAmount").val()
@@ -74,7 +75,6 @@ $(document).on("keyup", "#discount", function () {
                   responseType: 'blob'
               },
               success: function(blob, status, xhr) {
-                  const filename = "quotation.pdf";
                   const link = document.createElement("a");
                   const url = window.URL.createObjectURL(blob);
                   link.href = url;
@@ -94,3 +94,13 @@ $(document).on("keyup", "#discount", function () {
           });
       });
   });
+
+
+$(document)
+  .off("change", "#submittedBy")
+  .on("change", "#submittedBy", function () {
+
+    $("#submittedByName").val($("#submittedBy option:selected").text());
+    $("#submittedNumber").val($(this).val());
+
+});
