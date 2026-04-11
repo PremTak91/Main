@@ -70,8 +70,12 @@ $(document).on("keyup", "#discount", function () {
               submittedBy: $("#submittedByName").val(),
               submittedNumber: $("#submittedNumber").val(),
 			  createdDate: $("#createdDate").val(),
-			  discountAmount: $("#discountAmount").val()
+			  discountAmount: $("#discountAmount").val(),
+              pdfType: $("#pdfType").val()
           };
+
+          // Trigger standard application loader before initiating heavy PDF generation request
+          if (typeof showLoader === "function") showLoader();
 
           $.ajax({
               type: "POST",
@@ -82,6 +86,7 @@ $(document).on("keyup", "#discount", function () {
                   responseType: 'blob'
               },
               success: function(blob, status, xhr) {
+                  if (typeof hideLoader === "function") hideLoader();
                   const link = document.createElement("a");
                   const url = window.URL.createObjectURL(blob);
                   link.href = url;
@@ -92,6 +97,7 @@ $(document).on("keyup", "#discount", function () {
                   location.reload();
               },
               error: function(xhr, status, error) {
+                  if (typeof hideLoader === "function") hideLoader();
                   // Use a custom modal or message box instead of alert()
                   // Example: console.error("Error downloading PDF:", error);
                   // For a simple in-page message:
