@@ -7,6 +7,7 @@ import lombok.Setter;
 @Setter
 public class SolarQuotation {
     private double kw;
+    private int panelWatt;
     private String solarType;
     private String panelsName;
     private double rateKw;

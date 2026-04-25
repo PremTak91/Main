@@ -58,13 +58,37 @@
 						    </div>
 						</div>
                         <div class="row g-3 mt-2"> <!-- Using Bootstrap 5 gutter classes -->
-                            <div class="col-md-4">
-                                <label for="kw" class="form-label">Kw:</label>
-                                <input type="text" class="form-control" id="kw" placeholder="Enter Kw" onkeyup="CalculateActualPrice()" required>
+                            <div class="col-12 col-md-4">
+                                <div class="row g-2">
+
+                                    <div class="col-12 col-sm-6">
+                                        <label for="panelWatt" class="form-label">Panel Watt</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="panelWatt"
+                                               placeholder="Panel watt"
+                                               value="540"
+                                               required>
+                                    </div>
+
+                                    <div class="col-12 col-sm-6">
+                                        <label for="kw" class="form-label">kW</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="kw"
+                                               placeholder="Enter kW"
+                                               onkeyup="CalculateActualPrice()"
+                                               required>
+                                    </div>
+
+                                </div>
                             </div>
                             <div class="col-md-4">
                                 <label for="solarType" class="form-label">Solar Type:</label>
-                                <input type="text" class="form-control" id="solarType" placeholder="Enter Solar Type" value="Residential" required>
+                                <select class="form-control" id="solarType" required>
+                                    <option value="Residential">Residential</option>
+                                    <option value="Commercial">Commercial</option>
+                                </select>
                             </div>
                             <div class="col-md-4">
                                 <label for="panelsName" class="form-label">Panels Name:</label>

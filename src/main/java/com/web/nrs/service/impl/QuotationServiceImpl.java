@@ -253,7 +253,7 @@ public class QuotationServiceImpl implements QuotationService {
         txt(cb, Element.ALIGN_RIGHT, new Phrase("Hon'ble Prime Minister of India", new Font(Font.HELVETICA, 8, Font.NORMAL, new Color(180, 220, 255))), pmX + qW - 10, sigY - 14);
 
         // Client info card (bottom-left) — solid slightly-lighter navy, expanded height & padding
-        float cx = 25, cy = 90, cw = 275, ch = 115;
+        float cx = 25, cy = 90, cw = 275, ch = 135; // Increased height for wrapping
         cb.setColorFill(new Color(16, 52, 110));
         cb.roundRectangle(cx, cy, cw, ch, 10); cb.fill();
         cb.setColorStroke(ORANGE); cb.setLineWidth(1.5f); cb.roundRectangle(cx, cy, cw, ch, 10); cb.stroke();
@@ -261,15 +261,37 @@ public class QuotationServiceImpl implements QuotationService {
         float topY = cy + ch;
         txt(cb, Element.ALIGN_LEFT, new Phrase("PREPARED FOR", fLight(8.5f)), cx + 18, topY - 20);
         String client = q.getCustomerName() != null ? q.getCustomerName() : "Valued Customer";
-        txt(cb, Element.ALIGN_LEFT, new Phrase(client,       fWhiteBold(16)), cx + 18, topY - 40);
+        String mobile = q.getCustomerMobileNumber() != null ? q.getCustomerMobileNumber().trim() : "";
+
+        ColumnText ctClient = new ColumnText(cb);
+        ctClient.setSimpleColumn(cx + 18, topY - 70, cx + cw - 15, topY - 22);
+        
+        Font nameFont = client.length() > 22 ? fWhiteBold(13) : fWhiteBold(16);
+        Paragraph pClient = new Paragraph(client, nameFont);
+        pClient.setLeading(client.length() > 22 ? 15f : 18f);
+        ctClient.addElement(pClient);
+        
+        if (!mobile.isEmpty()) {
+            Paragraph pMobile = new Paragraph("+91 " + mobile, fLight(11f));
+            if (!mobile.startsWith("+")) {
+                pMobile = new Paragraph(mobile.length() == 10 ? "+91 " + mobile : mobile, fLight(11f));
+            } else {
+                pMobile = new Paragraph(mobile, fLight(11f));
+            }
+            pMobile.setSpacingBefore(4f);
+            pMobile.setLeading(14f);
+            ctClient.addElement(pMobile);
+        }
+        
+        try { ctClient.go(); } catch (Exception e) {}
         
         // Separator line with proper horizontal padding
-        fillRect(cb, new Color(80, 120, 180), cx + 15, topY - 55, cw - 30, 1);
+        fillRect(cb, new Color(80, 120, 180), cx + 15, topY - 72, cw - 30, 1);
         
-        txt(cb, Element.ALIGN_LEFT, new Phrase("System: " + q.getKw() + " kW", fOrange(11)), cx + 18, topY - 72);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Date: " + q.getQuotationDate(), fLight(9.5f)), cx + 18, topY - 90);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("System: " + q.getKw() + " kW", fOrange(11)), cx + 18, topY - 88);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Date: " + q.getQuotationDate(), fLight(9.5f)), cx + 18, topY - 106);
         String prop = q.getQuationNumber() != null ? q.getQuationNumber() : "NRS/2026/001";
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Proposal: " + prop, fLight(9.5f)), cx + 18, topY - 108);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Proposal: " + prop, fLight(9.5f)), cx + 18, topY - 124);
 
         // Bottom orange footer
         fillRect(cb, ORANGE, 0, 0, PW, 60);
@@ -482,8 +504,9 @@ public class QuotationServiceImpl implements QuotationService {
         cb.setLineDash(0);
 
         // Banner Bottom Text
-        txt(cb, Element.ALIGN_LEFT, new Phrase("540 + Wp | BIFACIAL", fWhiteBold(12)), rx, bBot + 30);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Topcon X 6 PANEL | Module", fLight(11)), rx, bBot + 12);
+        int panelWatt = q.getPanelWatt() > 0 ? q.getPanelWatt() : 540;
+        txt(cb, Element.ALIGN_LEFT, new Phrase( panelWatt + " + Wp | BIFACIAL", fWhiteBold(12)), rx, bBot + 30);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Topcon X " + calculatePanels(q.getKw(), panelWatt) + " PANEL | Module", fLight(11)), rx, bBot + 12);
 
         // 6. Right Side White Space (Dynamic Luxury Panel Chips)
         float wy = 430; // Base Y shifted upwards into the rich clear space below banner
@@ -728,6 +751,8 @@ public class QuotationServiceImpl implements QuotationService {
     // PAGE 5 – FINANCIAL SUMMARY
     // ======================================================
     private void page5(Document doc, PdfWriter writer, SolarQuotation q) throws Exception {
+
+        boolean isResidential = q.getSolarType().equals(ConstantUtils.SOLAR_TYPE_RESIDENTIAL);
         PdfContentByte cb = writer.getDirectContent();
         fillRect(cb, LIGHT_BG, 0, 0, PW, PH);
         pageHeader(cb, "Your Solar Investment Summary",
@@ -738,12 +763,31 @@ public class QuotationServiceImpl implements QuotationService {
         drawPriceCard(cb, 30,                  pcTopY - pcH, pcW, pcH,
                 "TOTAL SYSTEM COST",  "Rs." + formatAmt(q.getActualPrice()),
                 "Before subsidy deduction", PRIMARY, ORANGE);
-        drawPriceCard(cb, 30 + pcW + 10,       pcTopY - pcH, pcW, pcH,
+
+        if(isResidential){
+
+            drawPriceCard(cb, 30 + pcW + 10,       pcTopY - pcH, pcW, pcH,
                 "GOVT. SUBSIDY",      "Rs." + formatAmt(q.getSubsidy()),
                 "PM Surya Ghar benefit", GREEN, Color.WHITE);
-        drawPriceCard(cb, 30 + 2 * (pcW + 10), pcTopY - pcH, pcW, pcH,
-                "YOUR FINAL PAYABLE", "Rs." + formatAmt(q.getEffectivePrice()),
-                "After subsidy  * Best Price", ORANGE, Color.WHITE);
+
+            drawPriceCard(cb, 30 + 2 * (pcW + 10), pcTopY - pcH, pcW, pcH,
+                    "YOUR FINAL PAYABLE", "Rs." + formatAmt(q.getEffectivePrice()),
+                    "After subsidy  * Best Price", ORANGE, Color.WHITE);
+
+        }else{
+
+            drawPriceCard(cb, 30 + pcW + 10,       pcTopY - pcH, pcW, pcH,
+                    "",      "Meter charge extra at actual",
+                    "", GREEN, Color.WHITE);
+
+            drawPriceCard(cb, 30 + 2 * (pcW + 10), pcTopY - pcH, pcW, pcH,
+                    "YOUR FINAL PAYABLE", "Rs." + formatAmt(q.getActualPrice()),
+                    "After subsidy  * Best Price", ORANGE, Color.WHITE);
+
+        }
+
+
+
 
         // ROI section
         float roiY = pcTopY - pcH - 22;
@@ -751,26 +795,50 @@ public class QuotationServiceImpl implements QuotationService {
         txt(cb, Element.ALIGN_LEFT,
                 new Phrase("  RETURN ON INVESTMENT (ROI) ESTIMATE", fWhiteBold(10)), 38, roiY - 8);
         float rcW = (PW - 60) / 3f - 5, rcH = 68;
-        String[]   roiVals   = {q.getPaybackPeriod(), q.getAnnualSaving(), "Rs.4,50,000+"};
-        String[]   roiLabels = {"Payback Period", "Annual Savings", "25-Year Total Savings"};
+        String[]   roiVals   = {q.getPaybackPeriod(), "Rs.4,50,000+"};
+        String[]   roiLabels = {"Payback Period", "25-Year Total Savings"};
         Color[]    roiColors = {ORANGE, GREEN, PRIMARY};
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < roiVals.length; i++) {
             drawRoiCard(cb, 30 + i * (rcW + 7.5f), roiY - 36 - rcH, rcW, rcH,
                     roiVals[i], roiLabels[i], roiColors[i]);
         }
 
+
+        float emiSecY = isResidential ? roiY - 36 - rcH - 20 : roiY - 36 - rcH - 20, ecH = 80;
+
         // EMI comparison
-        float emiSecY = roiY - 36 - rcH - 20;
-        fillRound(cb, PRIMARY, 30, emiSecY - 24, PW - 60, 30, 6);
-        txt(cb, Element.ALIGN_LEFT,
-                new Phrase("  EMI & PAYMENT OPTIONS", fWhiteBold(10)), 38, emiSecY - 8);
-        float ecW = (PW - 60) / 2f - 5, ecH = 80;
-        drawEmiCard(cb, 30,            emiSecY - 36 - ecH, ecW, ecH,
-                "EMI OPTION", q.getEmiOption(),
-                "Flexible 12-60 month tenure\nZero-cost EMI via NBFCs\nNo hidden charges", ORANGE);
-        drawEmiCard(cb, 30 + ecW + 10, emiSecY - 36 - ecH, ecW, ecH,
-                "DIRECT PAYMENT BENEFIT", "Save Rs.12,000 Extra",
-                "One-time payment discount\nFastest installation slot\nPriority subsidy processing", PRIMARY);
+
+        if(isResidential){
+
+            fillRound(cb, PRIMARY, 30, emiSecY - 24, PW - 60, 30, 6);
+            txt(cb, Element.ALIGN_LEFT,
+                    new Phrase("  EMI & PAYMENT OPTIONS", fWhiteBold(10)), 38, emiSecY - 8);
+            float ecW = (PW - 60) / 2f - 5;
+            drawEmiCard(cb, 30,            emiSecY - 36 - ecH, ecW, ecH,
+                    "EMI OPTION", q.getEmiOption(),
+                    "Flexible 12-60 month tenure\nZero-cost EMI via NBFCs\nNo hidden charges", ORANGE);
+            drawEmiCard(cb, 30 + ecW + 10, emiSecY - 36 - ecH, ecW, ecH,
+                    "DIRECT PAYMENT BENEFIT", "Save Rs.12,000 Extra",
+                    "One-time payment discount\nFastest installation slot\nPriority subsidy processing", PRIMARY);
+
+
+        }else{
+
+            fillRound(cb, PRIMARY, 30, emiSecY - 24, PW - 60, 30, 6);
+            txt(cb, Element.ALIGN_LEFT,
+                    new Phrase(" PAYMENT OPTIONS", fWhiteBold(10)), 38, emiSecY - 8);
+            float ecW = (PW - 60) / 2f - 5;
+            drawEmiCard(cb, 30,            emiSecY - 36 - ecH, ecW, ecH,
+                    "Per Kilowatt price", "26,000",
+                    "", ORANGE);
+            drawEmiCard(cb, 30 + ecW + 10, emiSecY - 36 - ecH, ecW, ecH,
+                    "Per Kilowatt Price(Including GST)", "28,314",
+                    "", PRIMARY);
+
+        }
+
+
+
 
         // Payment schedule strip — increased height & properly distributed boxes
         float ptY = emiSecY - 36 - ecH - 18;
@@ -853,9 +921,24 @@ public class QuotationServiceImpl implements QuotationService {
         cb.setLineWidth(1f); cb.roundRectangle(x, y, w, h, 10); cb.fillStroke();
         fillRect(cb, accent, x, y + h - 5, w, 5);
         Color sub = new Color(200, 220, 255);
-        txt(cb, Element.ALIGN_CENTER, new Phrase(title, new Font(Font.HELVETICA, 7, Font.BOLD, sub)),        x + w / 2, y + h - 20);
-        txt(cb, Element.ALIGN_CENTER, new Phrase(value, new Font(Font.HELVETICA, 17, Font.BOLD, accent)),   x + w / 2, y + h / 2 + 6);
-        txt(cb, Element.ALIGN_CENTER, new Phrase(note,  new Font(Font.HELVETICA, 7, Font.NORMAL, sub)),     x + w / 2, y + 10);
+        if (title != null && !title.isEmpty()) {
+            txt(cb, Element.ALIGN_CENTER, new Phrase(title, new Font(Font.HELVETICA, 7, Font.BOLD, sub)), x + w / 2, y + h - 20);
+        }
+        
+        if (value.length() > 18) {
+            int mid = value.indexOf(' ', value.length() / 2 - 3);
+            if (mid == -1) mid = value.length() / 2;
+            String line1 = value.substring(0, mid).trim();
+            String line2 = value.substring(mid).trim();
+            txt(cb, Element.ALIGN_CENTER, new Phrase(line1, new Font(Font.HELVETICA, 13, Font.BOLD, accent)), x + w / 2, y + h / 2 + 12);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(line2, new Font(Font.HELVETICA, 13, Font.BOLD, accent)), x + w / 2, y + h / 2 - 6);
+        } else {
+            txt(cb, Element.ALIGN_CENTER, new Phrase(value, new Font(Font.HELVETICA, 17, Font.BOLD, accent)), x + w / 2, y + h / 2 + 6);
+        }
+
+        if (note != null && !note.isEmpty()) {
+            txt(cb, Element.ALIGN_CENTER, new Phrase(note,  new Font(Font.HELVETICA, 7, Font.NORMAL, sub)), x + w / 2, y + 10);
+        }
     }
 
     private static void drawRoiCard(PdfContentByte cb, float x, float y, float w, float h,
@@ -873,13 +956,22 @@ public class QuotationServiceImpl implements QuotationService {
         cb.setLineWidth(1f); cb.roundRectangle(x, y, w, h, 8); cb.fillStroke();
         cb.setColorFill(accent); cb.roundRectangle(x, y + h - 26, w, 26, 8); cb.fill();
         fillRect(cb, accent, x, y + h - 26, w, 13); // flatten bottom of header band
-        txt(cb, Element.ALIGN_LEFT, new Phrase(title, fWhiteBold(8)), x + 10, y + h - 15);
-        txt(cb, Element.ALIGN_LEFT, new Phrase(value, new Font(Font.HELVETICA, 13, Font.BOLD, accent)), x + 10, y + h - 40);
-        float by = y + h - 54;
-        for (String line : bullets.split("\n")) {
-            txt(cb, Element.ALIGN_LEFT,
-                    new Phrase("* " + line, new Font(Font.HELVETICA, 7, Font.NORMAL, DARK)), x + 10, by);
-            by -= 11;
+        
+        boolean hasBullets = bullets != null && !bullets.trim().isEmpty();
+        
+        if (hasBullets) {
+            txt(cb, Element.ALIGN_LEFT, new Phrase(title, fWhiteBold(8)), x + 10, y + h - 15);
+            txt(cb, Element.ALIGN_LEFT, new Phrase(value, new Font(Font.HELVETICA, 13, Font.BOLD, accent)), x + 10, y + h - 40);
+            float by = y + h - 54;
+            for (String line : bullets.split("\n")) {
+                txt(cb, Element.ALIGN_LEFT,
+                        new Phrase("* " + line, new Font(Font.HELVETICA, 7, Font.NORMAL, DARK)), x + 10, by);
+                by -= 11;
+            }
+        } else {
+            // Center everything and remove dot if no bullets
+            txt(cb, Element.ALIGN_CENTER, new Phrase(title, fWhiteBold(9)), x + w / 2, y + h - 17);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(value, new Font(Font.HELVETICA, 18, Font.BOLD, accent)), x + w / 2, y + 24);
         }
     }
 
@@ -1048,7 +1140,26 @@ public class QuotationServiceImpl implements QuotationService {
         return cell;
     }
 
-    private static String formatAmount(double amount) { return String.format("%,.2f", amount); }
-    private static String formatAmt(double amount)    { return String.format("%,.0f", amount); }
+    private static String formatAmount(double amount) {
+        java.text.NumberFormat format = java.text.NumberFormat.getNumberInstance(new java.util.Locale("en", "IN"));
+        format.setMinimumFractionDigits(2);
+        format.setMaximumFractionDigits(2);
+        return format.format(amount);
+    }
+    
+    private static String formatAmt(double amount) {
+        java.text.NumberFormat format = java.text.NumberFormat.getNumberInstance(new java.util.Locale("en", "IN"));
+        format.setMaximumFractionDigits(0);
+        return format.format(amount);
+    }
+    public static int calculatePanels(double systemSizeKW, int panelWattage) {
+        if (panelWattage <= 0) {
+            panelWattage = 540; // Default to 540 to prevent division by zero
+        }
+        double totalWatts = systemSizeKW * 1000;
+        double panels = totalWatts / panelWattage;
+
+        return (int) Math.ceil(panels); // round up
+    }
 }
 

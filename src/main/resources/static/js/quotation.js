@@ -71,7 +71,8 @@ $(document).on("keyup", "#discount", function () {
               submittedNumber: $("#submittedNumber").val(),
 			  createdDate: $("#createdDate").val(),
 			  discountAmount: $("#discountAmount").val(),
-              pdfType: $("#pdfType").val()
+              pdfType: $("#pdfType").val(),
+              panelWatt: $("#panelWatt").val()
           };
 
           // Trigger standard application loader before initiating heavy PDF generation request
@@ -115,5 +116,14 @@ $(document)
 
     $("#submittedByName").val($("#submittedBy option:selected").text());
     $("#submittedNumber").val($(this).val());
+
+});
+
+$("#solarType").on("change", function(){
+    if($(this).val().trim() == "Residential"){
+        $("#subsidy").val(78000);
+    }else{
+        $("#subsidy").val(0);
+    }
 
 });
