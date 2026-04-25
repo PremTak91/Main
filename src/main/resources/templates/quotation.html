@@ -62,21 +62,23 @@
                                 <div class="row g-2">
 
                                     <div class="col-12 col-sm-6">
-                                        <label for="panelWatt" class="form-label">Panel Watt</label>
+                                        <label for="noOfPanels" class="form-label">No of Panels</label>
                                         <input type="text"
                                                class="form-control"
-                                               id="panelWatt"
-                                               placeholder="Panel watt"
-                                               value="540"
+                                               id="noOfPanels"
+                                               placeholder="No. of panels"
+                                               onkeyup="CalculateActualPrice()"
+                                               value=""
                                                required>
                                     </div>
 
                                     <div class="col-12 col-sm-6">
-                                        <label for="kw" class="form-label">kW</label>
+                                        <label for="panelWatt" class="form-label">Panel Watt</label>
                                         <input type="text"
                                                class="form-control"
-                                               id="kw"
-                                               placeholder="Enter kW"
+                                               id="panelWatt"
+                                               placeholder="Enter Panel Watt"
+                                               value="540"
                                                onkeyup="CalculateActualPrice()"
                                                required>
                                     </div>

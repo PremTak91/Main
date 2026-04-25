@@ -504,9 +504,8 @@ public class QuotationServiceImpl implements QuotationService {
         cb.setLineDash(0);
 
         // Banner Bottom Text
-        int panelWatt = q.getPanelWatt() > 0 ? q.getPanelWatt() : 540;
-        txt(cb, Element.ALIGN_LEFT, new Phrase( panelWatt + " + Wp | BIFACIAL", fWhiteBold(12)), rx, bBot + 30);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Topcon X " + calculatePanels(q.getKw(), panelWatt) + " PANEL | Module", fLight(11)), rx, bBot + 12);
+        txt(cb, Element.ALIGN_LEFT, new Phrase( q.getPanelWatt() + " + Wp | BIFACIAL", fWhiteBold(12)), rx, bBot + 30);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Topcon X " + q.getNoOfPanels() + " PANEL | Module", fLight(11)), rx, bBot + 12);
 
         // 6. Right Side White Space (Dynamic Luxury Panel Chips)
         float wy = 430; // Base Y shifted upwards into the rich clear space below banner
@@ -705,6 +704,39 @@ public class QuotationServiceImpl implements QuotationService {
                         new Font(Font.HELVETICA, 9, Font.BOLD, new Color(120, 60, 0))),
                 PW / 2, noteY - 12);
 
+        // --- NEW SUPPLY ITEMS SECTION ---
+        float supplyY = noteY - 50; // Start below GEDA note
+        fillRound(cb, PRIMARY, 30, supplyY - 24, PW - 60, 30, 6);
+        txt(cb, Element.ALIGN_LEFT,
+                new Phrase("  SUPPLY ITEMS", fWhiteBold(11)),
+                38, supplyY - 8);
+
+        String[][] supplies = {
+            {"Inverter", "Ksolare / Solar Yaan (10 year warranty)"},
+            {"MCB, CABLE", "HAVELLS / POLYCAB (As per availability)"},
+            {"Earthing Kit with Lighting Arrestor", "Premium Make with 5 Years Warranty"},
+            {"Solar Mounting Structure", "As per MRE standard (Hot Dip GI pipe)"}
+        };
+
+        float sY = supplyY - 36;
+        float rowH = 34;
+        for (int i = 0; i < supplies.length; i++) {
+            cb.setColorFill(Color.WHITE);
+            cb.setColorStroke(new Color(210, 220, 245));
+            cb.setLineWidth(1f);
+            cb.roundRectangle(30, sY - rowH, PW - 60, rowH, 6);
+            cb.fillStroke();
+            
+            // Elegant left accent pill
+            fillRound(cb, ORANGE, 34, sY - rowH + 7, 4, 20, 2);
+            
+            // Text
+            txt(cb, Element.ALIGN_LEFT, new Phrase(supplies[i][0], fPrimary(9.5f)), 46, sY - rowH / 2f - 3f);
+            txt(cb, Element.ALIGN_LEFT, new Phrase(supplies[i][1], fDark(9f)), 240, sY - rowH / 2f - 3f);
+            
+            sY -= (rowH + 8);
+        }
+
         bottomStrip(cb,
                 "Net Metering takes 30-90 days  |  NRS handles end-to-end process for you",
                 "We assist with documentation, inspection & DISCOM coordination");
@@ -758,43 +790,59 @@ public class QuotationServiceImpl implements QuotationService {
         pageHeader(cb, "Your Solar Investment Summary",
                 "Transparent pricing  |  Maximum subsidy  |  Best value", 5);
 
-        // 3 Pricing cards
-        float pcW = (PW - 60 - 20) / 3f, pcH = 108, pcTopY = PH - 125;
-        drawPriceCard(cb, 30,                  pcTopY - pcH, pcW, pcH,
-                "TOTAL SYSTEM COST",  "Rs." + formatAmt(q.getActualPrice()),
-                "Before subsidy deduction", PRIMARY, ORANGE);
+        // Dynamic Pricing Cards Layout
+        java.util.List<String[]> pCards = new java.util.ArrayList<>();
+        pCards.add(new String[]{"TOTAL SYSTEM COST", "Rs." + formatAmt(q.getActualPrice()), "Before deductions", "1"});
+        
+        if (isResidential) {
+            pCards.add(new String[]{"GOVT. SUBSIDY", "Rs." + formatAmt(q.getSubsidy()), "PM Surya Ghar benefit", "2"});
+        }
+        
+        String discomMeter = isResidential ?  "Rs."+ q.getDiscomMeter() : "At Actual";
 
-        if(isResidential){
+        pCards.add(new String[]{"DISCOM METER Charge",  discomMeter, "Net Metering Charges", "1"});
 
-            drawPriceCard(cb, 30 + pcW + 10,       pcTopY - pcH, pcW, pcH,
-                "GOVT. SUBSIDY",      "Rs." + formatAmt(q.getSubsidy()),
-                "PM Surya Ghar benefit", GREEN, Color.WHITE);
+        
+        if (q.getPqHsCost() > 0) {
+            pCards.add(new String[]{"PREMIUM STRUCTURE", "Rs." + formatAmt(q.getPqHsCost()), "Quality & Heighted Cost", "1"});
+        }
+        
+        if (q.getDiscountAmount() > 0) {
+            pCards.add(new String[]{"SPECIAL DISCOUNT", "Rs." + formatAmt(q.getDiscountAmount()), "Exclusive Offer Applied", "2"});
+        }
+        
+        pCards.add(new String[]{"YOUR FINAL PAYABLE", "Rs." + formatAmt(isResidential ? q.getEffectivePrice() : q.getActualPrice()), "After all deductions", "3"});
 
-            drawPriceCard(cb, 30 + 2 * (pcW + 10), pcTopY - pcH, pcW, pcH,
-                    "YOUR FINAL PAYABLE", "Rs." + formatAmt(q.getEffectivePrice()),
-                    "After subsidy  * Best Price", ORANGE, Color.WHITE);
+        float pcW = (PW - 60 - 20) / 3f, pcH = 85, pcTopY = PH - 125;
+        float row2Y = pcTopY - pcH - 12;
 
-        }else{
-
-            drawPriceCard(cb, 30 + pcW + 10,       pcTopY - pcH, pcW, pcH,
-                    "",      "Meter charge extra at actual",
-                    "", GREEN, Color.WHITE);
-
-            drawPriceCard(cb, 30 + 2 * (pcW + 10), pcTopY - pcH, pcW, pcH,
-                    "YOUR FINAL PAYABLE", "Rs." + formatAmt(q.getActualPrice()),
-                    "After subsidy  * Best Price", ORANGE, Color.WHITE);
-
+        // Draw Row 1 (up to 3 cards)
+        int r1Count = Math.min(3, pCards.size());
+        for (int i = 0; i < r1Count; i++) {
+            String[] c = pCards.get(i);
+            Color bg = c[3].equals("1") ? PRIMARY : (c[3].equals("2") ? GREEN : ORANGE);
+            Color acc = c[3].equals("1") ? ORANGE : Color.WHITE;
+            drawPriceCard(cb, 30 + i * (pcW + 10), pcTopY - pcH, pcW, pcH, c[0], c[1], c[2], bg, acc);
         }
 
-
-
+        // Draw Row 2 (remaining cards)
+        int r2Count = pCards.size() - 3;
+        if (r2Count > 0) {
+            float row2W = (PW - 60 - (r2Count - 1) * 10f) / (float)r2Count;
+            for (int i = 0; i < r2Count; i++) {
+                String[] c = pCards.get(3 + i);
+                Color bg = c[3].equals("1") ? PRIMARY : (c[3].equals("2") ? GREEN : ORANGE);
+                Color acc = c[3].equals("1") ? ORANGE : Color.WHITE;
+                drawPriceCard(cb, 30 + i * (row2W + 10), row2Y - pcH, row2W, pcH, c[0], c[1], c[2], bg, acc);
+            }
+        }
 
         // ROI section
-        float roiY = pcTopY - pcH - 22;
+        float roiY = row2Y - pcH - 20;
         fillRound(cb, PRIMARY, 30, roiY - 24, PW - 60, 30, 6);
         txt(cb, Element.ALIGN_LEFT,
                 new Phrase("  RETURN ON INVESTMENT (ROI) ESTIMATE", fWhiteBold(10)), 38, roiY - 8);
-        float rcW = (PW - 60) / 3f - 5, rcH = 68;
+        float rcW = (PW - 60) / 3f - 5, rcH = 65; // Slightly reduced height
         String[]   roiVals   = {q.getPaybackPeriod(), "Rs.4,50,000+"};
         String[]   roiLabels = {"Payback Period", "25-Year Total Savings"};
         Color[]    roiColors = {ORANGE, GREEN, PRIMARY};
@@ -804,7 +852,8 @@ public class QuotationServiceImpl implements QuotationService {
         }
 
 
-        float emiSecY = isResidential ? roiY - 36 - rcH - 20 : roiY - 36 - rcH - 20, ecH = 80;
+        float emiSecY = roiY - 36 - rcH - 16;
+        float ecH = 74; // Slightly reduced height
 
         // EMI comparison
 
@@ -840,9 +889,9 @@ public class QuotationServiceImpl implements QuotationService {
 
 
 
-        // Payment schedule strip — increased height & properly distributed boxes
-        float ptY = emiSecY - 36 - ecH - 18;
-        float ptStripH = 58;
+        // Payment schedule strip
+        float ptY = emiSecY - 36 - ecH - 16;
+        float ptStripH = 54;
         cb.setColorFill(Color.WHITE); cb.setColorStroke(new Color(200, 215, 240));
         cb.setLineWidth(1f); cb.roundRectangle(30, ptY - ptStripH, PW - 60, ptStripH + 8, 8); cb.fillStroke();
         txt(cb, Element.ALIGN_LEFT, new Phrase("PAYMENT SCHEDULE", fPrimary(10)), 42, ptY - 10);
@@ -865,8 +914,8 @@ public class QuotationServiceImpl implements QuotationService {
         }
 
         // --- NEW BANK DETAILS SECTION ---
-        float bankSecY = ptY - ptStripH - 30; // Starts neatly below the payment strip
-        float bdH = 105; // Increased height to accommodate vertical stacking
+        float bankSecY = ptY - ptStripH - 24; // Adjusted to fit page
+        float bdH = 95; 
         
         // Card Body Background
         cb.setColorFill(Color.WHITE); cb.setColorStroke(new Color(210, 220, 240));
@@ -880,17 +929,17 @@ public class QuotationServiceImpl implements QuotationService {
         
         // Hybrid Layout: Full width for long strings, 2-Column for short strings
         float lCol = 50, rCol = PW / 2 + 10;
-        float detailY = bankSecY - 48; // Adjusted start Y
+        float detailY = bankSecY - 44; 
         
         txt(cb, Element.ALIGN_LEFT, new Phrase("Bank Name:", fDark(9.5f)), lCol, detailY);
         txt(cb, Element.ALIGN_LEFT, new Phrase("KALUPUR COMMERCIAL CO-OP BANK LTD", fPrimary(9.5f)), lCol + 80, detailY);
         
-        detailY -= 18;
+        detailY -= 16;
         
         txt(cb, Element.ALIGN_LEFT, new Phrase("Account Name:", fDark(9.5f)), lCol, detailY);
         txt(cb, Element.ALIGN_LEFT, new Phrase("NRS SOLAR SOLUTION", fPrimary(9.5f)), lCol + 80, detailY);
         
-        detailY -= 18;
+        detailY -= 16;
         
         txt(cb, Element.ALIGN_LEFT, new Phrase("Account No:", fDark(9.5f)), lCol, detailY);
         txt(cb, Element.ALIGN_LEFT, new Phrase("01920102458", fPrimary(9.5f)), lCol + 80, detailY);
@@ -898,7 +947,7 @@ public class QuotationServiceImpl implements QuotationService {
         txt(cb, Element.ALIGN_LEFT, new Phrase("IFSC Code:", fDark(9.5f)), rCol, detailY);
         txt(cb, Element.ALIGN_LEFT, new Phrase("KKCBOISP019", fPrimary(9.5f)), rCol + 65, detailY);
         
-        detailY -= 18;
+        detailY -= 16;
         
         txt(cb, Element.ALIGN_LEFT, new Phrase("Branch:", fDark(9.5f)), lCol, detailY);
         txt(cb, Element.ALIGN_LEFT, new Phrase("ISANPUR AHMEDABAD", fPrimary(9.5f)), lCol + 80, detailY);
@@ -1151,15 +1200,6 @@ public class QuotationServiceImpl implements QuotationService {
         java.text.NumberFormat format = java.text.NumberFormat.getNumberInstance(new java.util.Locale("en", "IN"));
         format.setMaximumFractionDigits(0);
         return format.format(amount);
-    }
-    public static int calculatePanels(double systemSizeKW, int panelWattage) {
-        if (panelWattage <= 0) {
-            panelWattage = 540; // Default to 540 to prevent division by zero
-        }
-        double totalWatts = systemSizeKW * 1000;
-        double panels = totalWatts / panelWattage;
-
-        return (int) Math.ceil(panels); // round up
     }
 }
 
