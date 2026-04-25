@@ -1,4 +1,4 @@
-// Helper functions for Loader and Toaster
+// ─── Loader ──────────────────────────────────────────────
 function showLoader() {
     const loader = document.getElementById("pageLoader");
     if (loader) loader.classList.remove("d-none");
@@ -9,11 +9,9 @@ function hideLoader() {
     if (loader) loader.classList.add("d-none");
 }
 
-
-
+// ─── Toast ───────────────────────────────────────────────
 function showToast(message, type = 'success') {
     const toastEl = document.getElementById("commonToast");
-    const toastBody = toastEl.querySelector(".toast-body");
     const toastMessage = document.getElementById("toastMessage");
     const toastIcon = document.getElementById("toastIcon");
 
@@ -42,3 +40,34 @@ function showToast(message, type = 'success') {
         toast.show();
     }
 }
+
+// ─── Global Session-Expiry Handler ───────────────────────
+/**
+ * Called whenever any API request returns 401 (Unauthorized / token expired).
+ * Clears state and redirects to login with an ?expired=true flag.
+ */
+function handleSessionExpired() {
+    // Avoid redirect loop if already on login page
+    if (window.location.pathname.includes('/login')) return;
+    window.location.href = window.location.origin + '/NRS/login?expired=true';
+}
+
+// ── jQuery AJAX global 401 interceptor ───────────────────
+$(document).ajaxError(function (event, jqXHR) {
+    if (jqXHR.status === 401) {
+        handleSessionExpired();
+    }
+});
+
+// ── Native fetch() interceptor ────────────────────────────
+(function () {
+    const _fetch = window.fetch;
+    window.fetch = function (...args) {
+        return _fetch.apply(this, args).then(function (response) {
+            if (response.status === 401) {
+                handleSessionExpired();
+            }
+            return response;
+        });
+    };
+})();

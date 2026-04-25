@@ -58,13 +58,39 @@
 						    </div>
 						</div>
                         <div class="row g-3 mt-2"> <!-- Using Bootstrap 5 gutter classes -->
-                            <div class="col-md-4">
-                                <label for="kw" class="form-label">Kw:</label>
-                                <input type="text" class="form-control" id="kw" placeholder="Enter Kw" onkeyup="CalculateActualPrice()" required>
+                            <div class="col-12 col-md-4">
+                                <div class="row g-2">
+
+                                    <div class="col-12 col-sm-6">
+                                        <label for="noOfPanels" class="form-label">No of Panels</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="noOfPanels"
+                                               placeholder="No. of panels"
+                                               onkeyup="CalculateActualPrice()"
+                                               value=""
+                                               required>
+                                    </div>
+
+                                    <div class="col-12 col-sm-6">
+                                        <label for="panelWatt" class="form-label">Panel Watt</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="panelWatt"
+                                               placeholder="Enter Panel Watt"
+                                               value="540"
+                                               onkeyup="CalculateActualPrice()"
+                                               required>
+                                    </div>
+
+                                </div>
                             </div>
                             <div class="col-md-4">
                                 <label for="solarType" class="form-label">Solar Type:</label>
-                                <input type="text" class="form-control" id="solarType" placeholder="Enter Solar Type" value="Residential" required>
+                                <select class="form-control" id="solarType" required>
+                                    <option value="Residential">Residential</option>
+                                    <option value="Commercial">Commercial</option>
+                                </select>
                             </div>
                             <div class="col-md-4">
                                 <label for="panelsName" class="form-label">Panels Name:</label>
@@ -125,9 +151,17 @@
 						      </div>
 
                             <div class="col-md-4">
-                                <label for="submittedNumber" class="form-label">Discount:</label>
+                                <label for="discount" class="form-label">Discount:</label>
                                 <input type="text" class="form-control" id="discount" placeholder="Enter offer in number" value="">
                                 <input type="hidden" class="form-control" id="discountAmount" placeholder="Enter offer in number" value="">
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="pdfType" class="form-label">PDF Format:</label>
+                                <select class="form-control" id="pdfType" required>
+                                    <option value="Standardized">Standardized (5 Pages)</option>
+                                    <option value="Single Page">Single Page Only</option>
+                                </select>
                             </div>
 						</div>
                         <div class="mt-4">

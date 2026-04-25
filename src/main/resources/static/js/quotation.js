@@ -1,10 +1,18 @@
 
 
+function calculateKw() {
+    const panelWatt = parseInt($("#panelWatt").val()) || 0;
+    const noOfPanels = parseInt($("#noOfPanels").val()) || 0;
+
+    const result = (noOfPanels * panelWatt) / 1000;
+
+    return Number(result.toFixed(2)); // keeps it numeric
+}
 // Keep the JavaScript logic exactly as provided
   function CalculateActualPrice() {
-      // debugger; // Keep or remove debugger as per your needs
+
       // Retrieve values and convert them to numbers
-      var totalKw = parseFloat($("#kw").val() || 0); // Default to 0 if NaN
+      var totalKw = calculateKw(); // Default to 0 if NaN
       var perKw = parseFloat($("#rateKw").val() || 0); // Default to 0 if NaN
       var discomInputVal = $("#discomMeter").val();
       var discomMeterCharge = parseFloat(discomInputVal); // Default to 0 if NaN
@@ -13,7 +21,7 @@
 
       // Calculate total price
       var totalPrice = perKw * totalKw;
-      $("#value").val(totalPrice);
+      $("#value").val(Number(totalPrice.toFixed(2)));
     
       // Calculate actual price
       var actualPrice = 0;
@@ -57,7 +65,7 @@ $(document).on("keyup", "#discount", function () {
 			  quationNumber: quationsNumber,
 			  customerName: name,
 			  customerMobileNumber: $("#customerMobileNumber").val(),
-              kw: parseFloat($("#kw").val()),
+              kw: calculateKw(),
               solarType: $("#solarType").val(),
               panelsName: $("#panelsName").val(),
               rateKw: parseFloat($("#rateKw").val()),
@@ -70,8 +78,13 @@ $(document).on("keyup", "#discount", function () {
               submittedBy: $("#submittedByName").val(),
               submittedNumber: $("#submittedNumber").val(),
 			  createdDate: $("#createdDate").val(),
-			  discountAmount: $("#discountAmount").val()
+			  discountAmount: $("#discountAmount").val(),
+              pdfType: $("#pdfType").val(),
+              panelWatt: $("#panelWatt").val()
           };
+
+          // Trigger standard application loader before initiating heavy PDF generation request
+          if (typeof showLoader === "function") showLoader();
 
           $.ajax({
               type: "POST",
@@ -82,6 +95,7 @@ $(document).on("keyup", "#discount", function () {
                   responseType: 'blob'
               },
               success: function(blob, status, xhr) {
+                  if (typeof hideLoader === "function") hideLoader();
                   const link = document.createElement("a");
                   const url = window.URL.createObjectURL(blob);
                   link.href = url;
@@ -92,6 +106,7 @@ $(document).on("keyup", "#discount", function () {
                   location.reload();
               },
               error: function(xhr, status, error) {
+                  if (typeof hideLoader === "function") hideLoader();
                   // Use a custom modal or message box instead of alert()
                   // Example: console.error("Error downloading PDF:", error);
                   // For a simple in-page message:
@@ -109,5 +124,14 @@ $(document)
 
     $("#submittedByName").val($("#submittedBy option:selected").text());
     $("#submittedNumber").val($(this).val());
+
+});
+
+$("#solarType").on("change", function(){
+    if($(this).val().trim() == "Residential"){
+        $("#subsidy").val(78000);
+    }else{
+        $("#subsidy").val(0);
+    }
 
 });
