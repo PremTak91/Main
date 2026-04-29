@@ -10,27 +10,38 @@ spring:
     static-path-pattern: /**
   thymeleaf:
     cache: false
+
   datasource:
     url: ${DB_URL}
     username: ${DB_USER}
     password: ${DB_PASS}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+    # 🔥 Important for Docker stability
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      initialization-fail-timeout: 60000
+
   sql:
     init:
       platform: mysql
       mode: always
 
-
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
       naming:
         implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+
     properties:
       hibernate.enable_lazy_load_no_trans: true
-      hibernate.dialect: org.hibernate.dialect.MySQLDialect
+
   servlet:
     multipart:
       enabled: true
