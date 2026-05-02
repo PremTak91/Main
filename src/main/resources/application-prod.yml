@@ -13,8 +13,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: nrssolarsolution@gmail.com
-    password: NRS@Dream786
+    username: ${SEND_EMAIL_ID}
+    password: ${SEND_EMAIL_PWD}
     properties:
       mail:
         smtp:
