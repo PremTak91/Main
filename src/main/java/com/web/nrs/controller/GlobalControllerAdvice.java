@@ -7,14 +7,24 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 @ControllerAdvice
 public class GlobalControllerAdvice {
 
+    private final com.web.nrs.repository.EmployeeRepository employeeRepository;
+
+    public GlobalControllerAdvice(com.web.nrs.repository.EmployeeRepository employeeRepository) {
+        this.employeeRepository = employeeRepository;
+    }
+
     // This will be available in all Thymeleaf templates
-    @ModelAttribute("currentUserName")
-    public String getCurrentUserName() {
+    @ModelAttribute
+    public void addGlobalAttributes(org.springframework.ui.Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
-            // Return username or full name from your DB if needed
-            return auth.getName();
+            String email = auth.getName();
+            model.addAttribute("currentUserName", email); // Fallback
+            employeeRepository.findEmployeeByEmail(email).ifPresent(emp -> {
+                model.addAttribute("currentUserId", emp.getId());
+                model.addAttribute("currentUserPhoto", emp.getPhoto());
+                model.addAttribute("currentUserName", emp.getFirstName() + " " + (emp.getLastName() != null ? emp.getLastName() : ""));
+            });
         }
-        return null;
     }
 }
