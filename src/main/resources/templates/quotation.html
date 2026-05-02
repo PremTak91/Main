@@ -11,8 +11,6 @@
     <!-- Custom CSS (for main layout like sidebar, navbar positioning) -->
     <link rel="stylesheet" href="css/styles.css">
 
-    <!-- jQuery (still needed for your existing JS logic, keep for compatibility) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
 
     <!-- Inline styles for form improvements -->
     <style>
@@ -177,8 +175,16 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS Bundle with Popper (Version 5.3.3) -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-	<script src="/NRS/js/quotation.js"></script>
+    <!-- Shared loader overlay -->
+    <div th:replace="~{fragments/commonUI :: loader}"></div>
+
+    <!-- Shared toast notification -->
+    <div th:replace="~{fragments/commonUI :: toaster}"></div>
+
+    <!-- jQuery + Bootstrap JS + commonJS.js (showLoader / hideLoader / showToast) -->
+    <div th:replace="~{fragments/commonJquery :: commonJquery}"></div>
+
+    <!-- Quotation-specific logic (must come after commonJS.js) -->
+	<script th:src="@{/js/quotation.js}"></script>
 </body>
 </html>

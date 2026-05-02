@@ -436,5 +436,17 @@ CREATE TABLE document_sequence (
     last_number INT,
     PRIMARY KEY (doc_type, financial_year)
 );
+
+
+CREATE TABLE IF NOT EXISTS `password_reset_token` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `token` VARCHAR(255) NOT NULL,
+    `user_id` BIGINT NOT NULL,
+    `expiry_date` DATETIME(6) NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `UK_token` (`token`),
+    KEY `FK_user_id` (`user_id`),
+    CONSTRAINT `FK_password_reset_user` FOREIGN KEY (`user_id`) REFERENCES `user_login` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 -- Dump completed on 2026-03-07 15:13:56
 

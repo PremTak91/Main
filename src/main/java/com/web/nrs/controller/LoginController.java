@@ -76,5 +76,47 @@ public class LoginController {
         return "redirect:/login";
     }
 
+    private final com.web.nrs.service.EmailService emailService;
+
+    @PostMapping("/forgot-password")
+    public @ResponseBody ResponseEntity<?> forgotPassword(@RequestBody java.util.Map<String, String> request, jakarta.servlet.http.HttpServletRequest httpRequest) {
+        String email = request.get("email");
+        try {
+            String token = loginService.generatePasswordResetToken(email);
+            if (token != null) {
+                String appUrl = httpRequest.getRequestURL().toString().replace(httpRequest.getRequestURI(), httpRequest.getContextPath());
+                String resetLink = appUrl + "/reset-password?token=" + token;
+                emailService.sendPasswordResetEmail(email, resetLink);
+                return ResponseEntity.ok("Password reset link sent to your email.");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with this email.");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing request: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/reset-password")
+    public String showResetPasswordPage(@org.springframework.web.bind.annotation.RequestParam("token") String token, org.springframework.ui.Model model) {
+        if (loginService.validatePasswordResetToken(token)) {
+            model.addAttribute("token", token);
+            return "resetPassword";
+        } else {
+            model.addAttribute("error", "Invalid or expired password reset token.");
+            return "login";
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public @ResponseBody ResponseEntity<?> resetPassword(@RequestBody java.util.Map<String, String> request) {
+        String token = request.get("token");
+        String newPassword = request.get("newPassword");
+        try {
+            loginService.updatePassword(token, newPassword);
+            return ResponseEntity.ok("Password successfully updated.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
 
 }
