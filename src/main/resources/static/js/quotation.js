@@ -1,4 +1,14 @@
 
+$(document).ready(function(){
+  const today = new Date();
+
+   const day = String(today.getDate()).padStart(2, '0');
+   const month = String(today.getMonth() + 1).padStart(2, '0');
+   const year = today.getFullYear();
+   const formattedDate = `${day}/${month}/${year}`;
+   $("#createdDate").val(formattedDate);
+
+});
 
 function calculateKw() {
     const panelWatt = parseInt($("#panelWatt").val()) || 0;
@@ -86,32 +96,143 @@ $(document).on("keyup", "#discount", function () {
           // Trigger standard application loader before initiating heavy PDF generation request
           if (typeof showLoader === "function") showLoader();
 
+          // ── Helper: safely hide the loader ───────────────────────────────
+          function safeHideLoader() {
+              if (typeof hideLoader === "function") hideLoader();
+          }
+
+          // ── Detect Android WebView (Replit APK wraps the site in WebView) ──
+          // WebView UA contains "wv" flag, or carries "Version/x.x" alongside "Android"
+          // without being a standalone browser.
+          function isAndroidWebView() {
+              var ua = navigator.userAgent || "";
+              return /Android/.test(ua) && (/wv\b/.test(ua) || /Version\/[\d.]+/.test(ua));
+          }
+
+          // ── Handle the PDF blob across all environments ───────────────────
+          //
+          // 3 distinct paths are needed because each environment handles blobs differently:
+          //
+          //  1. Android WebView (Replit APK):
+          //     • blob: URLs → unsupported / restricted
+          //     • window.location.href = "data:..." → blocked since Chrome 66 / Android API 21+
+          //     • Correct fix: create a hidden <a href="data:..." download> and .click() it;
+          //       Android routes the data URI to the system PDF viewer via an Intent.
+          //
+          //  2. Mobile browser (Chrome for Android, Safari iOS — NOT WebView):
+          //     • window.open(blobUrl, "_blank") → works; browser's built-in PDF viewer opens.
+          //
+          //  3. Desktop browser:
+          //     • Standard blob anchor download, then page reload to reset the sequence number.
+          //
+          function handlePdfBlob(blob, pdfFilename) {
+
+              if (isAndroidWebView()) {
+                  // Path 1 — Android WebView
+                  // Keep the loader visible during the (async) FileReader conversion so the user
+                  // has feedback while the large PDF blob is being converted to base64.
+                  var reader = new FileReader();
+
+                  reader.onloadend = function () {
+                      // Now we have the base64 data URI — hide loader just before handing off
+                      safeHideLoader();
+                      var base64data = reader.result; // "data:application/pdf;base64,..."
+
+                      // Use a hidden anchor + .click() instead of window.location.href = data:
+                      // Navigating to a data: URI is blocked in Chrome-based WebViews (API 21+)
+                      // but an anchor click triggers the Android Intent chooser (PDF viewer).
+                      var a = document.createElement("a");
+                      a.href = base64data;
+                      a.download = pdfFilename;
+                      a.style.display = "none";
+                      document.body.appendChild(a);
+                      a.click();
+                      // Small delay before removing the anchor to allow the Intent to fire
+                      setTimeout(function () { document.body.removeChild(a); }, 2000);
+                  };
+
+                  reader.onerror = function () {
+                      safeHideLoader();
+                      alert("Could not prepare the PDF. Please try again.");
+                  };
+
+                  reader.readAsDataURL(blob);
+
+              } else {
+                  // Path 2 & 3 — standard browser (mobile or desktop)
+                  var url = window.URL.createObjectURL(blob);
+                  var isMobileBrowser = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+                  if (isMobileBrowser) {
+                      // Path 2 — mobile browser: open PDF in a new tab
+                      safeHideLoader();
+                      var newTab = window.open(url, "_blank");
+
+                      if (newTab) {
+                          // Revoke after the new tab has had time to read the blob
+                          setTimeout(function () {
+                              window.URL.revokeObjectURL(url);
+                              location.reload(); // reset quotation number for next use
+                          }, 5000);
+                      } else {
+                          // Pop-up was blocked — show a tappable link as fallback
+                          var link = document.createElement("a");
+                          link.href = url;
+                          link.target = "_blank";
+                          link.rel = "noopener";
+                          link.textContent = "Tap here to open your PDF";
+                          link.style.cssText = [
+                              "display:block",
+                              "margin:20px auto",
+                              "padding:14px 20px",
+                              "font-size:16px",
+                              "font-weight:600",
+                              "color:#fff",
+                              "background:#0d6efd",
+                              "border-radius:8px",
+                              "text-align:center",
+                              "text-decoration:none",
+                              "max-width:320px"
+                          ].join(";");
+                          document.body.insertBefore(link, document.body.firstChild);
+                          // Revoke the blob URL only after a long delay so tapping still works
+                          setTimeout(function () { window.URL.revokeObjectURL(url); }, 60000);
+                      }
+
+                  } else {
+                      // Path 3 — desktop: trigger file download then reload
+                      safeHideLoader();
+                      var link = document.createElement("a");
+                      link.href = url;
+                      link.download = pdfFilename;
+                      link.style.display = "none";
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      setTimeout(function () {
+                          window.URL.revokeObjectURL(url);
+                          location.reload(); // reset quotation number for next use
+                      }, 1500);
+                  }
+              }
+          }
+
           $.ajax({
               type: "POST",
-              url: "/NRS/quts", // Keep the exact URL as requested
+              url: "/NRS/quts",
               contentType: "application/json",
               data: JSON.stringify(formData),
-              xhrFields: {
-                  responseType: 'blob'
-              },
-              success: function(blob, status, xhr) {
-                  if (typeof hideLoader === "function") hideLoader();
-                  const link = document.createElement("a");
-                  const url = window.URL.createObjectURL(blob);
-                  link.href = url;
-                  link.download = filename;
-                  document.body.appendChild(link);
-                  link.click();
-                  window.URL.revokeObjectURL(url);
-                  location.reload();
+              xhrFields: { responseType: "blob" },
+              success: function(blob) {
+                  // NOTE: hideLoader is called INSIDE handlePdfBlob at the right moment
+                  // for each path (especially important for the async FileReader WebView path).
+                  var pdfFilename = filename.endsWith(".pdf") ? filename : filename + ".pdf";
+                  handlePdfBlob(blob, pdfFilename);
               },
               error: function(xhr, status, error) {
-                  if (typeof hideLoader === "function") hideLoader();
-                  // Use a custom modal or message box instead of alert()
-                  // Example: console.error("Error downloading PDF:", error);
-                  // For a simple in-page message:
-                  let errorMessage = "Error downloading PDF: " + (error || "Unknown error");
-                  alert(errorMessage); // Temporarily using alert as per original logic, but recommended to use custom modal.
+                  safeHideLoader();
+                  var errorMessage = "Error generating PDF: " + (error || "Unknown error");
+                  alert(errorMessage);
               }
           });
       });

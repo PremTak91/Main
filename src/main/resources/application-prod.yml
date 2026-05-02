@@ -10,6 +10,20 @@ spring:
     static-path-pattern: /**
   thymeleaf:
     cache: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: nrssolarsolution@gmail.com
+    password: NRS@Dream786
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
 
   datasource:
     url: ${DB_URL}
@@ -55,3 +69,5 @@ entitymanager:
 jwt:
   secret: NRSSolarSolutions@Dreams05122020!
   expiration: 86400000
+
+
