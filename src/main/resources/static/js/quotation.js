@@ -88,10 +88,11 @@ $(document).on("keyup", "#discount", function () {
               effectivePrice:       parseFloat($("#effectivePrice").val()),
               submittedBy:          $("#submittedByName").val(),
               submittedNumber:      $("#submittedNumber").val(),
-              createdDate:          $("#createdDate").val(),
+              quotationDate:          $("#createdDate").val(),
               discountAmount:       $("#discountAmount").val(),
               pdfType:              $("#pdfType").val(),
-              panelWatt:            $("#panelWatt").val()
+              panelWatt:            $("#panelWatt").val(),
+              noOfPanels:           $("#noOfPanels").val(),
           };
 
           // Show loader for the entire duration of PDF generation

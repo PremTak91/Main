@@ -505,7 +505,7 @@ public class QuotationServiceImpl implements QuotationService {
 
         // Banner Bottom Text
         txt(cb, Element.ALIGN_LEFT, new Phrase( q.getPanelWatt() + " + Wp | BIFACIAL", fWhiteBold(12)), rx, bBot + 30);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Topcon X " + q.getNoOfPanels() + " PANEL | Module", fLight(11)), rx, bBot + 12);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Number of nodes = " + q.getNoOfPanels() + " PANELS | Module", fLight(11)), rx, bBot + 12);
 
         // 6. Right Side White Space (Dynamic Luxury Panel Chips)
         float wy = 430; // Base Y shifted upwards into the rich clear space below banner
@@ -855,23 +855,23 @@ public class QuotationServiceImpl implements QuotationService {
         float emiSecY = roiY - 36 - rcH - 16;
         float ecH = 74; // Slightly reduced height
 
-        // EMI comparison
-
-        if(isResidential){
-
-            fillRound(cb, PRIMARY, 30, emiSecY - 24, PW - 60, 30, 6);
-            txt(cb, Element.ALIGN_LEFT,
-                    new Phrase("  EMI & PAYMENT OPTIONS", fWhiteBold(10)), 38, emiSecY - 8);
-            float ecW = (PW - 60) / 2f - 5;
-            drawEmiCard(cb, 30,            emiSecY - 36 - ecH, ecW, ecH,
-                    "EMI OPTION", q.getEmiOption(),
-                    "Flexible 12-60 month tenure\nZero-cost EMI via NBFCs\nNo hidden charges", ORANGE);
-            drawEmiCard(cb, 30 + ecW + 10, emiSecY - 36 - ecH, ecW, ecH,
-                    "DIRECT PAYMENT BENEFIT", "Save Rs.12,000 Extra",
-                    "One-time payment discount\nFastest installation slot\nPriority subsidy processing", PRIMARY);
-
-
-        }else{
+//        // EMI comparison
+//
+//        if(isResidential){
+//
+//            fillRound(cb, PRIMARY, 30, emiSecY - 24, PW - 60, 30, 6);
+//            txt(cb, Element.ALIGN_LEFT,
+//                    new Phrase("  EMI & PAYMENT OPTIONS", fWhiteBold(10)), 38, emiSecY - 8);
+//            float ecW = (PW - 60) / 2f - 5;
+//            drawEmiCard(cb, 30,            emiSecY - 36 - ecH, ecW, ecH,
+//                    "EMI OPTION", q.getEmiOption(),
+//                    "Flexible 12-60 month tenure\nZero-cost EMI via NBFCs\nNo hidden charges", ORANGE);
+//            drawEmiCard(cb, 30 + ecW + 10, emiSecY - 36 - ecH, ecW, ecH,
+//                    "DIRECT PAYMENT BENEFIT", "Save Rs.12,000 Extra",
+//                    "One-time payment discount\nFastest installation slot\nPriority subsidy processing", PRIMARY);
+//
+//
+//        }else{
 
             fillRound(cb, PRIMARY, 30, emiSecY - 24, PW - 60, 30, 6);
             txt(cb, Element.ALIGN_LEFT,
@@ -884,7 +884,7 @@ public class QuotationServiceImpl implements QuotationService {
                     "Per Kilowatt Price(Including GST)", "28,314",
                     "", PRIMARY);
 
-        }
+
 
 
 
