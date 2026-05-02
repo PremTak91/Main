@@ -32,6 +32,7 @@ h1, h2, h3, h4, h5, h6 {
 .dashboard-wrapper {
     display: flex;
     width: 100%;
+    flex-grow: 1;
 }
 
 /* Sidebar Styling - This applies to all screen sizes initially */
@@ -266,6 +267,8 @@ h1, h2, h3, h4, h5, h6 {
         .btn-primary {
             background-color: #6a1b9a; /* Deep Purple - Accent color for button */
             border-color: #6a1b9a;
+        }
+        .right-section .btn-primary {
             width: 100%; /* Make button full width */
             padding: 0.75rem; /* Larger button padding */
             font-size: 1.1rem;
