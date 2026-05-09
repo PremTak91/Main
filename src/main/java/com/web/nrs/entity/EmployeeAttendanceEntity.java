@@ -24,6 +24,10 @@ public class EmployeeAttendanceEntity {
     @Column(name = "employee_id")
     private Long employeeId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_id", insertable = false, updatable = false)
+    private EmployeeEntity employee;
+
     @Column(name = "in_time")
     private LocalDateTime inTime;
 
