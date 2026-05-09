@@ -110,77 +110,22 @@ $(document).on("keyup", "#discount", function () {
           var ua = navigator.userAgent || "";
           var isMobileDevice = /Android|iPhone|iPad|iPod/i.test(ua);
 
-          if (isMobileDevice) {
-              // ════════════════════════════════════════════════════════════════
-              // MOBILE PATH  (Android WebView / Chrome for Android / Safari iOS)
-              // ════════════════════════════════════════════════════════════════
-              //
-              // WHY this approach:
-              //   Every client-side download technique (blob anchor, data-URI
-              //   anchor, FileReader + navigate) ultimately calls Android's
-              //   DownloadManager, which requires WRITE_EXTERNAL_STORAGE.
-              //   Replit APK manifests never include this permission → the OS
-              //   shows "Permission not granted" and the app may crash.
-              //
-              // HOW it works:
-              //   1. POST form JSON to /quts/token  →  server generates the PDF,
-              //      stores it in memory with a one-time UUID token, returns JSON
-              //      { token, viewUrl }.
-              //   2. Navigate window.location.href to viewUrl.
-              //   3. The WebView makes a normal GET page-load request; the JWT
-              //      cookie is sent automatically.
-              //   4. Server responds with Content-Disposition: inline → Android
-              //      opens the PDF in the system viewer (Intent) — ZERO storage
-              //      permissions required, ZERO crashes.
-              //
-              $.ajax({
-                  type:        "POST",
-                  url:         "/NRS/quts/token",
-                  contentType: "application/json",
-                  data:        JSON.stringify(formData),
-                  success: function(response) {
-                      safeHideLoader();
-                      if (response && response.viewUrl) {
-                          // Navigate → WebView loads the PDF like a normal page
-                          window.location.href = response.viewUrl + "?filename=" + encodeURIComponent(pdfFilename);
-                          setTimeout(function() {
-                              location.reload(); // reset quotation number for next use
-                          }, 1500);
-                      } else {
-                          alert("Could not generate PDF. Server returned an unexpected response.");
-                      }
-                  },
-                  error: function(xhr) {
-                      safeHideLoader();
-                      var msg = "Error generating PDF.";
-                      try {
-                          var json = JSON.parse(xhr.responseText);
-                          if (json && json.error) msg = json.error;
-                      } catch(e) { /* ignore */ }
-                      alert(msg);
-                  }
-              });
-
-          } else {
-              // ════════════════════════════════════════════════════════════════
-              // DESKTOP PATH  (Chrome, Firefox, Edge, Safari on macOS / Windows)
-              // ════════════════════════════════════════════════════════════════
-              //
-              // Desktop browsers support blob:// URLs and honour the HTML
-              // download attribute → trigger a direct file-save dialog.
-              //
-              $.ajax({
-                  type:        "POST",
-                  url:         "/NRS/quts",
-                  contentType: "application/json",
-                  data:        JSON.stringify(formData),
-                  xhrFields:   { responseType: "blob" },
-                  success: function(blob) {
-                      safeHideLoader();
-                      var url  = window.URL.createObjectURL(blob);
+          $.ajax({
+              type:        "POST",
+              url:         "/NRS/quts",
+              contentType: "application/json",
+              data:        JSON.stringify(formData),
+              xhrFields:   { responseType: "blob" },
+              success: function(blob) {
+                  safeHideLoader();
+                  var file = new File([blob], pdfFilename, { type: "application/pdf" });
+                  
+                  // Helper for traditional download
+                  function downloadBlob(blobData, filename) {
+                      var url  = window.URL.createObjectURL(blobData);
                       var link = document.createElement("a");
                       link.href     = url;
-                      link.download = pdfFilename;
+                      link.download = filename;
                       link.style.display = "none";
                       document.body.appendChild(link);
                       link.click();
@@ -189,13 +134,35 @@ $(document).on("keyup", "#discount", function () {
                           window.URL.revokeObjectURL(url);
                           location.reload(); // reset quotation number for next use
                       }, 1500);
-                  },
-                  error: function(xhr, status, error) {
-                      safeHideLoader();
-                      alert("Error generating PDF: " + (error || "Unknown error"));
                   }
-              });
-          }
+
+                  // ════════════════════════════════════════════════════════════════
+                  // MOBILE PATH (Web Share API)
+                  // ════════════════════════════════════════════════════════════════
+                  if (isMobileDevice && navigator.canShare && navigator.canShare({ files: [file] })) {
+                      navigator.share({
+                          files: [file],
+                          title: 'Solar Quotation',
+                          text: 'Here is your solar quotation.'
+                      }).then(() => {
+                          setTimeout(function() { location.reload(); }, 1500);
+                      }).catch((error) => {
+                          console.error('Sharing failed', error);
+                          // Fallback to traditional download if sharing fails or is cancelled
+                          downloadBlob(blob, pdfFilename);
+                      });
+                  } else {
+                      // ════════════════════════════════════════════════════════════════
+                      // DESKTOP PATH (Traditional Blob Download)
+                      // ════════════════════════════════════════════════════════════════
+                      downloadBlob(blob, pdfFilename);
+                  }
+              },
+              error: function(xhr, status, error) {
+                  safeHideLoader();
+                  alert("Error generating PDF: " + (error || "Unknown error"));
+              }
+          });
       });
   });
 
