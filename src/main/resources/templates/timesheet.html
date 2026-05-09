@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NRS Solar Solution - Timesheet</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+
+    <div class="dashboard-wrapper">
+
+        <div th:replace="fragments/sidebar :: sidebarMenu"> </div>
+
+        <div class="d-flex flex-column w-100">
+
+            <div th:replace="fragments/header :: headerPart"> </div>
+
+            <main class="main-content-area flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0">Employee Timesheet</h3>
+                </div>
+
+                <div class="card p-4 mb-4">
+                    <form th:action="@{/timesheet}" method="get" id="searchForm" class="mb-3">
+                        <input type="hidden" name="page" th:value="0" id="pageInput">
+                        <input type="hidden" name="size" th:value="${pageSize}" id="sizeInput">
+                        <input type="hidden" name="sortBy" th:value="${sortBy}">
+                        <input type="hidden" name="sortDir" th:value="${sortDir}">
+                        
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-3" th:if="${isAdmin}">
+                                <label for="employeeName" class="form-label">Employee Name</label>
+                                <input type="text" class="form-control" id="employeeName" name="employeeName" th:value="${searchName}" placeholder="Search Name">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="startDate" class="form-label">From Date</label>
+                                <input type="date" class="form-control" id="startDate" name="startDate" th:value="${startDate}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="endDate" class="form-label">To Date</label>
+                                <input type="date" class="form-control" id="endDate" name="endDate" th:value="${endDate}">
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                                <a th:href="@{/timesheet}" class="btn btn-secondary ms-1"><i class="fas fa-undo"></i> Reset</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+                        <div class="d-flex align-items-center mb-2 mb-md-0">
+                            <label for="showEntries" class="form-label me-2 mb-0">Show</label>
+                            <select class="form-select form-select-sm" id="showEntries" style="width: auto;"
+                                onchange="changePageSize(this.value)">
+                                <option value="10" th:selected="${pageSize == 10}">10</option>
+                                <option value="25" th:selected="${pageSize == 25}">25</option>
+                                <option value="50" th:selected="${pageSize == 50}">50</option>
+                                <option value="100" th:selected="${pageSize == 100}">100</option>
+                            </select>
+                            <span class="ms-2">entries</span>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped align-middle" id="timesheetTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">No.</th>
+                                    <th scope="col">
+                                        <a th:href="@{/timesheet(page=${currentPage}, size=${pageSize}, sortBy='employee.firstName', sortDir=${sortBy == 'employee.firstName' ? reverseSortDir : 'asc'}, employeeName=${searchName}, startDate=${startDate}, endDate=${endDate})}"
+                                            class="text-decoration-none text-dark">
+                                            Employee Name <i th:classappend="${sortBy == 'employee.firstName'} ? (${sortDir == 'asc'} ? 'fa-sort-up text-primary' : 'fa-sort-down text-primary') : 'fa-sort text-muted'" class="fas ms-1"></i>
+                                        </a>
+                                    </th>
+                                    <th scope="col">
+                                        <a th:href="@{/timesheet(page=${currentPage}, size=${pageSize}, sortBy='attendanceDate', sortDir=${sortBy == 'attendanceDate' ? reverseSortDir : 'asc'}, employeeName=${searchName}, startDate=${startDate}, endDate=${endDate})}"
+                                            class="text-decoration-none text-dark">
+                                            Attendance Date <i th:classappend="${sortBy == 'attendanceDate'} ? (${sortDir == 'asc'} ? 'fa-sort-up text-primary' : 'fa-sort-down text-primary') : 'fa-sort text-muted'" class="fas ms-1"></i>
+                                        </a>
+                                    </th>
+                                    <th scope="col">In Time</th>
+                                    <th scope="col">Out Time</th>
+                                    <th scope="col">Working Hours</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col" th:if="${isAdmin}">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="timesheet, iterStat : ${timesheets}">
+                                    <td th:text="${(currentPage * pageSize) + iterStat.index + 1}">1</td>
+                                    <td th:text="${timesheet.employeeName}">Name</td>
+                                    <td th:text="${timesheet.attendanceDate != null ? #temporals.format(timesheet.attendanceDate, 'MM/dd/yyyy') : '-'}">Date</td>
+                                    <td th:text="${timesheet.inTime != null ? #temporals.format(timesheet.inTime, 'hh:mm a') : '-'}">In Time</td>
+                                    <td th:text="${timesheet.outTime != null ? #temporals.format(timesheet.outTime, 'hh:mm a') : '-'}">Out Time</td>
+                                    <td th:text="${timesheet.workingHours != null ? timesheet.workingHours : '-'}">Hours</td>
+                                    <td>
+                                        <span th:if="${timesheet.status == 'PRESENT'}" class="badge bg-success">Present</span>
+                                        <span th:if="${timesheet.status == 'PARTIAL'}" class="badge bg-warning text-dark">Partial</span>
+                                        <span th:if="${timesheet.status == 'IN_PROGRESS'}" class="badge bg-info">In Progress</span>
+                                        <span th:if="${timesheet.status != 'PRESENT' and timesheet.status != 'PARTIAL' and timesheet.status != 'IN_PROGRESS'}" class="badge bg-secondary" th:text="${timesheet.status}">Status</span>
+                                    </td>
+                                    <td th:if="${isAdmin}">
+                                        <button class="btn btn-sm btn-info text-white" title="Edit"
+                                            th:data-id="${timesheet.id}"
+                                            th:data-in="${timesheet.inTime != null ? timesheet.inTime : ''}"
+                                            th:data-out="${timesheet.outTime != null ? timesheet.outTime : ''}"
+                                            onclick="editTimesheet(this)"><i
+                                                class="fas fa-edit"></i></button>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(timesheets)}">
+                                    <td th:colspan="${isAdmin ? 8 : 7}" class="text-center">No attendance records found</td>
+                                </tr>
+                                <tr th:if="${totalWorkingHours != null}">
+                                    <td th:colspan="${isAdmin ? 5 : 4}" class="text-end fw-bold">Total Working Hours:</td>
+                                    <td class="fw-bold text-primary" th:text="${totalWorkingHours}">00:00</td>
+                                    <td th:colspan="${isAdmin ? 2 : 2}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            Showing <span th:text="${totalItems > 0 ? (currentPage * pageSize) + 1 : 0}">0</span>
+                            to <span
+                                th:text="${(currentPage + 1) * pageSize > totalItems ? totalItems : (currentPage + 1) * pageSize}">0</span>
+                            of <span th:text="${totalItems}">0</span> entries
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination mb-0">
+                                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+                                    <a class="page-link" href="javascript:void(0)" th:onclick="'goToPage(' + (${currentPage - 1}) + ')'">Previous</a>
+                                </li>
+                                <th:block th:each="i : ${#numbers.sequence(0, totalPages > 0 ? totalPages - 1 : 0)}">
+                                    <li class="page-item" th:if="${i >= currentPage - 2 and i <= currentPage + 2}"
+                                        th:classappend="${i == currentPage} ? 'active'">
+                                        <a class="page-link" href="javascript:void(0)" th:onclick="'goToPage(' + ${i} + ')'" th:text="${i + 1}">1</a>
+                                    </li>
+                                </th:block>
+                                <li class="page-item" th:classappend="${currentPage >= totalPages - 1} ? 'disabled'">
+                                    <a class="page-link" href="javascript:void(0)" th:onclick="'goToPage(' + (${currentPage + 1}) + ')'">Next</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </main>
+
+            <div th:replace="fragments/footer :: footerPart"> </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editTimesheetModal" tabindex="-1" aria-labelledby="editTimesheetModalLabel" aria-hidden="true" th:if="${isAdmin}">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTimesheetModalLabel">Edit Timesheet</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="timesheetForm">
+                        <input type="hidden" id="timesheetId" value="">
+                        <div class="mb-3">
+                            <label for="inTime" class="form-label">In Time</label>
+                            <input type="datetime-local" class="form-control" id="inTime" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="outTime" class="form-label">Out Time</label>
+                            <input type="datetime-local" class="form-control" id="outTime">
+                            <small class="text-muted">Leave blank if still working.</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-primary" onclick="saveTimesheet()">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="fragments/commonUI :: loader"></div>
+    <div th:replace="fragments/commonUI :: toaster"></div>
+
+    <div th:replace="~{fragments/commonJquery :: commonJquery}"></div>
+    <script th:src="@{/js/timesheet.js}"></script>
+</body>
+
+</html>
