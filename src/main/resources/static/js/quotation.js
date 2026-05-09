@@ -118,53 +118,22 @@ $(document).on("keyup", "#discount", function () {
               xhrFields:   { responseType: "blob" },
               success: function(blob) {
                   safeHideLoader();
-                  var file = new File([blob], pdfFilename, { type: "application/pdf" });
-                  
                   // Helper for traditional download
                   function downloadBlob(blobData, filename) {
                       const url = window.URL.createObjectURL(blobData);
                       const a = document.createElement("a");
-                      a.style.display = "none";
                       a.href = url;
                       a.download = filename;
                       document.body.appendChild(a);
                       a.click();
+                      document.body.removeChild(a);
                       setTimeout(() => {
                           window.URL.revokeObjectURL(url);
-                          document.body.removeChild(a);
                       }, 1000);
                   }
 
-
-                  // MOBILE + ANDROID WEBVIEW
-                  if (isMobileDevice && navigator.share && navigator.canShare &&
-                      navigator.canShare({ files: [file] })) {
-                  
-                      navigator.share({
-                          files: [file],
-                          title: 'Solar Quotation',
-                          text: 'Here is your solar quotation.'
-                      })
-                      .then(() => {
-                          console.log("Share success");
-                          // DO NOT immediately reload
-                          // Wait longer OR remove reload completely
-                          setTimeout(() => {
-                              // optional reload
-                              // location.reload();
-                          }, 5000);
-                      })
-                      .catch((error) => {
-                          console.error('Sharing failed:', error);
-                          // fallback download
-                          downloadBlob(blob, pdfFilename);
-                      });
-
-
-                  } else {
-                      // DESKTOP + FALLBACK
-                      downloadBlob(blob, pdfFilename);
-                  }
+                  // DIRECT DOWNLOAD FOR ALL DEVICES
+                  downloadBlob(blob, pdfFilename);
               },
               error: function(xhr, status, error) {
                   safeHideLoader();
