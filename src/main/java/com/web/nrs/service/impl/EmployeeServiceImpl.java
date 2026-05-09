@@ -2,6 +2,7 @@ package com.web.nrs.service.impl;
 
 import com.web.nrs.DTO.EmployeeDTO;
 import com.web.nrs.DTO.EmployeeListDTO;
+import com.web.nrs.DTO.TimesheetDTO;
 import com.web.nrs.entity.*;
 import com.web.nrs.model.EmployeeRegistrationRequest;
 import com.web.nrs.repository.*;
@@ -221,10 +222,21 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public String punchIn(Long employeeId) {
-        // Check if already punched in (active session)
-        Optional<EmployeeAttendanceEntity> activeSession = employeeAttendanceRepository.findTopByEmployeeIdAndOutTimeIsNullOrderByInTimeDesc(employeeId);
-        if (activeSession.isPresent()) {
-            return "ALREADY_IN";
+        // Check if there's already a session for today
+        Optional<EmployeeAttendanceEntity> todaysSession = employeeAttendanceRepository.findByEmployeeIdAndAttendanceDate(employeeId, LocalDate.now());
+        
+        if (todaysSession.isPresent()) {
+            EmployeeAttendanceEntity attendance = todaysSession.get();
+            if (attendance.getOutTime() == null) {
+                return "ALREADY_IN";
+            } else {
+                // User punched out earlier today, resume session
+                attendance.setOutTime(null);
+                attendance.setWorkingHours(null);
+                attendance.setStatus("IN_PROGRESS");
+                employeeAttendanceRepository.save(attendance);
+                return "PUNCHED_IN";
+            }
         }
 
         EmployeeAttendanceEntity attendance = EmployeeAttendanceEntity.builder()
@@ -343,6 +355,92 @@ public class EmployeeServiceImpl implements EmployeeService {
         // Set status to 2 (Inactive)
         employee.setEmpStatus(2);
         employeeRepository.save(employee);
+        return true;
+    }
+
+    @Override
+    public Page<TimesheetDTO> getTimesheetRecords(Long employeeId, String employeeName, LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        Page<EmployeeAttendanceEntity> attendancePage = employeeAttendanceRepository.findFilteredAttendance(
+                employeeId, employeeName, startDate, endDate, pageable);
+
+        return attendancePage.map(attendance -> {
+            String empName = "-";
+            if (attendance.getEmployee() != null) {
+                empName = attendance.getEmployee().getFullName();
+            } else if (attendance.getEmployeeId() != null) {
+                empName = employeeRepository.findById(attendance.getEmployeeId())
+                        .map(EmployeeEntity::getFullName)
+                        .orElse("-");
+            }
+
+            return TimesheetDTO.builder()
+                    .id(attendance.getId())
+                    .employeeName(empName)
+                    .inTime(attendance.getInTime())
+                    .outTime(attendance.getOutTime())
+                    .workingHours(attendance.getWorkingHours())
+                    .status(attendance.getStatus())
+                    .attendanceDate(attendance.getAttendanceDate())
+                    .build();
+        });
+    }
+
+    @Override
+    public String calculateTotalWorkingHours(Long employeeId, String employeeName, LocalDate startDate, LocalDate endDate) {
+        List<EmployeeAttendanceEntity> records = employeeAttendanceRepository.findAllFilteredAttendance(
+                employeeId, employeeName, startDate, endDate);
+
+        long totalMinutes = 0;
+        for (EmployeeAttendanceEntity record : records) {
+            String wh = record.getWorkingHours();
+            if (wh != null && wh.contains(":")) {
+                try {
+                    String[] parts = wh.split(":");
+                    long hours = Long.parseLong(parts[0]);
+                    long mins = Long.parseLong(parts[1]);
+                    totalMinutes += (hours * 60) + mins;
+                } catch (Exception e) {
+                    // Ignore parse errors for a specific row
+                }
+            }
+        }
+
+        long finalHours = totalMinutes / 60;
+        long finalMins = totalMinutes % 60;
+        return String.format("%02d:%02d", finalHours, finalMins);
+    }
+
+    @Override
+    @Transactional
+    public boolean editTimesheetRecord(Long timesheetId, LocalDateTime inTime, LocalDateTime outTime) {
+        EmployeeAttendanceEntity attendance = employeeAttendanceRepository.findById(timesheetId)
+                .orElseThrow(() -> new RuntimeException("Attendance record not found with id: " + timesheetId));
+
+        if (inTime != null) {
+            attendance.setInTime(inTime);
+        }
+        if (outTime != null) {
+            attendance.setOutTime(outTime);
+        }
+
+        if (attendance.getInTime() != null && attendance.getOutTime() != null) {
+            java.time.Duration duration = java.time.Duration.between(attendance.getInTime(), attendance.getOutTime());
+            long hours = duration.toHours();
+            long minutes = duration.toMinutesPart();
+            String workingHours = String.format("%02d:%02d", hours, minutes);
+            attendance.setWorkingHours(workingHours);
+
+            if (hours >= 8) {
+                attendance.setStatus("PRESENT");
+            } else {
+                attendance.setStatus("PARTIAL");
+            }
+        } else {
+            attendance.setWorkingHours(null);
+            attendance.setStatus("IN_PROGRESS");
+        }
+
+        employeeAttendanceRepository.save(attendance);
         return true;
     }
 }

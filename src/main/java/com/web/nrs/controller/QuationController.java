@@ -101,7 +101,7 @@ public class QuationController {
     // The token is consumed on first access so it cannot be replayed.
 
     @GetMapping("/view/{token}")
-    public ResponseEntity<byte[]> viewPdf(@PathVariable String token) {
+    public ResponseEntity<byte[]> viewPdf(@PathVariable String token, @RequestParam(required = false, defaultValue = "quotation.pdf") String filename) {
         byte[] pdfBytes = PDF_TOKEN_CACHE.remove(token); // single-use
         if (pdfBytes == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -110,8 +110,8 @@ public class QuationController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDisposition(ContentDisposition
-                .inline()
-                .filename("quotation.pdf")
+                .attachment()
+                .filename(filename)
                 .build());
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }

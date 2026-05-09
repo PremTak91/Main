@@ -1,7 +1,11 @@
 package com.web.nrs.repository;
 
 import com.web.nrs.entity.EmployeeAttendanceEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -22,4 +26,29 @@ public interface EmployeeAttendanceRepository extends JpaRepository<EmployeeAtte
     List<EmployeeAttendanceEntity> findByOutTimeIsNull();
 
     List<EmployeeAttendanceEntity> findByOutTimeIsNullAndInTimeBefore(java.time.LocalDateTime time);
+
+    @Query("SELECT a FROM EmployeeAttendanceEntity a " +
+           "WHERE (:employeeId IS NULL OR a.employeeId = :employeeId) " +
+           "AND (:employeeName IS NULL OR LOWER(a.employee.firstName) LIKE LOWER(CONCAT('%', :employeeName, '%')) " +
+           "     OR LOWER(a.employee.lastName) LIKE LOWER(CONCAT('%', :employeeName, '%'))) " +
+           "AND (:startDate IS NULL OR a.attendanceDate >= :startDate) " +
+           "AND (:endDate IS NULL OR a.attendanceDate <= :endDate)")
+    Page<EmployeeAttendanceEntity> findFilteredAttendance(
+            @Param("employeeId") Long employeeId,
+            @Param("employeeName") String employeeName,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate,
+            Pageable pageable);
+
+    @Query("SELECT a FROM EmployeeAttendanceEntity a " +
+           "WHERE (:employeeId IS NULL OR a.employeeId = :employeeId) " +
+           "AND (:employeeName IS NULL OR LOWER(a.employee.firstName) LIKE LOWER(CONCAT('%', :employeeName, '%')) " +
+           "     OR LOWER(a.employee.lastName) LIKE LOWER(CONCAT('%', :employeeName, '%'))) " +
+           "AND (:startDate IS NULL OR a.attendanceDate >= :startDate) " +
+           "AND (:endDate IS NULL OR a.attendanceDate <= :endDate)")
+    List<EmployeeAttendanceEntity> findAllFilteredAttendance(
+            @Param("employeeId") Long employeeId,
+            @Param("employeeName") String employeeName,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 }

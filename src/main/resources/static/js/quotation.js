@@ -142,7 +142,10 @@ $(document).on("keyup", "#discount", function () {
                       safeHideLoader();
                       if (response && response.viewUrl) {
                           // Navigate → WebView loads the PDF like a normal page
-                          window.location.href = response.viewUrl;
+                          window.location.href = response.viewUrl + "?filename=" + encodeURIComponent(pdfFilename);
+                          setTimeout(function() {
+                              location.reload(); // reset quotation number for next use
+                          }, 1500);
                       } else {
                           alert("Could not generate PDF. Server returned an unexpected response.");
                       }

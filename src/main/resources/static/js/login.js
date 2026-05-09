@@ -33,7 +33,7 @@ $(document).ready(function() {
                     localStorage.removeItem("rememberedPassword");
                 }
                 
-                hideLoader();
+                // hideLoader(); // Do not hide loader so it stays until page unloads
                 // Redirect to home or dashboard
                 window.location.href = "/NRS/home";
             },
