@@ -122,39 +122,50 @@ $(document).on("keyup", "#discount", function () {
                   
                   // Helper for traditional download
                   function downloadBlob(blobData, filename) {
-                      var url  = window.URL.createObjectURL(blobData);
-                      var link = document.createElement("a");
-                      link.href     = url;
-                      link.download = filename;
-                      link.style.display = "none";
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      setTimeout(function() {
+                      const url = window.URL.createObjectURL(blobData);
+                      const a = document.createElement("a");
+                      a.style.display = "none";
+                      a.href = url;
+                      a.download = filename;
+                      document.body.appendChild(a);
+                      a.click();
+                      setTimeout(() => {
                           window.URL.revokeObjectURL(url);
-                          location.reload(); // reset quotation number for next use
-                      }, 1500);
+                          document.body.removeChild(a);
+                      }, 1000);
                   }
 
-                  // ════════════════════════════════════════════════════════════════
-                  // MOBILE PATH (Web Share API)
-                  // ════════════════════════════════════════════════════════════════
-                  if (isMobileDevice && navigator.canShare && navigator.canShare({ files: [file] })) {
+                  const file = new File([blob], pdfFilename, {
+                      type: 'application/pdf'
+                  });
+
+                  // MOBILE + ANDROID WEBVIEW
+                  if (isMobileDevice && navigator.share && navigator.canShare &&
+                      navigator.canShare({ files: [file] })) {
+                  
                       navigator.share({
                           files: [file],
                           title: 'Solar Quotation',
                           text: 'Here is your solar quotation.'
-                      }).then(() => {
-                          setTimeout(function() { location.reload(); }, 1500);
-                      }).catch((error) => {
-                          console.error('Sharing failed', error);
-                          // Fallback to traditional download if sharing fails or is cancelled
+                      })
+                      .then(() => {
+                          console.log("Share success");
+                          // DO NOT immediately reload
+                          // Wait longer OR remove reload completely
+                          setTimeout(() => {
+                              // optional reload
+                              // location.reload();
+                          }, 5000);
+                      })
+                      .catch((error) => {
+                          console.error('Sharing failed:', error);
+                          // fallback download
                           downloadBlob(blob, pdfFilename);
                       });
+
+
                   } else {
-                      // ════════════════════════════════════════════════════════════════
-                      // DESKTOP PATH (Traditional Blob Download)
-                      // ════════════════════════════════════════════════════════════════
+                      // DESKTOP + FALLBACK
                       downloadBlob(blob, pdfFilename);
                   }
               },
