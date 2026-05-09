@@ -135,9 +135,6 @@ $(document).on("keyup", "#discount", function () {
                       }, 1000);
                   }
 
-                  const file = new File([blob], pdfFilename, {
-                      type: 'application/pdf'
-                  });
 
                   // MOBILE + ANDROID WEBVIEW
                   if (isMobileDevice && navigator.share && navigator.canShare &&
