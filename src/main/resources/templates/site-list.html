@@ -66,13 +66,6 @@
         .dropzone .dz-message {
             margin: 0 !important;
             font-weight: 500;
-            pointer-events: none; /* Let clicks pass through to parent */
-        }
-        .dropzone * {
-            pointer-events: none; /* Ensure children don't block clicks */
-        }
-        .dropzone {
-            pointer-events: auto !important;
         }
     </style>
 </head>
@@ -292,8 +285,11 @@
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="currentPhotoSiteId">
-                    <div id="sitePhotoDropzone" class="dropzone mb-4 rounded border-primary border-2" action="/NRS/sites/0/photos">
-                        <div class="dz-message">
+                    <div id="sitePhotoDropzone" class="dropzone mb-4 rounded border-primary border-2 position-relative" action="/NRS/sites/0/photos">
+                        <!-- Native input overlay for maximum mobile compatibility -->
+                        <input type="file" id="sitePhotoInput" multiple accept="image/*" 
+                               style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; z-index: 10;">
+                        <div class="dz-message" style="position: relative; z-index: 1;">
                             <i class="fas fa-cloud-upload-alt fs-1 text-primary mb-2"></i><br>
                             <span>Click or drop photos here</span>
                         </div>
