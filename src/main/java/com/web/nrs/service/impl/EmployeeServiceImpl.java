@@ -40,6 +40,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final UserRoleRepository userRoleRepository;
     private final DesignationRepository designationRepository;
     private final EmployeeAttendanceRepository employeeAttendanceRepository;
+    private final EmployeeMainterRepository employeeMainterRepository;
 
     @Override
     public Page<EmployeeListDTO> getAllEmployees(Pageable pageable) {
@@ -110,13 +111,26 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setPhoneNo(employeeDetails.getPhoneNumber());
         employee.setDesignationId(employeeDetails.getDesignationId());
         employee.setDateOfJoining(employeeDetails.getDateOfJoining());
+        employee.setEmpMainterId(employeeDetails.getEmpMainterId());
+        employee.setBranch(employeeDetails.getBranch());
         employee.setEmpStatus(1);
         employee.setAuditTimeStamp(LocalDateTime.now());
         employee.setPreviousExperience(employeeDetails.getPreviousExperience());
 
         employee = employeeRepository.save(employee);
 
-        // 2️⃣ Save Login
+        // 2️⃣ Save Maintainer Assignment (for leave approval)
+        if (employee.getEmpMainterId() != null) {
+            EmployeeMainterEntity leaveRole = EmployeeMainterEntity.builder()
+                    .designationId(employee.getId())
+                    .mainterId(employee.getEmpMainterId())
+                    .active(1)
+                    .auditTimestamp(LocalDateTime.now())
+                    .build();
+            employeeMainterRepository.save(leaveRole);
+        }
+
+        // 3️⃣ Save Login
         LoginEntity login = new LoginEntity();
         login.setId(employee.getId());
         login.setUsername(employeeDetails.getEmail());
@@ -125,21 +139,21 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         login = loginRepository.save(login);
 
-        // 3️⃣ Fetch Role
+        // 4️⃣ Fetch Role
         RoleEntity role = roleRepository.findById(employeeDetails.getRoleId())
                 .orElseThrow(() -> new RuntimeException("Role not found"));
 
-        // 4️⃣ Create Composite Key
+        // 5️⃣ Create Composite Key
         UserRoleId userRoleId = new UserRoleId(login.getId(), role.getId());
 
-        // 5️⃣ Create UserRole Mapping
+        // 6️⃣ Create UserRole Mapping
         UserRoleEntity userRole = new UserRoleEntity();
         userRole.setId(userRoleId);
         userRole.setUser(login);     // REQUIRED for @MapsId
         userRole.setRoles(role);     // REQUIRED for @MapsId
 
-        // 6️⃣ Save Mapping
-        UserRoleEntity userRoleEntity = userRoleRepository.save(userRole);
+        // 7️⃣ Save Mapping
+        userRoleRepository.save(userRole);
         return true;
     }
 
@@ -355,6 +369,25 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
         if (request.getEmpMainterId() != null) {
             employee.setEmpMainterId(request.getEmpMainterId());
+            
+            // Sync with EmployeeMainterEntity (Leave Approver)
+            Optional<EmployeeMainterEntity> existingMainter = employeeMainterRepository
+                    .findByDesignationIdAndActiveNot(id, 2);
+            
+            if (existingMainter.isPresent()) {
+                EmployeeMainterEntity mainter = existingMainter.get();
+                mainter.setMainterId(request.getEmpMainterId());
+                mainter.setAuditTimestamp(LocalDateTime.now());
+                employeeMainterRepository.save(mainter);
+            } else {
+                EmployeeMainterEntity newMainter = EmployeeMainterEntity.builder()
+                        .designationId(id)
+                        .mainterId(request.getEmpMainterId())
+                        .active(1)
+                        .auditTimestamp(LocalDateTime.now())
+                        .build();
+                employeeMainterRepository.save(newMainter);
+            }
         }
         if (request.getEmpStatus() != null) {
             employee.setEmpStatus(request.getEmpStatus());

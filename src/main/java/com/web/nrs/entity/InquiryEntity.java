@@ -45,6 +45,9 @@ public class InquiryEntity {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "created_by")
+    private Long createdBy;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

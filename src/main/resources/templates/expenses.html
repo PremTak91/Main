@@ -127,10 +127,12 @@
                                         Date</td>
                                     <td th:text="${expense.expenseType != null ? expense.expenseType : '-'}">Type</td>
                                     <td>
-                                        <button class="btn btn-sm btn-info text-white me-1" title="Edit"
+                                        <button th:if="${isAdmin or (expense.createdBy == currentEmployeeId and expense.createdAt.toLocalDate().isEqual(today))}"
+                                            class="btn btn-sm btn-info text-white me-1" title="Edit"
                                             th:onclick="'editExpense(' + ${expense.id} + ')'"><i
                                                 class="fas fa-edit"></i></button>
-                                        <button class="btn btn-sm btn-danger" title="Delete"
+                                        <button th:if="${isAdmin}"
+                                            class="btn btn-sm btn-danger" title="Delete"
                                             th:onclick="'deleteExpense(' + ${expense.id} + ')'"><i
                                                 class="fas fa-trash-alt"></i></button>
                                     </td>

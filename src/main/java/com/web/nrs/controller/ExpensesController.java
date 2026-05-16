@@ -14,8 +14,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Controller
 @RequestMapping("/expenses")
@@ -23,6 +26,8 @@ import java.util.Map;
 public class ExpensesController {
 
     private final ExpensesService expensesService;
+    private final com.web.nrs.service.EmployeeService employeeService;
+    private final com.web.nrs.repository.EmployeeRepository employeeRepository;
 
     @GetMapping
     public String viewExpensePage(
@@ -33,9 +38,28 @@ public class ExpensesController {
             Model model
     ) {
         Pageable pageable = PaginationUtils.createPageable(page, size, sortBy, sortDir);
-        Page<ExpensesEntity> expensesPage = expensesService.getAllExpenses(pageable);
+        
+        // Security check
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPERADMIN"));
+        
+        Long employeeId = employeeService.getEmployeeByEmailId(auth.getName())
+                    .map(com.web.nrs.entity.EmployeeEntity::getId)
+                    .orElse(0L);
+
+        Page<ExpensesEntity> expensesPage;
+        if (isAdmin) {
+            expensesPage = expensesService.getAllExpenses(pageable);
+        } else {
+            // Non-admin can only see their own entries from today
+            expensesPage = expensesService.getExpensesByCreatorAndDate(employeeId, LocalDate.now().atStartOfDay(), pageable);
+        }
 
         model.addAttribute("expenses", expensesPage.getContent());
+        model.addAttribute("isAdmin", isAdmin);
+        model.addAttribute("currentEmployeeId", employeeId);
+        model.addAttribute("today", LocalDate.now());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", expensesPage.getTotalPages());
         model.addAttribute("totalItems", expensesPage.getTotalElements());
@@ -62,7 +86,13 @@ public class ExpensesController {
     @ResponseBody
     public ResponseEntity<ApiResponse> createExpense(@RequestBody Map<String, Object> request) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Long employeeId = employeeService.getEmployeeByEmailId(auth.getName())
+                    .map(com.web.nrs.entity.EmployeeEntity::getId)
+                    .orElseThrow(() -> new RuntimeException("Logged in employee not found"));
+
             ExpensesEntity expense = mapRequestToEntity(request, new ExpensesEntity());
+            expense.setCreatedBy(employeeId);
             expensesService.saveExpense(expense);
             return ResponseEntity.ok(ApiResponse.success("Expense added successfully"));
         } catch (Exception e) {
@@ -76,7 +106,26 @@ public class ExpensesController {
             @PathVariable Long id,
             @RequestBody Map<String, Object> request) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPERADMIN"));
+            
             ExpensesEntity existing = expensesService.getExpenseById(id);
+            
+            if (!isAdmin) {
+                Long employeeId = employeeService.getEmployeeByEmailId(auth.getName())
+                        .map(com.web.nrs.entity.EmployeeEntity::getId)
+                        .orElse(0L);
+                
+                // Only allow edit if it's their own entry and it was created today
+                if (!existing.getCreatedBy().equals(employeeId)) {
+                    return ResponseEntity.status(403).body(ApiResponse.error("You can only edit your own entries"));
+                }
+                if (existing.getCreatedAt().toLocalDate().isBefore(LocalDate.now())) {
+                    return ResponseEntity.status(403).body(ApiResponse.error("You can only edit entries on the same day they were created"));
+                }
+            }
+            
             mapRequestToEntity(request, existing);
             expensesService.saveExpense(existing);
             return ResponseEntity.ok(ApiResponse.success("Expense updated successfully"));
@@ -89,6 +138,14 @@ public class ExpensesController {
     @ResponseBody
     public ResponseEntity<ApiResponse> deleteExpense(@PathVariable Long id) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPERADMIN"));
+            
+            if (!isAdmin) {
+                return ResponseEntity.status(403).body(ApiResponse.error("Only administrators can delete entries"));
+            }
+            
             expensesService.deleteExpense(id);
             return ResponseEntity.ok(ApiResponse.success("Expense deleted successfully"));
         } catch (Exception e) {
@@ -97,25 +154,25 @@ public class ExpensesController {
     }
 
     private ExpensesEntity mapRequestToEntity(Map<String, Object> request, ExpensesEntity expense) {
-        if (request.containsKey("description")) {
+        if (request.get("description") != null) {
             expense.setDescription(request.get("description").toString());
         }
-        if (request.containsKey("totalAmount") && request.get("totalAmount") != null) {
+        if (request.get("totalAmount") != null) {
             expense.setTotalAmount(new BigDecimal(request.get("totalAmount").toString()));
         }
-        if (request.containsKey("advancedAmount") && request.get("advancedAmount") != null) {
+        if (request.get("advancedAmount") != null) {
             expense.setAdvancedAmount(new BigDecimal(request.get("advancedAmount").toString()));
         }
-        if (request.containsKey("expenseDate") && request.get("expenseDate") != null) {
+        if (request.get("expenseDate") != null) {
             expense.setExpenseDate(LocalDate.parse(request.get("expenseDate").toString()));
         }
-        if (request.containsKey("givenBy")) {
+        if (request.get("givenBy") != null) {
             expense.setGivenBy(request.get("givenBy").toString());
         }
-        if (request.containsKey("givenTo")) {
+        if (request.get("givenTo") != null) {
             expense.setGivenTo(request.get("givenTo").toString());
         }
-        if (request.containsKey("expenseType")) {
+        if (request.get("expenseType") != null) {
             expense.setExpenseType(request.get("expenseType").toString());
         }
         return expense;

@@ -468,3 +468,5 @@ CREATE TABLE IF NOT EXISTS `site_photos` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 ALTER TABLE site_details ADD COLUMN kilowatt VARCHAR(50);
+ALTER TABLE expenses ADD COLUMN created_by BIGINT;
+ALTER TABLE inquiry ADD COLUMN created_by BIGINT;

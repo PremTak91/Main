@@ -138,10 +138,12 @@
                                             class="badge bg-warning text-dark">Pending</span>
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm btn-info text-white me-1" title="Edit"
+                                        <button th:if="${isAdmin or (inquiry.createdBy == currentEmployeeId and inquiry.createdAt.toLocalDate().isEqual(today))}"
+                                            class="btn btn-sm btn-info text-white me-1" title="Edit"
                                             th:onclick="'editInquiry(' + ${inquiry.id} + ')'"><i
                                                 class="fas fa-edit"></i></button>
-                                        <button class="btn btn-sm btn-danger" title="Delete"
+                                        <button th:if="${isAdmin}"
+                                            class="btn btn-sm btn-danger" title="Delete"
                                             th:onclick="'deleteInquiry(' + ${inquiry.id} + ')'"><i
                                                 class="fas fa-trash-alt"></i></button>
                                     </td>
