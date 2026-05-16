@@ -41,6 +41,16 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
     });
+
+    // Mobile fallback: Force open file dialog on click
+    const dropzoneElement = document.getElementById("sitePhotoDropzone");
+    if (dropzoneElement) {
+        dropzoneElement.addEventListener("click", function (e) {
+            if (myDropzone && myDropzone.hiddenFileInput) {
+                myDropzone.hiddenFileInput.click();
+            }
+        });
+    }
 });
 
 function openAddSiteModal() {
