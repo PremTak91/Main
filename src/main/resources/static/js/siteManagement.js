@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
         addRemoveLinks: true,
         autoProcessQueue: true,
         dictDefaultMessage: "Drop site photos here to upload (Max 20MB)",
+        clickable: true,
         init: function() {
             this.on("processing", function(file) {
                 // Update URL dynamically based on current site ID

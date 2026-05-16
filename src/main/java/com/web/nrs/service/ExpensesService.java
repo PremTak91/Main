@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 public interface ExpensesService {
 
     Page<ExpensesEntity> getAllExpenses(Pageable pageable);
+    Page<ExpensesEntity> getExpensesByCreatorAndDate(Long createdBy, java.time.LocalDateTime startOfDay, Pageable pageable);
 
     ExpensesEntity getExpenseById(Long id);
 

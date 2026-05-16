@@ -20,6 +20,11 @@ public class InquiryServiceImpl implements InquiryService {
     }
 
     @Override
+    public Page<InquiryEntity> getInquiriesByCreatorAndDate(Long createdBy, java.time.LocalDateTime startOfDay, Pageable pageable) {
+        return inquiryRepository.findByCreatedByAndCreatedAtAfter(createdBy, startOfDay, pageable);
+    }
+
+    @Override
     public InquiryEntity getInquiryById(Long id) {
         return inquiryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Inquiry not found with id: " + id));

@@ -14,10 +14,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Controller
 @RequestMapping("/inquiry")
@@ -26,6 +29,7 @@ public class InquiryController {
 
     private final InquiryService inquiryService;
     private final EmployeeRepository employeeRepository;
+    private final com.web.nrs.service.EmployeeService employeeService;
 
     @GetMapping
     public String viewInquiryPage(
@@ -36,9 +40,28 @@ public class InquiryController {
             Model model
     ) {
         Pageable pageable = PaginationUtils.createPageable(page, size, sortBy, sortDir);
-        Page<InquiryEntity> inquiryPage = inquiryService.getAllInquiries(pageable);
+        
+        // Security check
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPERADMIN"));
+        
+        Long employeeId = employeeService.getEmployeeByEmailId(auth.getName())
+                    .map(com.web.nrs.entity.EmployeeEntity::getId)
+                    .orElse(0L);
+
+        Page<InquiryEntity> inquiryPage;
+        if (isAdmin) {
+            inquiryPage = inquiryService.getAllInquiries(pageable);
+        } else {
+            // Non-admin can only see their own entries from today
+            inquiryPage = inquiryService.getInquiriesByCreatorAndDate(employeeId, LocalDate.now().atStartOfDay(), pageable);
+        }
 
         // Load active employees for "Given By" dropdown
+        model.addAttribute("isAdmin", isAdmin);
+        model.addAttribute("currentEmployeeId", employeeId);
+        model.addAttribute("today", LocalDate.now());
         List<Map<String, Object>> employeeList = employeeRepository.findAll().stream()
                 .filter(emp -> emp.getEmpStatus() != null && emp.getEmpStatus() == 1)
                 .map(emp -> {
@@ -78,7 +101,13 @@ public class InquiryController {
     @ResponseBody
     public ResponseEntity<ApiResponse> createInquiry(@RequestBody Map<String, Object> request) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            Long employeeId = employeeService.getEmployeeByEmailId(auth.getName())
+                    .map(com.web.nrs.entity.EmployeeEntity::getId)
+                    .orElseThrow(() -> new RuntimeException("Logged in employee not found"));
+
             InquiryEntity inquiry = mapRequestToEntity(request, new InquiryEntity());
+            inquiry.setCreatedBy(employeeId);
             inquiryService.saveInquiry(inquiry);
             return ResponseEntity.ok(ApiResponse.success("Inquiry added successfully"));
         } catch (Exception e) {
@@ -92,7 +121,26 @@ public class InquiryController {
             @PathVariable Long id,
             @RequestBody Map<String, Object> request) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPERADMIN"));
+            
             InquiryEntity existing = inquiryService.getInquiryById(id);
+            
+            if (!isAdmin) {
+                Long employeeId = employeeService.getEmployeeByEmailId(auth.getName())
+                        .map(com.web.nrs.entity.EmployeeEntity::getId)
+                        .orElse(0L);
+                
+                // Only allow edit if it's their own entry and it was created today
+                if (!existing.getCreatedBy().equals(employeeId)) {
+                    return ResponseEntity.status(403).body(ApiResponse.error("You can only edit your own entries"));
+                }
+                if (existing.getCreatedAt().toLocalDate().isBefore(LocalDate.now())) {
+                    return ResponseEntity.status(403).body(ApiResponse.error("You can only edit entries on the same day they were created"));
+                }
+            }
+            
             mapRequestToEntity(request, existing);
             inquiryService.saveInquiry(existing);
             return ResponseEntity.ok(ApiResponse.success("Inquiry updated successfully"));
@@ -105,6 +153,14 @@ public class InquiryController {
     @ResponseBody
     public ResponseEntity<ApiResponse> deleteInquiry(@PathVariable Long id) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            boolean isAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPERADMIN"));
+            
+            if (!isAdmin) {
+                return ResponseEntity.status(403).body(ApiResponse.error("Only administrators can delete entries"));
+            }
+            
             inquiryService.deleteInquiry(id);
             return ResponseEntity.ok(ApiResponse.success("Inquiry deleted successfully"));
         } catch (Exception e) {

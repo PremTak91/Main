@@ -46,19 +46,16 @@ public class EmployeeController {
         Pageable pageable = PaginationUtils.createPageable(page, size, sortBy, sortDir);
         Page<EmployeeListDTO> employeePage = employeeService.getAllEmployees(pageable);
         
-        // Load active maintainers with their names (ensuring uniqueness)
-        List<EmployeeMainterEntity> mainters = employeeMainterRepository.findByActive(1);
-        List<Map<String, Object>> maintainerList = mainters.stream()
-                .map(EmployeeMainterEntity::getMainterId)
-                .distinct()
-                .map(mainterId -> {
+        // Load potential maintainers (Admins, Managers, etc.)
+        List<EmployeeEntity> allEmployees = employeeRepository.findAll();
+        List<Map<String, Object>> maintainerList = allEmployees.stream()
+                .map(emp -> {
                     Map<String, Object> maintainerMap = new HashMap<>();
-                    maintainerMap.put("id", mainterId);
-                    employeeRepository.findById(mainterId)
-                            .ifPresent(emp -> maintainerMap.put("name", emp.getFullName()));
+                    maintainerMap.put("id", emp.getId());
+                    maintainerMap.put("name", emp.getFullName());
                     return maintainerMap;
                 })
-                .filter(m -> m.get("name") != null)
+                .filter(m -> m.get("name") != null && !m.get("name").toString().isBlank())
                 .collect(Collectors.toList());
         
         model.addAttribute("employees", employeePage.getContent());

@@ -79,23 +79,18 @@ public class LeaveRoleController {
                 .filter(m -> m.get("name") != null && !((String)m.get("name")).isBlank())
                 .collect(Collectors.toList());
         
-        // Get active maintainers for approver dropdown
-        List<EmployeeMainterEntity> mainters = employeeMainterRepository.findByActive(1);
-        List<Map<String, Object>> approverList = mainters.stream()
-                .map(mainter -> {
+        // Get all employees for approver dropdown (privileged users)
+        List<Map<String, Object>> approverList = allEmployees.stream()
+                .map(emp -> {
                     Map<String, Object> approverMap = new HashMap<>();
-                    approverMap.put("id", mainter.getMainterId());
-                    employeeRepository.findById(mainter.getMainterId())
-                            .ifPresent(emp -> {
-                                String name = Stream.of(emp.getFirstName(), emp.getLastName())
-                                        .filter(s -> s != null && !s.isBlank())
-                                        .collect(Collectors.joining(" "));
-                                approverMap.put("name", name);
-                            });
+                    approverMap.put("id", emp.getId());
+                    String name = Stream.of(emp.getFirstName(), emp.getLastName())
+                            .filter(s -> s != null && !s.isBlank())
+                            .collect(Collectors.joining(" "));
+                    approverMap.put("name", name);
                     return approverMap;
                 })
-                .filter(m -> m.get("name") != null)
-                .distinct()
+                .filter(m -> m.get("name") != null && !((String)m.get("name")).isBlank())
                 .collect(Collectors.toList());
         
         model.addAttribute("leaveRoles", leaveRoleList);

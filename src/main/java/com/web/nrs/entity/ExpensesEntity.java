@@ -43,6 +43,9 @@ public class ExpensesEntity {
     @Column(name = "expense_type")
     private String expenseType;
 
+    @Column(name = "created_by")
+    private Long createdBy;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

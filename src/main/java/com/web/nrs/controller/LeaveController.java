@@ -2,7 +2,9 @@ package com.web.nrs.controller;
 
 import com.web.nrs.utils.ApiResponse;
 import com.web.nrs.entity.HolidayEntity;
+import com.web.nrs.entity.EmployeeEntity;
 import com.web.nrs.service.LeaveService;
+import com.web.nrs.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -22,15 +24,17 @@ import java.util.Map;
 public class LeaveController {
 
     private final LeaveService leaveService;
+    private final EmployeeService employeeService;
 
     @GetMapping
     public String viewLeaveBalanceAndStatus(Model model) {
         // Get current user email from security context
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
-        
         // Get employee ID from email
-        Long employeeId = leaveService.getEmployeeIdByEmail(email);
+        Long employeeId = employeeService.getEmployeeByEmailId(email)
+                .map(EmployeeEntity::getId)
+                .orElseThrow(() -> new RuntimeException("Logged in employee not found. Please login again."));
         
         int currentYear = LocalDate.now().getYear();
         
@@ -77,7 +81,9 @@ public class LeaveController {
     public String viewLeaveRequestApproval(Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
-        Long approverId = leaveService.getEmployeeIdByEmail(email);
+        Long approverId = employeeService.getEmployeeByEmailId(email)
+                .map(EmployeeEntity::getId)
+                .orElseThrow(() -> new RuntimeException("Approver not found. Please login again."));
         
         List<Map<String, Object>> leaveRequests = leaveService.getPendingLeaveRequestsForApprover(approverId);
         model.addAttribute("leaveRequests", leaveRequests);

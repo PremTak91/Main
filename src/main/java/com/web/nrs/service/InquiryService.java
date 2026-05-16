@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 public interface InquiryService {
 
     Page<InquiryEntity> getAllInquiries(Pageable pageable);
+    Page<InquiryEntity> getInquiriesByCreatorAndDate(Long createdBy, java.time.LocalDateTime startOfDay, Pageable pageable);
 
     InquiryEntity getInquiryById(Long id);
 

@@ -20,6 +20,11 @@ public class ExpensesServiceImpl implements ExpensesService {
     }
 
     @Override
+    public Page<ExpensesEntity> getExpensesByCreatorAndDate(Long createdBy, java.time.LocalDateTime startOfDay, Pageable pageable) {
+        return expensesRepository.findByCreatedByAndCreatedAtAfter(createdBy, startOfDay, pageable);
+    }
+
+    @Override
     public ExpensesEntity getExpenseById(Long id) {
         return expensesRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Expense not found with id: " + id));
