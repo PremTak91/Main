@@ -438,3 +438,33 @@ CREATE TABLE document_sequence (
 );
 -- Dump completed on 2026-03-07 15:13:56
 
+
+CREATE TABLE IF NOT EXISTS `site_details` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `customer_name` VARCHAR(255) NOT NULL,
+    `contact_no` VARCHAR(50) DEFAULT NULL,
+    `address` TEXT DEFAULT NULL,
+    `site_status` VARCHAR(50) DEFAULT NULL,
+    `assigned_technician_id` BIGINT DEFAULT NULL,
+    `expected_completed_date` DATE DEFAULT NULL,
+    `remarks` TEXT DEFAULT NULL,
+    `created_by` BIGINT DEFAULT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_by` BIGINT DEFAULT NULL,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `site_photos` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `site_id` BIGINT NOT NULL,
+    `object_key` VARCHAR(1000) NOT NULL,
+    `original_filename` VARCHAR(255) DEFAULT NULL,
+    `uploaded_by` BIGINT DEFAULT NULL,
+    `uploaded_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `FK_site_photos_site_id` (`site_id`),
+    CONSTRAINT `FK_site_photos_site` FOREIGN KEY (`site_id`) REFERENCES `site_details` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE site_details ADD COLUMN kilowatt VARCHAR(50);

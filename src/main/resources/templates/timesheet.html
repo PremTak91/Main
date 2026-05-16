@@ -88,7 +88,7 @@
                                     </th>
                                     <th scope="col">In Time</th>
                                     <th scope="col">Out Time</th>
-                                    <th scope="col">Working Hours</th>
+                                    <th scope="col" sec:authorize="hasAnyRole('SUPERADMIN', 'ADMIN')">Working Hours</th>
                                     <th scope="col">Status</th>
                                     <th scope="col" th:if="${isAdmin}">Actions</th>
                                 </tr>
@@ -100,7 +100,7 @@
                                     <td th:text="${timesheet.attendanceDate != null ? #temporals.format(timesheet.attendanceDate, 'MM/dd/yyyy') : '-'}">Date</td>
                                     <td th:text="${timesheet.inTime != null ? #temporals.format(timesheet.inTime, 'hh:mm a') : '-'}">In Time</td>
                                     <td th:text="${timesheet.outTime != null ? #temporals.format(timesheet.outTime, 'hh:mm a') : '-'}">Out Time</td>
-                                    <td th:text="${timesheet.workingHours != null ? timesheet.workingHours : '-'}">Hours</td>
+                                    <td th:text="${timesheet.workingHours != null ? timesheet.workingHours : '-'}" sec:authorize="hasAnyRole('SUPERADMIN', 'ADMIN')">Hours</td>
                                     <td>
                                         <span th:if="${timesheet.status == 'PRESENT'}" class="badge bg-success">Present</span>
                                         <span th:if="${timesheet.status == 'PARTIAL'}" class="badge bg-warning text-dark">Partial</span>
@@ -117,9 +117,9 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${#lists.isEmpty(timesheets)}">
-                                    <td th:colspan="${isAdmin ? 8 : 7}" class="text-center">No attendance records found</td>
+                                    <td th:colspan="${isAdmin ? 8 : 6}" class="text-center">No attendance records found</td>
                                 </tr>
-                                <tr th:if="${totalWorkingHours != null}">
+                                <tr th:if="${totalWorkingHours != null}" sec:authorize="hasAnyRole('SUPERADMIN', 'ADMIN')">
                                     <td th:colspan="${isAdmin ? 5 : 4}" class="text-end fw-bold">Total Working Hours:</td>
                                     <td class="fw-bold text-primary" th:text="${totalWorkingHours}">00:00</td>
                                     <td th:colspan="${isAdmin ? 2 : 2}"></td>

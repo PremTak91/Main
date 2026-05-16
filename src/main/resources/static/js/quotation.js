@@ -117,7 +117,7 @@ $(document).on("keyup", "#discount", function () {
                   window.Android.downloadPdf(JSON.stringify(formData), pdfFilename);
               } catch (e) {
                   safeHideLoader();
-                  alert("Mobile PDF error: " + e.message);
+                  showToast("Mobile PDF error: " + e.message, "error");
               }
               return; // Stop here — Android handles the rest natively
           }
@@ -145,7 +145,7 @@ $(document).on("keyup", "#discount", function () {
               },
               error: function(xhr, status, error) {
                   safeHideLoader();
-                  alert("Error generating PDF: " + (error || "Unknown error"));
+                  showToast("Error generating PDF: " + (error || "Unknown error"), "error");
               }
           });
       });

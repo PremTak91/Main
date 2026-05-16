@@ -156,18 +156,19 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Optional<EmployeeEntity> getEmployeeByEmailId(String emailId) {
-        return employeeRepository.findEmployeeByEmail(emailId);
+        Optional<EmployeeEntity> empOpt = employeeRepository.findEmployeeByEmail(emailId);
+        if (empOpt.isPresent()) {
+            return empOpt;
+        }
+        // Fallback to searching user_login table by username, then fetching employee by ID
+        return loginRepository.findByUsername(emailId)
+                .flatMap(login -> employeeRepository.findById(login.getId()));
     }
 
     @Override
     public EmployeeDTO getProfileDetailsByEmailId(String emailId) {
         EmployeeEntity employeeEntity = getEmployeeByEmailId(emailId)
-                .orElseGet(() -> {
-                    LoginEntity login = loginRepository.findByUsername(emailId)
-                            .orElseThrow(() -> new RuntimeException("User not found"));
-                    return employeeRepository.findById(login.getId())
-                            .orElseThrow(() -> new RuntimeException("User not found"));
-                });
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         DesignationEntity designationEntity = null;
         if (employeeEntity.getDesignationId() != null) {

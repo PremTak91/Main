@@ -20,7 +20,7 @@ import java.util.Map;
 public class PostActivityController {
 
     private final PostActivityService postActivityService;
-    private final EmployeeRepository employeeRepository;
+    private final com.web.nrs.service.EmployeeService employeeService;
 
     @PostMapping
     @ResponseBody
@@ -30,7 +30,7 @@ public class PostActivityController {
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String email = auth.getName();
-            EmployeeEntity emp = employeeRepository.findEmployeeByEmail(email)
+            EmployeeEntity emp = employeeService.getEmployeeByEmailId(email)
                     .orElseThrow(() -> new RuntimeException("Logged in employee not found"));
 
             postActivityService.savePost(emp.getId(), postText, postImage);
