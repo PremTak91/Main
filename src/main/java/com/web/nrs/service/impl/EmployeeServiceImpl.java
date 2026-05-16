@@ -161,12 +161,19 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeDTO getProfileDetailsByEmailId(String emailId) {
-        EmployeeEntity  employeeEntity = ValidationUtils.throwIfNull(getEmployeeByEmailId(emailId),
-                () -> new RuntimeException("User not found")
-                ).get();
+        EmployeeEntity employeeEntity = getEmployeeByEmailId(emailId)
+                .orElseGet(() -> {
+                    LoginEntity login = loginRepository.findByUsername(emailId)
+                            .orElseThrow(() -> new RuntimeException("User not found"));
+                    return employeeRepository.findById(login.getId())
+                            .orElseThrow(() -> new RuntimeException("User not found"));
+                });
 
-        DesignationEntity designationEntity = designationRepository.findById(employeeEntity.getDesignationId())
-                .orElseThrow(() -> new RuntimeException("Designation details is not correct"));
+        DesignationEntity designationEntity = null;
+        if (employeeEntity.getDesignationId() != null) {
+            designationEntity = designationRepository.findById(employeeEntity.getDesignationId())
+                    .orElse(null);
+        }
 
         return EmployeeDTO.builder().build().getEmployeeDTO(employeeEntity, designationEntity);
     }
@@ -176,6 +183,11 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         if (employeeDetails.getEmail() != null && !employeeDetails.getEmail().isEmpty()) {
             employee.setEmail(employeeDetails.getEmail());
+            // Update LoginEntity username as well
+            loginRepository.findById(employee.getId()).ifPresent(login -> {
+                login.setUsername(employeeDetails.getEmail());
+                loginRepository.save(login);
+            });
         }
         if (employeeDetails.getPhoneNo() != null && !employeeDetails.getPhoneNo().isEmpty()) {
             employee.setPhoneNo(employeeDetails.getPhoneNo());
@@ -310,6 +322,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
         if (request.getEmail() != null && !request.getEmail().isEmpty()) {
             employee.setEmail(request.getEmail());
+            // Keep user_login table in sync
+            loginRepository.findById(id).ifPresent(login -> {
+                login.setUsername(request.getEmail());
+                loginRepository.save(login);
+            });
         }
         if (request.getPhoneNo() != null && !request.getPhoneNo().isEmpty()) {
             employee.setPhoneNo(request.getPhoneNo());
