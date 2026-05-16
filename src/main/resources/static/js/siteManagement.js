@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
         addRemoveLinks: true,
         autoProcessQueue: true,
         dictDefaultMessage: "Drop site photos here to upload (Max 20MB)",
-        clickable: true,
+        clickable: "#sitePhotoInput",
         init: function() {
             this.on("processing", function(file) {
                 // Update URL dynamically based on current site ID
@@ -41,16 +41,6 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
     });
-
-    // Mobile fallback: Force open file dialog on click
-    const dropzoneElement = document.getElementById("sitePhotoDropzone");
-    if (dropzoneElement) {
-        dropzoneElement.addEventListener("click", function (e) {
-            if (myDropzone && myDropzone.hiddenFileInput) {
-                myDropzone.hiddenFileInput.click();
-            }
-        });
-    }
 });
 
 function openAddSiteModal() {
