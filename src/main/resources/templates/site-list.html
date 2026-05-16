@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NRS Solar Solution - Site Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <!-- Dropzone CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.css" />
+    <style>
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .photo-card {
+            position: relative;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .photo-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .photo-card .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard-wrapper">
+
+        <div th:replace="~{fragments/sidebar :: sidebarMenu}"> </div>
+
+        <div class="d-flex flex-column w-100">
+
+            <div th:replace="~{fragments/header :: headerPart}"> </div>
+
+            <main class="main-content-area flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0 text-primary fw-bold"><i class="fas fa-map-marked-alt me-2"></i>Site Management</h3>
+                    <button class="btn btn-primary" onclick="openAddSiteModal()">
+                        <i class="fas fa-plus me-1"></i> Add New Site
+                    </button>
+                </div>
+
+                <div class="card p-4 shadow-sm border-0 rounded-3">
+                    <!-- Search Form -->
+                    <form th:action="@{/sites}" method="get" class="mb-4">
+                        <div class="row g-2">
+                            <div class="col-md-4 col-lg-3">
+                                <input type="text" name="keyword" class="form-control" placeholder="Search customer, status..." th:value="${keyword}">
+                            </div>
+                            <div class="col-md-3 col-lg-2">
+                                <input type="date" name="startDate" class="form-control" th:value="${startDate}" title="From Created Date">
+                            </div>
+                            <div class="col-md-3 col-lg-2">
+                                <input type="date" name="endDate" class="form-control" th:value="${endDate}" title="To Created Date">
+                            </div>
+                            <div class="col-md-2 col-lg-5">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="fas fa-search me-1"></i> Search
+                                </button>
+                                <a th:href="@{/sites}" class="btn btn-outline-secondary ms-1"><i class="fas fa-sync me-1"></i> Reset</a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Sites Table -->
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Customer Name</th>
+                                    <th>Contact No</th>
+                                    <th>Address</th>
+                                    <th>Created Date</th>
+                                    <th>Expected Date</th>
+                                    <th>Kilowatt</th>
+                                    <th>Status</th>
+                                    <th>Remarks</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="site : ${sites}">
+                                    <td th:text="${site.id}"></td>
+                                    <td th:text="${site.customerName}" class="fw-bold"></td>
+                                    <td th:text="${site.contactNo}"></td>
+                                    <td>
+                                        <span class="d-inline-block text-truncate" style="max-width: 200px;" th:title="${site.address}" th:text="${site.address}"></span>
+                                    </td>
+                                    <td th:text="${#temporals.format(site.createdAt, 'dd-MM-yyyy')}"></td>
+                                    <td th:text="${site.expectedCompletedDate}"></td>
+                                    <td th:text="${site.kilowatt}"></td>
+                                    <td>
+                                        <span class="badge"
+                                            th:classappend="${site.siteStatus == 'Completed' ? 'bg-success' : (site.siteStatus == 'Initiate' || site.siteStatus == 'Structure Completed' || site.siteStatus == 'Wiring Completed' ? 'bg-warning text-dark' : 'bg-secondary')}"
+                                            th:text="${site.siteStatus}">
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="d-inline-block text-truncate" style="max-width: 150px;" th:title="${site.remarks}" th:text="${site.remarks}"></span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-info text-white me-1" 
+                                            th:data-id="${site.id}" 
+                                            th:data-name="${site.customerName}"
+                                            onclick="openPhotoModal(this.getAttribute('data-id'), this.getAttribute('data-name'))" 
+                                            title="Photos">
+                                            <i class="fas fa-images"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-primary me-1" 
+                                            th:data-id="${site.id}"
+                                            onclick="editSite(this.getAttribute('data-id'))" 
+                                            title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" 
+                                            th:data-id="${site.id}"
+                                            onclick="deleteSite(this.getAttribute('data-id'))" 
+                                            title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(sites)}">
+                                    <td colspan="9" class="text-center py-4 text-muted">No sites found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="d-flex justify-content-between align-items-center mt-4" th:if="${totalPages > 0}">
+                        <div class="text-muted small">
+                            Showing <span th:text="${currentPage * pageSize + 1}"></span> to 
+                            <span th:text="${T(java.lang.Math).min((currentPage + 1) * pageSize * 1L, totalItems)}"></span> of 
+                            <span th:text="${totalItems}"></span> entries
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+                                    <a class="page-link" href="javascript:void(0)" 
+                                        th:data-page="${currentPage - 1}"
+                                        onclick="goToPage(this.getAttribute('data-page'))">Previous</a>
+                                </li>
+                                <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" th:classappend="${i == currentPage ? 'active' : ''}">
+                                    <a class="page-link" href="javascript:void(0)" 
+                                        th:data-page="${i}"
+                                        onclick="goToPage(this.getAttribute('data-page'))" th:text="${i + 1}"></a>
+                                </li>
+                                <li class="page-item" th:classappend="${currentPage == totalPages - 1 ? 'disabled' : ''}">
+                                    <a class="page-link" href="javascript:void(0)" 
+                                        th:data-page="${currentPage + 1}"
+                                        onclick="goToPage(this.getAttribute('data-page'))">Next</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+
+
+                </div>
+            </main>
+
+            <div th:replace="~{fragments/footer :: footerPart}"> </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Site Modal -->
+    <div class="modal fade" id="siteModal" tabindex="-1" aria-labelledby="siteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="siteModalLabel">Site Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="siteForm">
+                        <input type="hidden" id="siteId" name="id">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="customerName" class="form-label">Customer Name *</label>
+                                <input type="text" class="form-control" id="customerName" name="customerName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="contactNo" class="form-label">Contact No</label>
+                                <input type="text" class="form-control" id="contactNo" name="contactNo">
+                            </div>
+                            <div class="col-md-12">
+                                <label for="address" class="form-label">Site Address</label>
+                                <textarea class="form-control" id="address" name="address" rows="2"></textarea>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="siteStatus" class="form-label">Status</label>
+                                <select class="form-select" id="siteStatus" name="siteStatus">
+                                    <option value="Initiate">Initiate</option>
+                                    <option value="Structure Completed">Structure Completed</option>
+                                    <option value="Wiring Completed">Wiring Completed</option>
+                                    <option value="All Done">All Done</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="kilowatt" class="form-label">Kilowatt</label>
+                                <input type="text" class="form-control" id="kilowatt" name="kilowatt" placeholder="e.g. 5kW">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="expectedCompletedDate" class="form-label">Expected Date</label>
+                                <input type="date" class="form-control" id="expectedCompletedDate" name="expectedCompletedDate">
+                            </div>
+                            <div class="col-md-4">
+                                <label for="assignedTechnicianId" class="form-label">Technician</label>
+                                <select class="form-select" id="assignedTechnicianId" name="assignedTechnicianId">
+                                    <option value="">-- Select --</option>
+                                    <option th:each="emp : ${employees}" th:value="${emp.id}" th:text="${emp.employeeName}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="remarks" class="form-label">Remarks</label>
+                                <textarea class="form-control" id="remarks" name="remarks" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="saveSite()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Modal -->
+    <div class="modal fade" id="photoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Site Photos: <span id="photoCustomerName" class="text-primary"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="currentPhotoSiteId">
+                    <div id="sitePhotoDropzone" class="dropzone mb-4 rounded border-primary border-2" action="/NRS/sites/0/photos">
+                        <div class="dz-message">
+                            <i class="fas fa-cloud-upload-alt fs-1 text-primary mb-2"></i><br>
+                            <span>Click or drop photos here</span>
+                        </div>
+                    </div>
+                    <h6 class="fw-bold mb-3">Gallery</h6>
+                    <div id="photoGallery" class="photo-gallery"></div>
+                    <div id="noPhotosMsg" class="text-center py-4 text-muted" style="display: none;">
+                        <i class="fas fa-images fs-2 mb-2 d-block"></i>
+                        No photos found for this site.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Image Preview Modal -->
+    <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-transparent border-0">
+                <div class="modal-header border-0 pb-0">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center pt-0">
+                    <img id="fullSizePreview" src="" class="img-fluid rounded shadow-lg" style="max-height: 80vh;">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div th:replace="~{fragments/commonUI :: loader}"></div>
+    <div th:replace="~{fragments/commonUI :: toaster}"></div>
+    <div th:replace="~{fragments/commonJquery :: commonJquery}"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
+    <script th:src="@{/js/siteManagement.js}"></script>
+</body>
+
+</html>

@@ -26,11 +26,12 @@ function toggleAttendance() {
             return response.json();
         })
         .then(data => {
+            showToast("Attendance updated successfully", "success");
             checkAttendanceStatus(); // Refresh status from server to be sure
         })
         .catch(error => {
             console.error("Error:", error);
-            alert("Failed to update attendance");
+            showToast("Failed to update attendance", "error");
         })
         .finally(() => {
             btn.disabled = false;
