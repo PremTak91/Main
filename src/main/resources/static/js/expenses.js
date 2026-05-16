@@ -171,36 +171,34 @@ function saveExpense() {
  * Delete expense
  */
 function deleteExpense(id) {
-    if (!confirm('Are you sure you want to delete this expense?')) {
-        return;
-    }
+    showConfirm("Delete Expense", "Are you sure you want to delete this expense?", function() {
+        showLoader();
 
-    showLoader();
-
-    fetch('/NRS/expenses/' + id, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => response.json())
-        .then(result => {
-            hideLoader();
-            if (result.success) {
-                showToast(result.message || 'Expense deleted successfully', 'success');
-                // Refresh page after short delay
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                showToast(result.message || 'Failed to delete expense', 'error');
+        fetch('/NRS/expenses/' + id, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
             }
         })
-        .catch(error => {
-            hideLoader();
-            console.error('Error deleting expense:', error);
-            showToast('Error deleting expense', 'error');
-        });
+            .then(response => response.json())
+            .then(result => {
+                hideLoader();
+                if (result.success) {
+                    showToast(result.message || 'Expense deleted successfully', 'success');
+                    // Refresh page after short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast(result.message || 'Failed to delete expense', 'error');
+                }
+            })
+            .catch(error => {
+                hideLoader();
+                console.error('Error deleting expense:', error);
+                showToast('Error deleting expense', 'error');
+            });
+    });
 }
 
 /**

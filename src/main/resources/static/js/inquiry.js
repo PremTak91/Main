@@ -175,35 +175,33 @@ function saveInquiry() {
  * Delete inquiry
  */
 function deleteInquiry(id) {
-    if (!confirm('Are you sure you want to delete this inquiry?')) {
-        return;
-    }
+    showConfirm("Delete Inquiry", "Are you sure you want to delete this inquiry?", function() {
+        showLoader();
 
-    showLoader();
-
-    fetch('/NRS/inquiry/' + id, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => response.json())
-        .then(result => {
-            hideLoader();
-            if (result.success) {
-                showToast(result.message || 'Inquiry deleted successfully', 'success');
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                showToast(result.message || 'Failed to delete inquiry', 'error');
+        fetch('/NRS/inquiry/' + id, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
             }
         })
-        .catch(error => {
-            hideLoader();
-            console.error('Error deleting inquiry:', error);
-            showToast('Error deleting inquiry', 'error');
-        });
+            .then(response => response.json())
+            .then(result => {
+                hideLoader();
+                if (result.success) {
+                    showToast(result.message || 'Inquiry deleted successfully', 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast(result.message || 'Failed to delete inquiry', 'error');
+                }
+            })
+            .catch(error => {
+                hideLoader();
+                console.error('Error deleting inquiry:', error);
+                showToast('Error deleting inquiry', 'error');
+            });
+    });
 }
 
 /**

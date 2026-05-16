@@ -71,3 +71,26 @@ $(document).ajaxError(function (event, jqXHR) {
         });
     };
 })();
+
+// ─── Confirmation Modal ───────────────────────────────────
+function showConfirm(title, message, onConfirm) {
+    const modalEl = document.getElementById("confirmModal");
+    if (!modalEl) return;
+
+    document.getElementById("confirmTitle").textContent = title || "Confirm Action";
+    document.getElementById("confirmMessage").textContent = message || "Are you sure?";
+    
+    const confirmBtn = document.getElementById("confirmBtn");
+    const modal = new bootstrap.Modal(modalEl);
+
+    // Remove old listeners to avoid multiple triggers
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+    newConfirmBtn.addEventListener("click", function () {
+        modal.hide();
+        if (typeof onConfirm === "function") onConfirm();
+    });
+
+    modal.show();
+}

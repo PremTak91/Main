@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
         addRemoveLinks: true,
         autoProcessQueue: true,
         dictDefaultMessage: "Drop site photos here to upload (Max 20MB)",
-        clickable: "#sitePhotoInput",
+        clickable: false, // We'll handle clicks via the native input overlay
         init: function() {
             this.on("processing", function(file) {
                 // Update URL dynamically based on current site ID
@@ -41,6 +41,19 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         }
     });
+
+    // Handle files from the native input overlay
+    const sitePhotoInput = document.getElementById("sitePhotoInput");
+    if (sitePhotoInput) {
+        sitePhotoInput.addEventListener("change", function () {
+            if (this.files && this.files.length > 0) {
+                for (let i = 0; i < this.files.length; i++) {
+                    myDropzone.addFile(this.files[i]);
+                }
+                this.value = ""; // Clear for next selection
+            }
+        });
+    }
 });
 
 function openAddSiteModal() {
@@ -112,7 +125,7 @@ function saveSite() {
 }
 
 function deleteSite(id) {
-    if (confirm("Are you sure you want to delete this site? All associated photos will also be permanently deleted.")) {
+    showConfirm("Delete Site", "Are you sure you want to delete this site? All associated photos will also be permanently deleted.", function() {
         showLoader();
         fetch(`/NRS/sites/${id}`, {
             method: "DELETE"
@@ -131,7 +144,7 @@ function deleteSite(id) {
             hideLoader();
             showToast("Error deleting site", "error");
         });
-    }
+    });
 }
 
 // --- PHOTO MANAGEMENT ---
@@ -178,7 +191,7 @@ function loadSitePhotos(siteId) {
 }
 
 function deletePhoto(photoId) {
-    if (confirm("Are you sure you want to delete this photo?")) {
+    showConfirm("Delete Photo", "Are you sure you want to delete this photo?", function() {
         fetch(`/NRS/sites/photos/${photoId}`, {
             method: "DELETE"
         })
@@ -194,7 +207,7 @@ function deletePhoto(photoId) {
         .catch(error => {
             showToast("Error deleting photo", "error");
         });
-    }
+    });
 }
 
 function previewSiteImage(url) {
