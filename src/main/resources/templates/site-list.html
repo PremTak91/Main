@@ -66,6 +66,13 @@
         .dropzone .dz-message {
             margin: 0 !important;
             font-weight: 500;
+            pointer-events: none; /* Let clicks pass through to parent */
+        }
+        .dropzone * {
+            pointer-events: none; /* Ensure children don't block clicks */
+        }
+        .dropzone {
+            pointer-events: auto !important;
         }
     </style>
 </head>
