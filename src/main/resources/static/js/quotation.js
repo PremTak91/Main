@@ -103,13 +103,27 @@ $(document).on("keyup", "#discount", function () {
               if (typeof hideLoader === "function") hideLoader();
           }
 
-          // ── Environment detection ─────────────────────────────────────────
-          // Treat ALL mobile devices (WebView or real browser) with the token
-          // path so we never trigger the Android DownloadManager.
-          // Desktop browsers get the direct blob-download path.
-          var ua = navigator.userAgent || "";
-          var isMobileDevice = /Android|iPhone|iPad|iPod/i.test(ua);
+          // ── Android WebView path ──────────────────────────────────────────
+          // When running inside the NRS Android app, window.Android is the
+          // JavascriptInterface bridge injected by MainActivity.
+          // We pass the form JSON to the bridge which:
+          //   1. POSTs to /quts/token (with the JWT cookie)
+          //   2. Navigates the WebView to /quts/view/{token}
+          //   3. Downloads the PDF bytes and opens them in the system PDF viewer
+          // This requires ZERO storage permissions and works on all Android versions.
+          if (window.Android && typeof window.Android.downloadPdf === "function") {
+              try {
+                  safeHideLoader();
+                  window.Android.downloadPdf(JSON.stringify(formData), pdfFilename);
+              } catch (e) {
+                  safeHideLoader();
+                  alert("Mobile PDF error: " + e.message);
+              }
+              return; // Stop here — Android handles the rest natively
+          }
 
+          // ── Web / Desktop / iOS path ──────────────────────────────────────
+          // Direct blob download — works perfectly on all browsers except Android WebView.
           $.ajax({
               type:        "POST",
               url:         "/NRS/quts",
@@ -118,22 +132,16 @@ $(document).on("keyup", "#discount", function () {
               xhrFields:   { responseType: "blob" },
               success: function(blob) {
                   safeHideLoader();
-                  // Helper for traditional download
-                  function downloadBlob(blobData, filename) {
-                      const url = window.URL.createObjectURL(blobData);
-                      const a = document.createElement("a");
-                      a.href = url;
-                      a.download = filename;
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                      setTimeout(() => {
-                          window.URL.revokeObjectURL(url);
-                      }, 1000);
-                  }
-
-                  // DIRECT DOWNLOAD FOR ALL DEVICES
-                  downloadBlob(blob, pdfFilename);
+                  var blobUrl = window.URL.createObjectURL(blob);
+                  var a = document.createElement("a");
+                  a.href = blobUrl;
+                  a.download = pdfFilename;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  setTimeout(function() {
+                      window.URL.revokeObjectURL(blobUrl);
+                  }, 1000);
               },
               error: function(xhr, status, error) {
                   safeHideLoader();
