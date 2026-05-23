@@ -41,6 +41,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final DesignationRepository designationRepository;
     private final EmployeeAttendanceRepository employeeAttendanceRepository;
     private final EmployeeMainterRepository employeeMainterRepository;
+    private final com.web.nrs.service.CloudinaryStorageService cloudinaryStorageService;
 
     @Override
     public Page<EmployeeListDTO> getAllEmployees(Pageable pageable) {
@@ -223,23 +224,35 @@ public class EmployeeServiceImpl implements EmployeeService {
              employee.setDesignationId(designation.getId());
         }
 
-        if (photo != null && !photo.isEmpty()) {
-            try {
-                String fileName = UUID.randomUUID().toString() + "_" + photo.getOriginalFilename();
-                Path uploadPath = Paths.get(ConstantUtils.EMPLOYEE_PROFILE_PATH);
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                }
-                Path filePath = uploadPath.resolve(fileName);
-                Files.copy(photo.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-                employee.setPhoto(fileName);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to upload photo", e);
-            }
-        }
-
         employeeRepository.save(employee);
         return true;
+    }
+
+    public void uploadProfilePhoto(Long employeeId, MultipartFile photo) {
+        EmployeeEntity employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+
+        if (photo != null && !photo.isEmpty()) {
+            try {
+                // Try to delete old photo if it is a Cloudinary public ID
+                // Cloudinary generates random UUIDs as public_ids usually 36 chars long, but let's just attempt deletion
+                if (employee.getPhoto() != null && !employee.getPhoto().isEmpty() && !employee.getPhoto().contains(".")) {
+                    try {
+                        cloudinaryStorageService.deleteImage(employee.getPhoto());
+                    } catch (Exception e) {
+                        // ignore error if deletion fails
+                    }
+                }
+                
+                String publicId = cloudinaryStorageService.compressAndUploadImage("employee_profiles", photo);
+                String url = cloudinaryStorageService.generateUrl(publicId);
+                // Store the full URL instead of publicId for easier backwards compatibility rendering in Thymeleaf
+                employee.setPhoto(url);
+                employeeRepository.save(employee);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to upload photo to Cloudinary", e);
+            }
+        }
     }
 
     @Override

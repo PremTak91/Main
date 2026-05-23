@@ -155,7 +155,7 @@ DROP TABLE IF EXISTS `employeeinfo`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `employeeinfo` (
-  `id` bigint NOT NULL AUTO_INCREMENT,
+  `id` int NOT NULL AUTO_INCREMENT,
   `firstName` varchar(64) DEFAULT NULL,
   `middleName` varchar(64) DEFAULT NULL,
   `lastName` varchar(64) DEFAULT NULL,
@@ -187,7 +187,7 @@ CREATE TABLE `employeeinfo` (
 
 LOCK TABLES `employeeinfo` WRITE;
 /*!40000 ALTER TABLE `employeeinfo` DISABLE KEYS */;
-INSERT INTO `employeeinfo` VALUES (1,'Prem','','Kumar','0','','7014877536','Nrs@Dream','sirohi','rajasthan',2,'2022-03-13','1',3,0,0,0,NULL,NULL,NULL,NULL,NULL);
+INSERT INTO `employeeinfo` VALUES (1,'Pramod','','Kansara','0','','898983494','Nrs@Dream','sirohi','rajasthan',2,'2022-03-13','1',3,0,0,0,NULL,NULL,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `employeeinfo` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -281,7 +281,7 @@ DROP TABLE IF EXISTS `post_activity`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `post_activity` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `emp_id` bigint NOT NULL,
+  `emp_id` int NOT NULL,
   `post_text` text,
   `post_image` varchar(255) DEFAULT NULL,
   `audit_time_stamp` datetime DEFAULT CURRENT_TIMESTAMP,
@@ -436,17 +436,55 @@ CREATE TABLE document_sequence (
     last_number INT,
     PRIMARY KEY (doc_type, financial_year)
 );
-
-
-CREATE TABLE IF NOT EXISTS `password_reset_token` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `token` VARCHAR(255) NOT NULL,
-    `user_id` BIGINT NOT NULL,
-    `expiry_date` DATETIME(6) NOT NULL,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `UK_token` (`token`),
-    KEY `FK_user_id` (`user_id`),
-    CONSTRAINT `FK_password_reset_user` FOREIGN KEY (`user_id`) REFERENCES `user_login` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 -- Dump completed on 2026-03-07 15:13:56
 
+
+CREATE TABLE IF NOT EXISTS `site_details` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `customer_name` VARCHAR(255) NOT NULL,
+    `contact_no` VARCHAR(50) DEFAULT NULL,
+    `address` TEXT DEFAULT NULL,
+    `site_status` VARCHAR(50) DEFAULT NULL,
+    `assigned_technician_id` BIGINT DEFAULT NULL,
+    `expected_completed_date` DATE DEFAULT NULL,
+    `remarks` TEXT DEFAULT NULL,
+    `created_by` BIGINT DEFAULT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_by` BIGINT DEFAULT NULL,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `site_photos` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `site_id` BIGINT NOT NULL,
+    `object_key` VARCHAR(1000) NOT NULL,
+    `original_filename` VARCHAR(255) DEFAULT NULL,
+    `uploaded_by` BIGINT DEFAULT NULL,
+    `uploaded_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `FK_site_photos_site_id` (`site_id`),
+    CONSTRAINT `FK_site_photos_site` FOREIGN KEY (`site_id`) REFERENCES `site_details` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE site_details ADD COLUMN kilowatt VARCHAR(50);
+ALTER TABLE expenses ADD COLUMN created_by BIGINT;
+ALTER TABLE inquiry ADD COLUMN created_by BIGINT;
+
+CREATE TABLE documents (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    document_url VARCHAR(1000) NOT NULL,
+    public_id VARCHAR(255) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE work_logs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT NOT NULL,
+    work_date DATE NOT NULL,
+    work_description TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_worklog_employee FOREIGN KEY (employee_id) REFERENCES employeeinfo(id)
+);

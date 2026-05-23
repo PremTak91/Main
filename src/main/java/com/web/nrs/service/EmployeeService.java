@@ -29,6 +29,9 @@ public interface EmployeeService {
     EmployeeDTO getProfileDetailsByEmailId(String emailId);
 
     boolean updateEmployee(EmployeeEntity employee, EmployeeRegistrationRequest employeeDetails, MultipartFile photo);
+
+    void uploadProfilePhoto(Long employeeId, MultipartFile photo);
+
     Optional<EmployeeEntity> findEmployeeById(long id);
 
     String punchIn(Long employeeId);

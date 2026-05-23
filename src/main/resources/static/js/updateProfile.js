@@ -1,5 +1,36 @@
+document.getElementById("modalEmployeePhoto").addEventListener("change", function(event) {
+    if (this.files && this.files.length > 0) {
+        const photoData = new FormData();
+        photoData.append("employeeId", document.getElementById("updateProfileBtn").dataset.param);
+        photoData.append("photo", this.files[0]);
 
+        showLoader();
 
+        fetch("/NRS/profile/photo", {
+            method: "POST",
+            body: photoData,
+            credentials: "same-origin"
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Photo upload failed");
+            return response.json();
+        })
+        .then(data => {
+            showToast("Profile photo uploaded successfully! Reloading...", "success");
+            // Clear the file input so it doesn't upload again with the main form
+            document.getElementById("modalEmployeePhoto").value = "";
+            setTimeout(() => location.reload(), 1500);
+        })
+        .catch(error => {
+            console.error("Error uploading photo:", error);
+            showToast("Failed to upload profile photo.", "error");
+            document.getElementById("modalEmployeePhoto").value = "";
+        })
+        .finally(() => {
+            hideLoader();
+        });
+    }
+});
 document.getElementById("updateProfileBtn").addEventListener("click", function (event) {
     event.preventDefault();
 
@@ -13,8 +44,10 @@ document.getElementById("updateProfileBtn").addEventListener("click", function (
     formData.append("designation", document.getElementById("modalPosition").value);
     formData.append("qualification", document.getElementById("modalEducation").value);
 
+    // Do not append photo here because it is uploaded instantly via the change listener
+    // However, if for some reason they bypassed the change listener, we can still attach it
     const fileInput = document.getElementById("modalEmployeePhoto");
-    if (fileInput.files.length > 0) {
+    if (fileInput && fileInput.files.length > 0) {
         formData.append("photo", fileInput.files[0]);
     }
 

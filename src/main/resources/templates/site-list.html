@@ -281,7 +281,18 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Site Photos: <span id="photoCustomerName" class="text-primary"></span></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="ms-auto d-flex align-items-center">
+                        <div class="dropdown me-3">
+                            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="downloadAllBtn" data-bs-toggle="dropdown" aria-expanded="false" style="display: none;">
+                                <i class="fas fa-download me-1"></i> Download All
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="downloadAllBtn">
+                                <li><a class="dropdown-item" href="#" onclick="downloadAllPhotos('zip'); return false;"><i class="fas fa-file-archive me-2 text-primary"></i> Save as ZIP (Compatible)</a></li>
+                                <li><a class="dropdown-item" href="#" onclick="downloadAllPhotos('folder'); return false;"><i class="fas fa-folder-open me-2 text-warning"></i> Save to Local Folder (Advanced)</a></li>
+                            </ul>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                 </div>
                 <div class="modal-body">
                     <input type="hidden" id="currentPhotoSiteId">
@@ -323,6 +334,7 @@
     <div th:replace="~{fragments/commonJquery :: commonJquery}"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.9.3/min/dropzone.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script th:src="@{/js/siteManagement.js}"></script>
 </body>
 
