@@ -15,13 +15,33 @@ public class ExpensesServiceImpl implements ExpensesService {
     private final ExpensesRepository expensesRepository;
 
     @Override
-    public Page<ExpensesEntity> getAllExpenses(Pageable pageable) {
-        return expensesRepository.findAll(pageable);
+    public Page<ExpensesEntity> getAllExpenses(String keyword, String searchType, java.time.LocalDate startDate, java.time.LocalDate endDate, Pageable pageable) {
+        return expensesRepository.searchAllExpenses(keyword, searchType, startDate, endDate, pageable);
     }
 
     @Override
-    public Page<ExpensesEntity> getExpensesByCreatorAndDate(Long createdBy, java.time.LocalDateTime startOfDay, Pageable pageable) {
-        return expensesRepository.findByCreatedByAndCreatedAtAfter(createdBy, startOfDay, pageable);
+    public Page<ExpensesEntity> getExpensesByCreatorAndDate(Long createdBy, java.time.LocalDateTime startOfDay, String keyword, String searchType, java.time.LocalDate startDate, java.time.LocalDate endDate, Pageable pageable) {
+        return expensesRepository.searchByCreatorAndDate(createdBy, startOfDay, keyword, searchType, startDate, endDate, pageable);
+    }
+
+    @Override
+    public java.util.List<ExpensesEntity> exportExpenses(String keyword, String searchType, java.time.LocalDate startDate, java.time.LocalDate endDate, Long createdBy, boolean isAdmin) {
+        if (isAdmin) {
+            return expensesRepository.exportAllExpenses(keyword, searchType, startDate, endDate);
+        } else {
+            return expensesRepository.exportByCreatorAndDate(createdBy, java.time.LocalDate.now().atStartOfDay(), keyword, searchType, startDate, endDate);
+        }
+    }
+
+    @Override
+    public java.math.BigDecimal getTotalExpenseAmount(String keyword, String searchType, java.time.LocalDate startDate, java.time.LocalDate endDate, Long createdBy, boolean isAdmin) {
+        java.math.BigDecimal total;
+        if (isAdmin) {
+            total = expensesRepository.sumAllExpenses(keyword, searchType, startDate, endDate);
+        } else {
+            total = expensesRepository.sumByCreatorAndDate(createdBy, java.time.LocalDate.now().atStartOfDay(), keyword, searchType, startDate, endDate);
+        }
+        return total != null ? total : java.math.BigDecimal.ZERO;
     }
 
     @Override

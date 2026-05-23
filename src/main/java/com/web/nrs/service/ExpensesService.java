@@ -6,8 +6,12 @@ import org.springframework.data.domain.Pageable;
 
 public interface ExpensesService {
 
-    Page<ExpensesEntity> getAllExpenses(Pageable pageable);
-    Page<ExpensesEntity> getExpensesByCreatorAndDate(Long createdBy, java.time.LocalDateTime startOfDay, Pageable pageable);
+    Page<ExpensesEntity> getAllExpenses(String keyword, String searchType, java.time.LocalDate startDate, java.time.LocalDate endDate, Pageable pageable);
+    Page<ExpensesEntity> getExpensesByCreatorAndDate(Long createdBy, java.time.LocalDateTime startOfDay, String keyword, String searchType, java.time.LocalDate startDate, java.time.LocalDate endDate, Pageable pageable);
+
+    java.util.List<ExpensesEntity> exportExpenses(String keyword, String searchType, java.time.LocalDate startDate, java.time.LocalDate endDate, Long createdBy, boolean isAdmin);
+
+    java.math.BigDecimal getTotalExpenseAmount(String keyword, String searchType, java.time.LocalDate startDate, java.time.LocalDate endDate, Long createdBy, boolean isAdmin);
 
     ExpensesEntity getExpenseById(Long id);
 
