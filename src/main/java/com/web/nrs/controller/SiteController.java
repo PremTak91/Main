@@ -9,6 +9,8 @@ import com.web.nrs.service.SiteService;
 import com.web.nrs.utils.ApiResponse;
 import com.web.nrs.utils.PaginationUtils;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/sites")
 @RequiredArgsConstructor
 public class SiteController {
+
+    private static final Logger log = LoggerFactory.getLogger(SiteController.class);
 
     private final SiteService siteService;
     private final EmployeeService employeeService;
@@ -143,6 +147,11 @@ public class SiteController {
             @RequestParam("file") MultipartFile file,
             Authentication authentication) {
         try {
+            if (file == null || file.isEmpty()) {
+                log.warn("Upload attempt with empty file for site {}", id);
+                return ResponseEntity.badRequest().body(ApiResponse.error("No file received. Please select a valid image."));
+            }
+            log.info("Uploading photo for site {}: {} ({} bytes)", id, file.getOriginalFilename(), file.getSize());
             Long userId = getUserId(authentication);
             siteService.uploadPhoto(id, file, userId);
             return ResponseEntity.ok(ApiResponse.success("Photo uploaded successfully"));
