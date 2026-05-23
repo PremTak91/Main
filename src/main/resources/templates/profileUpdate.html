@@ -52,7 +52,7 @@
                             <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
                                 <div class="profile-image-container d-flex justify-content-center">
                                     <img th:if="${emp.photo != null and !#strings.isEmpty(emp.photo) and emp.photo != 'null'}" 
-                                         th:src="@{/images/employeePhoto/{photo}(photo=${emp.photo})}" 
+                                         th:src="${#strings.startsWith(emp.photo, 'http') ? emp.photo : '/NRS/images/employeePhoto/' + emp.photo}" 
                                          alt="User Profile"
                                          class="employee-photo" 
                                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
@@ -198,6 +198,7 @@
                     </form>
                 </div>
                 <div class="modal-footer justify-content-between">
+                    <input type="hidden" id="isProfileUploadContext" value="true">
                     <button type="submit" id="updateProfileBtn" th:data-param="${emp.id}"
                         class="btn btn-primary">Submit</button>
                 </div>

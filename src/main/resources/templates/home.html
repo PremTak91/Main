@@ -31,7 +31,7 @@
                         <div class="card p-4">
                             <div class="d-flex align-items-center mb-3">
                                 <div th:if="${post.authorPhoto != null}" class="me-3">
-                                    <img th:src="@{/images/employeePhoto/{photo}(photo=${post.authorPhoto})}"
+                                    <img th:src="${#strings.startsWith(post.authorPhoto, 'http') ? post.authorPhoto : '/NRS/images/employeePhoto/' + post.authorPhoto}"
                                         alt="User Avatar" class="rounded-circle border border-secondary"
                                         style="width: 60px; height: 60px; object-fit: cover;">
                                 </div>

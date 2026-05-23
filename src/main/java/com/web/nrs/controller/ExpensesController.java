@@ -35,6 +35,10 @@ public class ExpensesController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "ALL") String searchType,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate,
             Model model
     ) {
         Pageable pageable = PaginationUtils.createPageable(page, size, sortBy, sortDir);
@@ -50,16 +54,20 @@ public class ExpensesController {
 
         Page<ExpensesEntity> expensesPage;
         if (isAdmin) {
-            expensesPage = expensesService.getAllExpenses(pageable);
+            expensesPage = expensesService.getAllExpenses(keyword, searchType, startDate, endDate, pageable);
         } else {
             // Non-admin can only see their own entries from today
-            expensesPage = expensesService.getExpensesByCreatorAndDate(employeeId, LocalDate.now().atStartOfDay(), pageable);
+            expensesPage = expensesService.getExpensesByCreatorAndDate(employeeId, LocalDate.now().atStartOfDay(), keyword, searchType, startDate, endDate, pageable);
         }
 
         model.addAttribute("expenses", expensesPage.getContent());
         model.addAttribute("isAdmin", isAdmin);
         model.addAttribute("currentEmployeeId", employeeId);
         model.addAttribute("today", LocalDate.now());
+
+        // Calculate and add Total Amount based on search
+        java.math.BigDecimal totalAmount = expensesService.getTotalExpenseAmount(keyword, searchType, startDate, endDate, employeeId, isAdmin);
+        model.addAttribute("totalExpenseAmount", totalAmount);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", expensesPage.getTotalPages());
         model.addAttribute("totalItems", expensesPage.getTotalElements());
@@ -67,8 +75,51 @@ public class ExpensesController {
         model.addAttribute("sortBy", sortBy);
         model.addAttribute("sortDir", sortDir);
         model.addAttribute("reverseSortDir", sortDir.equals("asc") ? "desc" : "asc");
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("searchType", searchType);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
 
         return "expenses";
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportExpenses(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "ALL") String searchType,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate
+    ) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_SUPERADMIN"));
+        
+        Long employeeId = employeeService.getEmployeeByEmailId(auth.getName())
+                .map(com.web.nrs.entity.EmployeeEntity::getId)
+                .orElse(0L);
+
+        java.util.List<ExpensesEntity> expenses = expensesService.exportExpenses(keyword, searchType, startDate, endDate, employeeId, isAdmin);
+
+        StringBuilder csvBuilder = new StringBuilder();
+        csvBuilder.append("ID,Description,Amount,Advanced Amount,Given By,Given To,Date,Type\n");
+
+        for (ExpensesEntity e : expenses) {
+            csvBuilder.append(e.getId()).append(",")
+                      .append("\"").append(e.getDescription() != null ? e.getDescription().replace("\"", "\"\"") : "").append("\",")
+                      .append(e.getTotalAmount() != null ? e.getTotalAmount() : "").append(",")
+                      .append(e.getAdvancedAmount() != null ? e.getAdvancedAmount() : "").append(",")
+                      .append("\"").append(e.getGivenBy() != null ? e.getGivenBy().replace("\"", "\"\"") : "").append("\",")
+                      .append("\"").append(e.getGivenTo() != null ? e.getGivenTo().replace("\"", "\"\"") : "").append("\",")
+                      .append(e.getExpenseDate() != null ? e.getExpenseDate().toString() : "").append(",")
+                      .append("\"").append(e.getExpenseType() != null ? e.getExpenseType().replace("\"", "\"\"") : "").append("\"\n");
+        }
+
+        byte[] csvBytes = csvBuilder.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=\"expenses.csv\"")
+                .header("Content-Type", "text/csv; charset=UTF-8")
+                .body(csvBytes);
     }
 
     @GetMapping("/{id}")

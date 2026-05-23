@@ -470,3 +470,21 @@ CREATE TABLE IF NOT EXISTS `site_photos` (
 ALTER TABLE site_details ADD COLUMN kilowatt VARCHAR(50);
 ALTER TABLE expenses ADD COLUMN created_by BIGINT;
 ALTER TABLE inquiry ADD COLUMN created_by BIGINT;
+
+CREATE TABLE documents (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    document_url VARCHAR(1000) NOT NULL,
+    public_id VARCHAR(255) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE work_logs (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT NOT NULL,
+    work_date DATE NOT NULL,
+    work_description TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_worklog_employee FOREIGN KEY (employee_id) REFERENCES employeeinfo(id)
+);

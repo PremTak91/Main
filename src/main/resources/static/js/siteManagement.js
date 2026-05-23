@@ -2,6 +2,7 @@ let siteModal;
 let photoModal;
 let previewModal;
 let myDropzone;
+let currentSitePhotos = [];
 Dropzone.autoDiscover = false;
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -164,23 +165,30 @@ function loadSitePhotos(siteId) {
         .then(function (r) { return r.json(); })
         .then(function (data) {
             hideLoader();
+            currentSitePhotos = [];
+            var downloadBtn = document.getElementById("downloadAllBtn");
             if (data.success && data.data.length > 0) {
+                currentSitePhotos = data.data;
                 noPhotosMsg.style.display = "none";
-                data.data.forEach(function (photo) {
+                if (downloadBtn) downloadBtn.style.display = "inline-block";
+                
+                data.data.forEach(function (photo, index) {
                     var card = document.createElement("div");
                     card.className = "photo-card";
+                    var filename = "photo_" + (index + 1) + ".jpg";
                     card.innerHTML =
                         '<img src="' + photo.url + '" alt="Site Photo" ' +
                             'onclick="previewSiteImage(\'' + photo.url + '\')" ' +
                             'title="Click to view full size">' +
                         '<button class="delete-btn" onclick="deletePhoto(' + photo.id + ')" title="Delete Photo">' +
                             '<i class="fas fa-times"></i></button>' +
-                        '<a href="' + photo.url + '" target="_blank" download class="download-btn" title="Download">' +
-                            '<i class="fas fa-download"></i></a>';
+                        '<button class="download-btn border-0 bg-transparent" onclick="downloadSinglePhoto(\'' + photo.url + '\', \'' + filename + '\')" style="cursor: pointer;" title="Download">' +
+                            '<i class="fas fa-download text-white"></i></button>';
                     gallery.appendChild(card);
                 });
             } else {
                 noPhotosMsg.style.display = "block";
+                if (downloadBtn) downloadBtn.style.display = "none";
                 gallery.appendChild(noPhotosMsg);
             }
         })
@@ -226,4 +234,139 @@ function goToPage(page) {
     if (endDate)   url += "&endDate=" + endDate;
 
     window.location.href = url;
+}
+
+// ── Image Downloading Logic ───────────────────────────────────────────────────
+
+function downloadSinglePhoto(url, filename) {
+    showLoader();
+    fetch(url)
+        .then(response => response.blob())
+        .then(blob => {
+            hideLoader();
+            var blobUrl = window.URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(blobUrl);
+        })
+        .catch(err => {
+            hideLoader();
+            showToast("Failed to download image", "error");
+            console.error(err);
+        });
+}
+
+function downloadAllPhotos(format) {
+    if (!currentSitePhotos || currentSitePhotos.length === 0) {
+        showToast("No photos available to download.", "error");
+        return;
+    }
+    
+    var customerName = document.getElementById("photoCustomerName").innerText.trim() || "Customer";
+    customerName = customerName.replace(/[^a-z0-9_]/gi, '_'); // sanitize
+
+    if (format === 'zip') {
+        saveAsZip(customerName);
+    } else if (format === 'folder') {
+        saveToLocalFolder(customerName);
+    }
+}
+
+async function saveAsZip(customerName) {
+    if (typeof JSZip === 'undefined') {
+        showToast("ZIP library not loaded. Please try again later.", "error");
+        return;
+    }
+
+    showLoader();
+    try {
+        var zip = new JSZip();
+        var folderName = "NRS_solarSite_" + customerName;
+        var folder = zip.folder(folderName);
+
+        var fetchPromises = currentSitePhotos.map((photo, index) => {
+            return fetch(photo.url)
+                .then(response => {
+                    if (!response.ok) throw new Error("Network response was not ok");
+                    return response.blob();
+                })
+                .then(blob => {
+                    var filename = "photo_" + (index + 1) + ".jpg";
+                    folder.file(filename, blob);
+                });
+        });
+
+        await Promise.all(fetchPromises);
+        
+        var content = await zip.generateAsync({ type: "blob" });
+        hideLoader();
+        
+        var blobUrl = window.URL.createObjectURL(content);
+        var a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = folderName + ".zip";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+        
+        showToast("ZIP downloaded successfully!", "success");
+    } catch (err) {
+        hideLoader();
+        showToast("Error creating ZIP file. Check console for details.", "error");
+        console.error(err);
+    }
+}
+
+async function saveToLocalFolder(customerName) {
+    if (!window.showDirectoryPicker) {
+        showToast("Your browser does not support saving directly to a folder. Please use 'Save as ZIP' instead. (Try Chrome or Edge on Desktop)", "error");
+        return;
+    }
+
+    try {
+        // 1. Ask user for a root directory (e.g. D:\)
+        const rootHandle = await window.showDirectoryPicker({
+            mode: 'readwrite',
+            startIn: 'desktop'
+        });
+
+        showLoader();
+
+        // 2. Create NRS/solarSite/[CustomerName] structure
+        const nrsHandle = await rootHandle.getDirectoryHandle('NRS', { create: true });
+        const solarSiteHandle = await nrsHandle.getDirectoryHandle('solarSite', { create: true });
+        const customerHandle = await solarSiteHandle.getDirectoryHandle(customerName, { create: true });
+
+        // 3. Fetch and save each photo
+        var fetchPromises = currentSitePhotos.map(async (photo, index) => {
+            const filename = "photo_" + (index + 1) + ".jpg";
+            
+            const fileHandle = await customerHandle.getFileHandle(filename, { create: true });
+            const writable = await fileHandle.createWritable();
+            
+            const response = await fetch(photo.url);
+            if (!response.ok) throw new Error("Network response was not ok");
+            const blob = await response.blob();
+            
+            await writable.write(blob);
+            await writable.close();
+        });
+
+        await Promise.all(fetchPromises);
+        
+        hideLoader();
+        showToast("Successfully saved " + currentSitePhotos.length + " photos to NRS/solarSite/" + customerName, "success");
+        
+    } catch (err) {
+        hideLoader();
+        if (err.name === 'AbortError') return; // User cancelled picker
+        
+        showToast("Error saving to folder. Please ensure you granted write permissions.", "error");
+        console.error(err);
+    }
 }

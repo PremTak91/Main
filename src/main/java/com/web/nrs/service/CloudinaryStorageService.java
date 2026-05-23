@@ -55,12 +55,42 @@ public class CloudinaryStorageService {
         return uploadResult.get("public_id").toString();
     }
 
+    public Map<String, String> uploadDocument(String folderName, MultipartFile file) throws IOException {
+        if (cloudinary == null) {
+            throw new RuntimeException("Cloudinary is not configured correctly.");
+        }
+
+        String uniqueFilename = UUID.randomUUID().toString();
+
+        // Use 'raw' resource_type for documents (PDF, DOCX, etc.)
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                "folder", folderName,
+                "public_id", uniqueFilename,
+                "resource_type", "raw"
+        ));
+
+        return Map.of(
+            "public_id", uploadResult.get("public_id").toString(),
+            "url", uploadResult.get("secure_url").toString()
+        );
+    }
+
     public void deleteImage(String publicId) {
         if (cloudinary != null && publicId != null && !publicId.isEmpty()) {
             try {
                 cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
             } catch (IOException e) {
                 throw new RuntimeException("Failed to delete image from Cloudinary", e);
+            }
+        }
+    }
+
+    public void deleteDocument(String publicId) {
+        if (cloudinary != null && publicId != null && !publicId.isEmpty()) {
+            try {
+                cloudinary.uploader().destroy(publicId, ObjectUtils.asMap("resource_type", "raw"));
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to delete document from Cloudinary", e);
             }
         }
     }

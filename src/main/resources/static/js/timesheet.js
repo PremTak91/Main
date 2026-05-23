@@ -38,7 +38,7 @@ function saveTimesheet() {
     const outTime = $('#outTime').val();
 
     if (!inTime) {
-        showToast('Error', 'In Time is required.', 'danger');
+        showToast('In Time is required.', 'error');
         return;
     }
 
@@ -50,14 +50,14 @@ function saveTimesheet() {
     $('#loader').show();
 
     $.ajax({
-        url: `/timesheet/${id}`,
+        url: `/NRS/timesheet/${id}`,
         type: 'PUT',
         contentType: 'application/json',
         data: JSON.stringify(requestData),
         success: function(response) {
             $('#loader').hide();
             $('#editTimesheetModal').modal('hide');
-            showToast('Success', response.message || 'Timesheet updated successfully', 'success');
+            showToast(response.message || 'Timesheet updated successfully', 'success');
             setTimeout(() => {
                 location.reload();
             }, 1000);
@@ -65,7 +65,7 @@ function saveTimesheet() {
         error: function(xhr) {
             $('#loader').hide();
             const message = xhr.responseJSON?.message || 'Failed to update timesheet';
-            showToast('Error', message, 'danger');
+            showToast(message, 'error');
         }
     });
 }

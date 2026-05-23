@@ -12,19 +12,42 @@ document.addEventListener('DOMContentLoaded', function () {
  * Setup event listeners
  */
 function setupEventListeners() {
-    // Client-side search filter
     const searchInput = document.getElementById('searchTable');
     if (searchInput) {
-        searchInput.addEventListener('input', function () {
-            const searchTerm = this.value.toLowerCase();
-            const rows = document.querySelectorAll('#expensesTable tbody tr');
-
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? '' : 'none';
-            });
+        searchInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                applyFilters();
+            }
         });
     }
+}
+
+/**
+ * Apply all filters (search, date, search type)
+ */
+function applyFilters() {
+    const keyword = document.getElementById('searchTable').value;
+    const searchType = document.getElementById('searchType').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+
+    let url = '/NRS/expenses?page=0&size=' + currentPageSize + '&sortBy=' + currentSortBy + '&sortDir=' + currentSortDir;
+    
+    if (keyword && keyword.trim() !== '') {
+        url += '&keyword=' + encodeURIComponent(keyword.trim());
+    }
+    if (searchType && searchType !== 'ALL') {
+        url += '&searchType=' + encodeURIComponent(searchType);
+    }
+    if (startDate) {
+        url += '&startDate=' + encodeURIComponent(startDate);
+    }
+    if (endDate) {
+        url += '&endDate=' + encodeURIComponent(endDate);
+    }
+
+    window.location.href = url;
 }
 
 /**
@@ -43,7 +66,22 @@ function setupModalReset() {
  * Change page size
  */
 function changePageSize(size) {
-    window.location.href = '/NRS/expenses?page=0&size=' + size + '&sortBy=' + currentSortBy + '&sortDir=' + currentSortDir;
+    let url = '/NRS/expenses?page=0&size=' + size + '&sortBy=' + currentSortBy + '&sortDir=' + currentSortDir;
+    
+    if (currentKeyword && currentKeyword.trim() !== '') {
+        url += '&keyword=' + encodeURIComponent(currentKeyword);
+    }
+    if (currentSearchType && currentSearchType !== 'ALL') {
+        url += '&searchType=' + encodeURIComponent(currentSearchType);
+    }
+    if (currentStartDate) {
+        url += '&startDate=' + encodeURIComponent(currentStartDate);
+    }
+    if (currentEndDate) {
+        url += '&endDate=' + encodeURIComponent(currentEndDate);
+    }
+    
+    window.location.href = url;
 }
 
 /**

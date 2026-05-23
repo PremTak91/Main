@@ -45,4 +45,19 @@ public class ProfileController {
         response.put("message", "Profile updated successfully");
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/profile/photo")
+    public ResponseEntity<?> uploadProfilePhoto(@RequestParam("employeeId") Long employeeId,
+                                                @RequestParam("photo") MultipartFile photo) {
+        try {
+            employeeService.uploadProfilePhoto(employeeId, photo);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Profile photo uploaded successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Failed to upload photo: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 }
