@@ -22,9 +22,10 @@ document.addEventListener("DOMContentLoaded", function () {
         clickable: false, // We'll handle clicks via the native input overlay
         init: function() {
             this.on("processing", function(file) {
-                // Update URL dynamically based on current site ID
+                // Update URL dynamically based on current site ID using absolute path
                 const siteId = document.getElementById("currentPhotoSiteId").value;
-                this.options.url = `/NRS/sites/${siteId}/photos`;
+                const baseUrl = window.location.origin;
+                this.options.url = `${baseUrl}/NRS/sites/${siteId}/photos`;
             });
             this.on("success", function(file, response) {
                 if (response.success) {
