@@ -2,7 +2,6 @@ package com.web.nrs.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import net.coobird.thumbnailator.Thumbnails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,20 +42,13 @@ public class CloudinaryStorageService {
             throw new RuntimeException("Cloudinary is not configured correctly.");
         }
 
-        // Compress Image using Thumbnailator (like WhatsApp/Instagram)
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        Thumbnails.of(file.getInputStream())
-                .size(1080, 1080) // Max dimensions
-                .outputQuality(0.7) // 70% quality compression
-                .outputFormat("jpg")
-                .toOutputStream(os);
-
-        byte[] compressedImage = os.toByteArray();
         String uniqueFilename = UUID.randomUUID().toString();
 
-        Map uploadResult = cloudinary.uploader().upload(compressedImage, ObjectUtils.asMap(
+        // Let Cloudinary handle the resizing and compression to avoid OutOfMemoryError on our server heap
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
                 "folder", folderName,
-                "public_id", uniqueFilename
+                "public_id", uniqueFilename,
+                "transformation", new com.cloudinary.Transformation().width(1080).height(1080).crop("limit").quality(70).fetchFormat("jpg")
         ));
 
         // Returns the public_id which is needed for deletion
