@@ -507,5 +507,15 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeAttendanceRepository.save(attendance);
         return true;
     }
+
+    @Override
+    @Transactional
+    public boolean deleteTimesheetRecord(Long timesheetId) {
+        if (!employeeAttendanceRepository.existsById(timesheetId)) {
+            return false;
+        }
+        employeeAttendanceRepository.deleteById(timesheetId);
+        return true;
+    }
 }
 

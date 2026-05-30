@@ -119,4 +119,20 @@ public class TimesheetController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
+
+    @DeleteMapping("/{id}")
+    @ResponseBody
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    public ResponseEntity<ApiResponse> deleteTimesheet(@PathVariable Long id) {
+        try {
+            boolean deleted = employeeService.deleteTimesheetRecord(id);
+            if (deleted) {
+                return ResponseEntity.ok(ApiResponse.success("Timesheet deleted successfully"));
+            } else {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Failed to delete timesheet or not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
 }

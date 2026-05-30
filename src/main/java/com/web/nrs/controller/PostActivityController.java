@@ -47,6 +47,20 @@ public class PostActivityController {
             @RequestParam(value = "postText", required = false) String postText,
             @RequestParam(value = "postImage", required = false) MultipartFile postImage) {
         try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
+            EmployeeEntity emp = employeeService.getEmployeeByEmailId(email)
+                    .orElseThrow(() -> new RuntimeException("Logged in employee not found"));
+            
+            boolean isSuperAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
+                    
+            Long postAuthorId = postActivityService.getPostById(id).getEmpId();
+            
+            if (!isSuperAdmin && !postAuthorId.equals(emp.getId())) {
+                return ResponseEntity.status(403).body(ApiResponse.error("You don't have permission to edit this post"));
+            }
+
             postActivityService.updatePost(id, postText, postImage);
             return ResponseEntity.ok(ApiResponse.success("Post updated successfully"));
         } catch (Exception e) {
@@ -61,6 +75,32 @@ public class PostActivityController {
             return ResponseEntity.ok(ApiResponse.success("Post fetched", postActivityService.getPostById(id)));
         } catch (Exception e) {
             return ResponseEntity.status(404).body(ApiResponse.error("Post not found"));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseBody
+    public ResponseEntity<ApiResponse> deletePost(@PathVariable Long id) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
+            EmployeeEntity emp = employeeService.getEmployeeByEmailId(email)
+                    .orElseThrow(() -> new RuntimeException("Logged in employee not found"));
+            
+            // Check authorization: only creator or SUPERADMIN can delete
+            boolean isSuperAdmin = auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
+                    
+            Long postAuthorId = postActivityService.getPostById(id).getEmpId();
+            
+            if (!isSuperAdmin && !postAuthorId.equals(emp.getId())) {
+                return ResponseEntity.status(403).body(ApiResponse.error("You don't have permission to delete this post"));
+            }
+
+            postActivityService.deletePost(id);
+            return ResponseEntity.ok(ApiResponse.success("Post deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("Failed to delete post: " + e.getMessage()));
         }
     }
 }
