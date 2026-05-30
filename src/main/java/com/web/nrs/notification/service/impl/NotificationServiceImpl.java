@@ -53,8 +53,9 @@ public class NotificationServiceImpl implements NotificationService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        if (type.getId() == null && notification.getType().getId() != null) {
-            typeRepository.save(type);
+        if (type.getId() == null) {
+            type = typeRepository.save(type);
+            notification.setType(type);
         }
 
         notification = notificationRepository.save(notification);
