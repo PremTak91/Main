@@ -24,7 +24,8 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
            "(:endDate IS NULL OR e.expenseDate <= :endDate) AND " +
            "(:keyword IS NULL OR :keyword = '' OR " +
            "  (:searchType = 'ALL' AND (LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
-           "  (:searchType = 'NAME' AND (LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
+           "  (:searchType = 'GIVEN_BY' AND LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "  (:searchType = 'GIVEN_TO' AND LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'TYPE' AND LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'DESC' AND LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
            ")")
@@ -40,7 +41,8 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
            "(:endDate IS NULL OR e.expenseDate <= :endDate) AND " +
            "(:keyword IS NULL OR :keyword = '' OR " +
            "  (:searchType = 'ALL' AND (LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
-           "  (:searchType = 'NAME' AND (LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
+           "  (:searchType = 'GIVEN_BY' AND LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "  (:searchType = 'GIVEN_TO' AND LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'TYPE' AND LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'DESC' AND LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
            ")")
@@ -58,7 +60,8 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
            "(:endDate IS NULL OR e.expenseDate <= :endDate) AND " +
            "(:keyword IS NULL OR :keyword = '' OR " +
            "  (:searchType = 'ALL' AND (LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
-           "  (:searchType = 'NAME' AND (LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
+           "  (:searchType = 'GIVEN_BY' AND LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "  (:searchType = 'GIVEN_TO' AND LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'TYPE' AND LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'DESC' AND LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
            ") ORDER BY e.id DESC")
@@ -73,7 +76,8 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
            "(:endDate IS NULL OR e.expenseDate <= :endDate) AND " +
            "(:keyword IS NULL OR :keyword = '' OR " +
            "  (:searchType = 'ALL' AND (LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
-           "  (:searchType = 'NAME' AND (LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
+           "  (:searchType = 'GIVEN_BY' AND LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "  (:searchType = 'GIVEN_TO' AND LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'TYPE' AND LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'DESC' AND LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
            ") ORDER BY e.id DESC")
@@ -90,7 +94,8 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
            "(:endDate IS NULL OR e.expenseDate <= :endDate) AND " +
            "(:keyword IS NULL OR :keyword = '' OR " +
            "  (:searchType = 'ALL' AND (LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
-           "  (:searchType = 'NAME' AND (LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
+           "  (:searchType = 'GIVEN_BY' AND LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "  (:searchType = 'GIVEN_TO' AND LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'TYPE' AND LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'DESC' AND LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
            ")")
@@ -105,7 +110,8 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
            "(:endDate IS NULL OR e.expenseDate <= :endDate) AND " +
            "(:keyword IS NULL OR :keyword = '' OR " +
            "  (:searchType = 'ALL' AND (LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
-           "  (:searchType = 'NAME' AND (LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%')))) OR " +
+           "  (:searchType = 'GIVEN_BY' AND LOWER(e.givenBy) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
+           "  (:searchType = 'GIVEN_TO' AND LOWER(e.givenTo) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'TYPE' AND LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'DESC' AND LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
            ")")

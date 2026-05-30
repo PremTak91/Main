@@ -488,3 +488,38 @@ CREATE TABLE work_logs (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_worklog_employee FOREIGN KEY (employee_id) REFERENCES employeeinfo(id)
 );
+
+CREATE TABLE notification_type (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    description VARCHAR(255),
+    default_priority VARCHAR(20) DEFAULT 'MEDIUM'
+);
+
+CREATE TABLE notification (
+    id VARCHAR(36) PRIMARY KEY,
+    type_id BIGINT,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    deep_link VARCHAR(500),
+    priority VARCHAR(20) DEFAULT 'MEDIUM',
+    action_required BOOLEAN DEFAULT FALSE,
+    expires_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_notification_type FOREIGN KEY (type_id) REFERENCES notification_type(id)
+);
+
+CREATE TABLE notification_recipient (
+    id VARCHAR(36) PRIMARY KEY,
+    notification_id VARCHAR(36) NOT NULL,
+    recipient_id INT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    read_at DATETIME,
+    CONSTRAINT fk_notification_recipient_notif FOREIGN KEY (notification_id) REFERENCES notification(id) ON DELETE CASCADE,
+    CONSTRAINT fk_notification_recipient_emp FOREIGN KEY (recipient_id) REFERENCES employeeinfo(id)
+);
+
+INSERT INTO notification_type (code, description, default_priority) VALUES 
+('LEAVE_APPLIED', 'Leave Request Submitted', 'HIGH'),
+('LEAVE_APPROVED', 'Leave Request Approved', 'MEDIUM'),
+('LEAVE_REJECTED', 'Leave Request Rejected', 'HIGH');

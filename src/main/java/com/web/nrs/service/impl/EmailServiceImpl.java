@@ -44,7 +44,7 @@ public class EmailServiceImpl implements EmailService {
 
         } catch (MessagingException e) {
             log.error("Failed to send password reset email to {}", toEmail, e);
-            throw new RuntimeException("Failed to send email");
+            throw new RuntimeException("Failed to send email", e);
         }
     }
 }
