@@ -23,7 +23,7 @@ public class PostActivityEntity {
     @Column(name = "emp_id", nullable = false)
     private Long empId;
 
-    @Column(name = "post_text", columnDefinition = "TEXT")
+    @Column(name = "post_text", columnDefinition = "TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
     private String postText;
 
     @Column(name = "post_image")

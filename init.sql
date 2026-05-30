@@ -516,3 +516,17 @@ CREATE TABLE `post_comments` (
   CONSTRAINT `FK_post_comment_emp` FOREIGN KEY (`emp_id`) REFERENCES `employeeinfo` (`id`),
   CONSTRAINT `FK_post_comment_post` FOREIGN KEY (`post_id`) REFERENCES `post_activity` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Upgrades the entire 'post_activity' table to support full utf8mb4 encoding
+ALTER TABLE post_activity CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Explicitly upgrades the 'post_text' column just to be absolutely sure
+ALTER TABLE post_activity MODIFY post_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Upgrades the entire 'post_comments' table so people can use Hindi/Emojis in comments too
+ALTER TABLE post_comments CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Explicitly upgrades the 'comment_text' column
+ALTER TABLE post_comments MODIFY comment_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE post_activity MODIFY post_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+ALTER TABLE post_comments MODIFY comment_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
