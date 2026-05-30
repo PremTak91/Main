@@ -25,17 +25,34 @@ public class FCMService {
     @PostConstruct
     public void init() {
         try {
-            ClassPathResource resource = new ClassPathResource("firebase-adminsdk.json");
-            if (resource.exists()) {
+            // 1. Try to read from Environment Variable (Best for Production/Render)
+            String firebaseEnvStr = System.getenv("FIREBASE_CREDENTIALS");
+            
+            if (firebaseEnvStr != null && !firebaseEnvStr.trim().isEmpty()) {
+                log.info("Initializing Firebase Admin SDK from FIREBASE_CREDENTIALS environment variable...");
+                java.io.InputStream stream = new java.io.ByteArrayInputStream(firebaseEnvStr.getBytes(java.nio.charset.StandardCharsets.UTF_8));
                 FirebaseOptions options = FirebaseOptions.builder()
-                        .setCredentials(GoogleCredentials.fromStream(resource.getInputStream()))
+                        .setCredentials(GoogleCredentials.fromStream(stream))
                         .build();
                 if (FirebaseApp.getApps().isEmpty()) {
                     FirebaseApp.initializeApp(options);
-                    log.info("Firebase Admin SDK initialized successfully.");
+                    log.info("Firebase Admin SDK initialized successfully via Env Var.");
                 }
             } else {
-                log.warn("firebase-adminsdk.json not found in resources. Push notifications will be disabled.");
+                // 2. Fallback to Local File (Best for Local Development)
+                ClassPathResource resource = new ClassPathResource("firebase-adminsdk.json");
+                if (resource.exists()) {
+                    log.info("Initializing Firebase Admin SDK from local firebase-adminsdk.json file...");
+                    FirebaseOptions options = FirebaseOptions.builder()
+                            .setCredentials(GoogleCredentials.fromStream(resource.getInputStream()))
+                            .build();
+                    if (FirebaseApp.getApps().isEmpty()) {
+                        FirebaseApp.initializeApp(options);
+                        log.info("Firebase Admin SDK initialized successfully via local file.");
+                    }
+                } else {
+                    log.warn("Neither FIREBASE_CREDENTIALS env var nor firebase-adminsdk.json file found. Push notifications disabled.");
+                }
             }
         } catch (Exception e) {
             log.error("Failed to initialize Firebase Admin SDK", e);

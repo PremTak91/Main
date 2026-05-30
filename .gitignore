@@ -4,6 +4,13 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Environments
+.env
+
+# Firebase Secrets
+firebase-adminsdk.json
+google-services.json
+
 ### STS ###
 .apt_generated
 .classpath
@@ -31,3 +38,4 @@ build/
 
 ### VS Code ###
 .vscode/
+/app/
