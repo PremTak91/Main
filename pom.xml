@@ -130,6 +130,13 @@
 		<version>0.4.20</version>
 	</dependency>
 
+	<!-- Firebase Admin SDK for Push Notifications -->
+	<dependency>
+		<groupId>com.google.firebase</groupId>
+		<artifactId>firebase-admin</artifactId>
+		<version>9.2.0</version>
+	</dependency>
+
 	</dependencies>
 
 	<build>

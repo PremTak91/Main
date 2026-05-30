@@ -4,6 +4,8 @@ import com.web.nrs.utils.ApiResponse;
 import com.web.nrs.notification.dto.NotificationDTO;
 import com.web.nrs.notification.service.NotificationService;
 import com.web.nrs.service.EmployeeService;
+import com.web.nrs.repository.EmployeeRepository;
+import com.web.nrs.entity.EmployeeEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,6 +21,7 @@ public class NotificationController {
 
     private final NotificationService notificationService;
     private final EmployeeService employeeService;
+    private final EmployeeRepository employeeRepository;
 
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -55,5 +58,15 @@ public class NotificationController {
     public ResponseEntity<ApiResponse> deleteNotification(@PathVariable String id) {
         notificationService.deleteNotification(id);
         return ResponseEntity.ok(ApiResponse.success("Notification deleted"));
+    }
+
+    @PostMapping("/fcm-token")
+    public ResponseEntity<ApiResponse> updateFcmToken(@RequestParam String token) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        EmployeeEntity emp = employeeService.getEmployeeByEmailId(auth.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        emp.setFcmToken(token);
+        employeeRepository.save(emp);
+        return ResponseEntity.ok(ApiResponse.success("FCM token updated successfully"));
     }
 }

@@ -50,7 +50,9 @@ public class EmployeeEntity {
     private Long auditUserId;
     private LocalDateTime auditTimeStamp;
     private Integer previousExperience;
-
+    
+    @Column(name = "fcm_token")
+    private String fcmToken;
 
 
     @Transient
