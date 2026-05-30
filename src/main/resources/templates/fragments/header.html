@@ -15,17 +15,17 @@
                     <img th:src="@{/images/NRS_brand.png}" alt="NRS Logo" height="40" class="d-inline-block align-text-top">
                 </a>
 
-                <div class="ms-auto d-flex align-items-center">
-                    <button type="button" class="btn btn-outline-primary btn-sm me-2 rounded-pill"
+                <div class="ms-auto d-flex align-items-center flex-nowrap gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm rounded-pill"
                         data-bs-toggle="modal" data-bs-target="#createPostModal" title="Create Post">
-                        <i class="fas fa-edit me-1"></i> Post
+                        <i class="fas fa-edit me-1"></i> <span class="d-none d-md-inline">Post</span>
                     </button>
-                    <button id="attendanceBtn" class="badge bg-danger rounded-pill me-3 border-0"
+                    <button id="attendanceBtn" class="badge bg-danger rounded-pill border-0"
                         onclick="toggleAttendance()">IN</button>
                     
                     <!-- Notification Bell -->
-                    <div class="dropdown me-3" id="notificationDropdownContainer">
-                        <a class="text-decoration-none position-relative text-dark" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="markNotificationsRead()">
+                    <div class="dropdown" id="notificationDropdownContainer">
+                        <a class="text-decoration-none position-relative text-dark d-flex align-items-center justify-content-center" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="markNotificationsRead()" style="width: 32px; height: 32px;">
                             <i class="fas fa-bell fs-5"></i>
                             <span id="unreadNotificationCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size: 0.6rem;">
                                 0
