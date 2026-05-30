@@ -487,4 +487,5 @@ CREATE TABLE work_logs (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_worklog_employee FOREIGN KEY (employee_id) REFERENCES employeeinfo(id)
-);
+);
+ALTER TABLE employeeinfo ADD COLUMN fcm_token varchar(255);

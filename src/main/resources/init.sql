@@ -523,3 +523,5 @@ INSERT INTO notification_type (code, description, default_priority) VALUES
 ('LEAVE_APPLIED', 'Leave Request Submitted', 'HIGH'),
 ('LEAVE_APPROVED', 'Leave Request Approved', 'MEDIUM'),
 ('LEAVE_REJECTED', 'Leave Request Rejected', 'HIGH');
+
+ALTER TABLE employeeinfo ADD COLUMN fcm_token varchar(255);
