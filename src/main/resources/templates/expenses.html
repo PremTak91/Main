@@ -32,9 +32,9 @@
                         </span>
                     </h3>
                     <div class="d-flex gap-2">
-                        <a th:href="@{/expenses/export(keyword=${keyword}, searchType=${searchType}, startDate=${startDate}, endDate=${endDate})}" class="btn btn-success">
+                        <button type="button" class="btn btn-success" onclick="exportExpenses()">
                             <i class="fas fa-file-excel me-2"></i> Export Excel
-                        </a>
+                        </button>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
                             <i class="fas fa-plus me-2"></i> Add Entry
                         </button>
