@@ -51,6 +51,64 @@ function applyFilters() {
 }
 
 /**
+ * Export Expenses to Excel
+ */
+function exportExpenses() {
+    const keyword = document.getElementById('searchTable') ? document.getElementById('searchTable').value : '';
+    const searchType = document.getElementById('searchType') ? document.getElementById('searchType').value : '';
+    const startDate = document.getElementById('startDate') ? document.getElementById('startDate').value : '';
+    const endDate = document.getElementById('endDate') ? document.getElementById('endDate').value : '';
+
+    let url = '/NRS/expenses/export?';
+    let params = new URLSearchParams();
+    
+    if (keyword && keyword.trim() !== '') params.append('keyword', keyword.trim());
+    if (searchType && searchType !== 'ALL') params.append('searchType', searchType);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    
+    url += params.toString();
+
+    showLoader();
+
+    fetch(url)
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to download Excel file');
+            return response.blob();
+        })
+        .then(blob => {
+            hideLoader();
+            const filename = 'Expenses_Export_' + new Date().getTime() + '.xlsx';
+
+            if (window.Android && typeof window.Android.saveBase64File === "function") {
+                // We are inside the Android App, convert blob to Base64 and pass to native method
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = function() {
+                    const base64data = reader.result; // contains data:application/vnd.openxmlformats...;base64,.....
+                    window.Android.saveBase64File(base64data, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                };
+            } else {
+                // We are in a standard Web Browser, create a hidden link and click it
+                const blobUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(blobUrl);
+                document.body.removeChild(a);
+            }
+        })
+        .catch(error => {
+            hideLoader();
+            console.error('Export error:', error);
+            showToast('Failed to export expenses.', 'error');
+        });
+}
+
+/**
  * Setup modal reset on close
  */
 function setupModalReset() {
