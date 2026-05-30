@@ -12,14 +12,14 @@ spring:
     cache: false
   mail:
     host: smtp.gmail.com
-    port: 587
+    port: 465
     username: ${SEND_EMAIL_ID}
     password: ${SEND_EMAIL_PWD}
     properties:
       mail:
         smtp:
           auth: true
-          starttls:
+          ssl:
             enable: true
           connectiontimeout: "30000"
           timeout: "30000"
