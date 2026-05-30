@@ -9,7 +9,22 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchUnreadCount();
     fetchNotifications();
     connectWebSocket();
+    registerFcmToken();
 });
+
+function registerFcmToken() {
+    if (window.Android && typeof window.Android.getFcmToken === "function") {
+        setTimeout(() => {
+            const token = window.Android.getFcmToken();
+            if (token && token.trim() !== '') {
+                fetch('/NRS/api/notifications/fcm-token?token=' + encodeURIComponent(token), {
+                    method: 'POST'
+                }).then(res => console.log('FCM token registered'))
+                  .catch(err => console.error('Error registering FCM token', err));
+            }
+        }, 3000); // Wait 3 seconds for FCM to initialize in Android
+    }
+}
 
 function connectWebSocket() {
     const socket = new SockJS('/NRS/ws-notifications');

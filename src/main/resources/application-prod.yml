@@ -21,9 +21,9 @@ spring:
           auth: true
           starttls:
             enable: true
-          connectiontimeout: 5000
-          timeout: 5000
-          writetimeout: 5000
+          connectiontimeout: "30000"
+          timeout: "30000"
+          writetimeout: "30000"
 
   datasource:
     url: ${DB_URL}
