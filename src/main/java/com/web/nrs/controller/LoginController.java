@@ -86,7 +86,16 @@ public class LoginController {
             if (token != null) {
                 String appUrl = httpRequest.getRequestURL().toString().replace(httpRequest.getRequestURI(), httpRequest.getContextPath());
                 String resetLink = appUrl + "/reset-password?token=" + token;
-                emailService.sendPasswordResetEmail(email, resetLink);
+                
+                // Send email asynchronously so the UI responds immediately without waiting for SMTP
+                java.util.concurrent.CompletableFuture.runAsync(() -> {
+                    try {
+                        emailService.sendPasswordResetEmail(email, resetLink);
+                    } catch (Exception e) {
+                        System.err.println("Async Email Send Failed: " + e.getMessage());
+                    }
+                });
+                
                 return ResponseEntity.ok("Password reset link sent to your email.");
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found with this email.");
