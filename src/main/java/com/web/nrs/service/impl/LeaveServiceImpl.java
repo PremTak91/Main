@@ -10,10 +10,13 @@ import com.web.nrs.repository.EmployeeRepository;
 import com.web.nrs.repository.HolidayRepository;
 import com.web.nrs.service.LeaveService;
 import lombok.RequiredArgsConstructor;
+import com.web.nrs.notification.event.NotificationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +33,7 @@ public class LeaveServiceImpl implements LeaveService {
     private final HolidayRepository holidayRepository;
     private final EmployeeLeaveRepository employeeLeaveRepository;
     private final EmployeeMainterRepository employeeMainterRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final EmployeeRepository employeeRepository;
 
     @Override
@@ -53,12 +57,19 @@ public class LeaveServiceImpl implements LeaveService {
     }
 
     @Override
-    public List<Map<String, Object>> getLeaveHistoryWithApprover(Long employeeId) {
+    public List<Map<String, Object>> getLeaveHistoryWithApprover(Long employeeId, boolean isSuperAdmin) {
         if (employeeId == null) {
             return List.of();
         }
         
-        List<EmployeeLeaveEntity> leaves = employeeLeaveRepository.findByEmpMaintainerIdOrderByCreatedAtDesc(employeeId);
+        List<EmployeeLeaveEntity> leaves;
+        if (isSuperAdmin) {
+            leaves = employeeLeaveRepository.findAll().stream()
+                    .sorted(Comparator.comparing(EmployeeLeaveEntity::getCreatedAt).reversed())
+                    .collect(Collectors.toList());
+        } else {
+            leaves = employeeLeaveRepository.findByEmpMaintainerIdOrderByCreatedAtDesc(employeeId);
+        }
         
         return leaves.stream()
                 .map(leave -> {
@@ -70,6 +81,12 @@ public class LeaveServiceImpl implements LeaveService {
                     leaveMap.put("status", leave.getStatus());
                     leaveMap.put("approverName", "N/A");
                     leaveMap.put("approvalReason", leave.getApprovalReason() != null ? leave.getApprovalReason() : "");
+                    
+                    leaveMap.put("employeeName", "Unknown");
+                    if (isSuperAdmin) {
+                        employeeRepository.findById(leave.getEmpMaintainerId())
+                                .ifPresent(emp -> leaveMap.put("employeeName", getFullName(emp)));
+                    }
                     
                     // Get approver name from maintainer assignment
                     Optional<EmployeeMainterEntity> maintainer = employeeMainterRepository
@@ -123,7 +140,63 @@ public class LeaveServiceImpl implements LeaveService {
                 .updatedAt(LocalDateTime.now())
                 .build();
         
+        // Find approver for this employee
+        Long approverId = null;
+        Optional<EmployeeMainterEntity> maintainer = employeeMainterRepository.findByDesignationIdAndActiveNot(employeeId, 2);
+        if (maintainer.isPresent() && maintainer.get().getMainterId() != null) {
+            approverId = maintainer.get().getMainterId();
+            leave.setEmpMaintainerId(approverId);
+        }
+
+        EmployeeLeaveEntity savedLeave = employeeLeaveRepository.save(leave);
+
+        if (approverId != null) {
+            String employeeName = employeeRepository.findById(employeeId)
+                    .map(this::getFullName)
+                    .orElse("An employee");
+            String message = String.format("%s has applied for leave from %s to %s. Please review and take action.",
+                    employeeName, fromDate, toDate);
+            
+            eventPublisher.publishEvent(new NotificationEvent(
+                    this,
+                    "LEAVE_APPLIED",
+                    "New Leave Request",
+                    message,
+                    "/NRS/leave/approval",
+                    List.of(approverId)
+            ));
+        }
+
+        return savedLeave;
+    }
+
+    @Override
+    public EmployeeLeaveEntity editLeave(Long leaveId, String description, LocalDate fromDate, LocalDate toDate) {
+        EmployeeLeaveEntity leave = employeeLeaveRepository.findById(leaveId)
+                .orElseThrow(() -> new RuntimeException("Leave request not found"));
+                
+        if (!"Pending".equalsIgnoreCase(leave.getStatus())) {
+            throw new RuntimeException("Only pending leave requests can be edited");
+        }
+        
+        leave.setLeaveDescription(description);
+        leave.setFromDate(fromDate);
+        leave.setToDate(toDate);
+        leave.setUpdatedAt(LocalDateTime.now());
+        
         return employeeLeaveRepository.save(leave);
+    }
+
+    @Override
+    public void deleteLeave(Long leaveId) {
+        EmployeeLeaveEntity leave = employeeLeaveRepository.findById(leaveId)
+                .orElseThrow(() -> new RuntimeException("Leave request not found"));
+                
+        if (!"Pending".equalsIgnoreCase(leave.getStatus())) {
+            throw new RuntimeException("Only pending leave requests can be deleted");
+        }
+        
+        employeeLeaveRepository.delete(leave);
     }
 
     @Override
@@ -134,23 +207,32 @@ public class LeaveServiceImpl implements LeaveService {
     }
 
     @Override
-    public List<Map<String, Object>> getPendingLeaveRequestsForApprover(Long approverId) {
-        if (approverId == null) {
+    public List<Map<String, Object>> getPendingLeaveRequestsForApprover(Long approverId, boolean isSuperAdmin) {
+        if (approverId == null && !isSuperAdmin) {
             return List.of();
         }
         
-        // Find all employees assigned to this approver
-        List<EmployeeMainterEntity> assignedEmployees = employeeMainterRepository.findByMainterId(approverId);
-        List<Long> employeeIds = assignedEmployees.stream()
-                .filter(m -> m.getActive() != null && m.getActive() != 2)
-                .map(EmployeeMainterEntity::getDesignationId)
-                .collect(Collectors.toList());
+        List<EmployeeLeaveEntity> leaves;
         
-        if (employeeIds.isEmpty()) {
-            return List.of();
+        if (isSuperAdmin) {
+            // Super admins see all leaves sorted by date
+            leaves = employeeLeaveRepository.findAll().stream()
+                    .sorted(Comparator.comparing(EmployeeLeaveEntity::getCreatedAt).reversed())
+                    .collect(Collectors.toList());
+        } else {
+            // Approvers see only leaves of assigned employees
+            List<EmployeeMainterEntity> assignedEmployees = employeeMainterRepository.findByMainterId(approverId);
+            List<Long> employeeIds = assignedEmployees.stream()
+                    .filter(m -> m.getActive() != null && m.getActive() != 2)
+                    .map(EmployeeMainterEntity::getDesignationId)
+                    .collect(Collectors.toList());
+            
+            if (employeeIds.isEmpty()) {
+                return List.of();
+            }
+            
+            leaves = employeeLeaveRepository.findByEmpMaintainerIdInOrderByCreatedAtDesc(employeeIds);
         }
-        
-        List<EmployeeLeaveEntity> leaves = employeeLeaveRepository.findByEmpMaintainerIdInOrderByCreatedAtDesc(employeeIds);
         
         return leaves.stream()
                 .map(leave -> {
@@ -179,6 +261,25 @@ public class LeaveServiceImpl implements LeaveService {
         leave.setApprovalReason(reason != null ? reason : "Accepted");
         leave.setUpdatedAt(LocalDateTime.now());
         employeeLeaveRepository.save(leave);
+
+        // Find employee to notify
+        List<EmployeeMainterEntity> maintainers = employeeMainterRepository.findByMainterId(leave.getEmpMaintainerId());
+        Long applicantId = maintainers.stream()
+                .filter(m -> employeeLeaveRepository.findByEmpMaintainerIdInOrderByCreatedAtDesc(List.of(m.getDesignationId()))
+                        .stream().anyMatch(l -> l.getLeaveId().equals(leaveId)))
+                .map(EmployeeMainterEntity::getDesignationId)
+                .findFirst().orElse(null);
+
+        if (applicantId != null) {
+            eventPublisher.publishEvent(new NotificationEvent(
+                    this,
+                    "LEAVE_APPROVED",
+                    "Leave Approved",
+                    "Your leave request from " + leave.getFromDate() + " to " + leave.getToDate() + " has been approved.",
+                    "/NRS/leave",
+                    List.of(applicantId)
+            ));
+        }
     }
 
     @Override
@@ -189,6 +290,25 @@ public class LeaveServiceImpl implements LeaveService {
         leave.setApprovalReason(reason);
         leave.setUpdatedAt(LocalDateTime.now());
         employeeLeaveRepository.save(leave);
+
+        // Find employee to notify
+        List<EmployeeMainterEntity> maintainers = employeeMainterRepository.findByMainterId(leave.getEmpMaintainerId());
+        Long applicantId = maintainers.stream()
+                .filter(m -> employeeLeaveRepository.findByEmpMaintainerIdInOrderByCreatedAtDesc(List.of(m.getDesignationId()))
+                        .stream().anyMatch(l -> l.getLeaveId().equals(leaveId)))
+                .map(EmployeeMainterEntity::getDesignationId)
+                .findFirst().orElse(null);
+
+        if (applicantId != null) {
+            eventPublisher.publishEvent(new NotificationEvent(
+                    this,
+                    "LEAVE_REJECTED",
+                    "Leave Rejected",
+                    "Your leave request from " + leave.getFromDate() + " to " + leave.getToDate() + " has been rejected. Reason: " + reason,
+                    "/NRS/leave",
+                    List.of(applicantId)
+            ));
+        }
     }
     
     private String getFullName(EmployeeEntity employee) {

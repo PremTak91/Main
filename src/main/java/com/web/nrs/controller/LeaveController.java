@@ -44,8 +44,12 @@ public class LeaveController {
         // 2. Calculate leave balance (12 default - approved leaves)
         int leaveBalance = leaveService.calculateLeaveBalance(employeeId, currentYear);
         
+        // Check if superadmin
+        boolean isSuperAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
+                
         // 3. Get leave history with approver names
-        List<Map<String, Object>> leaveHistory = leaveService.getLeaveHistoryWithApprover(employeeId);
+        List<Map<String, Object>> leaveHistory = leaveService.getLeaveHistoryWithApprover(employeeId, isSuperAdmin);
         
         // 4. Get assigned approver for apply leave form
         Map<String, Object> approverInfo = leaveService.getAssignedApprover(employeeId);
@@ -56,6 +60,7 @@ public class LeaveController {
         model.addAttribute("approverName", approverInfo.get("approverName"));
         model.addAttribute("approverId", approverInfo.get("approverId"));
         model.addAttribute("employeeId", employeeId);
+        model.addAttribute("isSuperAdmin", isSuperAdmin);
         
         return "leaveBalanceAndStatus";
     }
@@ -76,6 +81,32 @@ public class LeaveController {
         }
     }
 
+    @PutMapping("/{id}")
+    @ResponseBody
+    public ResponseEntity<ApiResponse> editLeave(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+        try {
+            String description = request.get("description").toString();
+            LocalDate fromDate = LocalDate.parse(request.get("fromDate").toString());
+            LocalDate toDate = LocalDate.parse(request.get("toDate").toString());
+            
+            leaveService.editLeave(id, description, fromDate, toDate);
+            return ResponseEntity.ok(ApiResponse.success("Leave updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseBody
+    public ResponseEntity<ApiResponse> deleteLeave(@PathVariable Long id) {
+        try {
+            leaveService.deleteLeave(id);
+            return ResponseEntity.ok(ApiResponse.success("Leave deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
     @GetMapping("/approval")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public String viewLeaveRequestApproval(Model model) {
@@ -85,7 +116,10 @@ public class LeaveController {
                 .map(EmployeeEntity::getId)
                 .orElseThrow(() -> new RuntimeException("Approver not found. Please login again."));
         
-        List<Map<String, Object>> leaveRequests = leaveService.getPendingLeaveRequestsForApprover(approverId);
+        boolean isSuperAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
+                
+        List<Map<String, Object>> leaveRequests = leaveService.getPendingLeaveRequestsForApprover(approverId, isSuperAdmin);
         model.addAttribute("leaveRequests", leaveRequests);
         
         return "leaveRequestApproval";

@@ -34,7 +34,9 @@ public class SecurityConfig {
                         "/images/employeePhoto/**", "/images/postImages/**",
                         "/webjars/**",
                         "/login",
-                        "/registration"
+                        "/registration",
+                        "/forgot-password",
+                        "/reset-password"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

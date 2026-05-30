@@ -55,7 +55,8 @@
                             <label for="searchType" class="form-label form-label-sm mb-1">Search By</label>
                             <select class="form-select form-select-sm" id="searchType">
                                 <option value="ALL" th:selected="${searchType == 'ALL'}">All Fields</option>
-                                <option value="NAME" th:selected="${searchType == 'NAME'}">Given By / To</option>
+                                <option value="GIVEN_BY" th:selected="${searchType == 'GIVEN_BY'}">Given By</option>
+                                <option value="GIVEN_TO" th:selected="${searchType == 'GIVEN_TO'}">Given To</option>
                                 <option value="TYPE" th:selected="${searchType == 'TYPE'}">Expense Type</option>
                                 <option value="DESC" th:selected="${searchType == 'DESC'}">Description</option>
                             </select>
