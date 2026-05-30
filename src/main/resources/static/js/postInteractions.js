@@ -133,10 +133,36 @@ function submitComment(postId) {
 }
 
 function deletePost(postId) {
-    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+    const modalElement = document.getElementById('confirmModal');
+    if (!modalElement) {
+        // Fallback if modal doesn't exist on page
+        if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+            return;
+        }
+        executeDeletePost(postId);
         return;
     }
+
+    document.getElementById('confirmTitle').textContent = 'Delete Post';
+    document.getElementById('confirmMessage').textContent = 'Are you sure you want to delete this post? This action cannot be undone.';
     
+    const confirmBtn = document.getElementById('confirmBtn');
+    
+    // Remove existing event listeners to prevent multiple fires
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    
+    newConfirmBtn.addEventListener('click', function() {
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) modal.hide();
+        executeDeletePost(postId);
+    });
+    
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+}
+
+function executeDeletePost(postId) {
     showLoader();
     
     fetch(`/NRS/api/posts/${postId}`, {

@@ -4,6 +4,7 @@ import com.web.nrs.utils.ApiResponse;
 import com.web.nrs.entity.EmployeeEntity;
 import com.web.nrs.repository.EmployeeRepository;
 import com.web.nrs.service.PostActivityService;
+import com.web.nrs.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,6 +22,8 @@ public class PostActivityController {
 
     private final PostActivityService postActivityService;
     private final com.web.nrs.service.EmployeeService employeeService;
+    private final NotificationService notificationService;
+    private final EmployeeRepository employeeRepository;
 
     @PostMapping
     @ResponseBody
@@ -33,7 +36,20 @@ public class PostActivityController {
             EmployeeEntity emp = employeeService.getEmployeeByEmailId(email)
                     .orElseThrow(() -> new RuntimeException("Logged in employee not found"));
 
-            postActivityService.savePost(emp.getId(), postText, postImage);
+            var post = postActivityService.savePost(emp.getId(), postText, postImage);
+
+            if (postText != null && postText.toLowerCase().contains("@all")) {
+                String authorName = emp.getFirstName() + " " + (emp.getLastName() != null ? emp.getLastName() : "");
+                String message = authorName + " mentioned everyone in a new post.";
+                
+                java.util.List<Long> allEmpIds = employeeRepository.findAll().stream()
+                        .map(EmployeeEntity::getId)
+                        .filter(id -> !id.equals(emp.getId()))
+                        .collect(java.util.stream.Collectors.toList());
+                        
+                notificationService.createAndSendNotification("MENTION", "New Mention", message, "/NRS/home#post-" + post.getId(), allEmpIds);
+            }
+
             return ResponseEntity.ok(ApiResponse.success("Post created successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error("Failed to create post: " + e.getMessage()));

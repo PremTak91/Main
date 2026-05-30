@@ -8,7 +8,7 @@ import java.util.Map;
 
 public interface PostActivityService {
     List<Map<String, Object>> getAllPostsWithEmployeeDetails(Long currentUserId);
-    void savePost(Long empId, String postText, MultipartFile postImage) throws Exception;
+    PostActivityEntity savePost(Long empId, String postText, MultipartFile postImage) throws Exception;
     void updatePost(Long id, String postText, MultipartFile postImage) throws Exception;
     PostActivityEntity getPostById(Long id);
     void deletePost(Long id) throws Exception;
