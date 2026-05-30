@@ -28,7 +28,7 @@ public class PostCommentEntity {
     @JoinColumn(name = "emp_id", nullable = false)
     private EmployeeEntity employee;
 
-    @Column(name = "comment_text", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "comment_text", columnDefinition = "TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci", nullable = false)
     private String commentText;
 
     @Column(name = "created_at")
