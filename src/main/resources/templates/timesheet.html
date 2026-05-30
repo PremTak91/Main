@@ -114,6 +114,12 @@
                                             th:data-out="${timesheet.outTime != null ? timesheet.outTime : ''}"
                                             onclick="editTimesheet(this)"><i
                                                 class="fas fa-edit"></i></button>
+                                                
+                                        <button sec:authorize="hasRole('SUPERADMIN')" 
+                                            class="btn btn-sm btn-danger ms-1" title="Delete"
+                                            th:onclick="'deleteTimesheet(' + ${timesheet.id} + ')'">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
                                     </td>
                                 </tr>
                                 <tr th:if="${#lists.isEmpty(timesheets)}">

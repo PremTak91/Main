@@ -47,4 +47,5 @@ public interface EmployeeService {
     Page<TimesheetDTO> getTimesheetRecords(Long employeeId, String employeeName, LocalDate startDate, LocalDate endDate, Pageable pageable);
     String calculateTotalWorkingHours(Long employeeId, String employeeName, LocalDate startDate, LocalDate endDate);
     boolean editTimesheetRecord(Long timesheetId, LocalDateTime inTime, LocalDateTime outTime);
+    boolean deleteTimesheetRecord(Long timesheetId);
 }

@@ -26,7 +26,18 @@ function toggleAttendance() {
             return response.json();
         })
         .then(data => {
-            showToast("Attendance updated successfully", "success");
+            let msg = "Attendance updated successfully";
+            let status = data.message;
+            if (status === "PUNCHED_IN") {
+                msg = "Successfully Logged In! Have a great day at work ✨";
+            } else if (status === "PUNCHED_OUT") {
+                msg = "Logged out successfully! See you tomorrow 🌟";
+            } else if (status === "ALREADY_IN") {
+                msg = "You are already logged in!";
+            } else if (status === "ALREADY_OUT") {
+                msg = "You are already logged out!";
+            }
+            showToast(msg, "success");
             checkAttendanceStatus(); // Refresh status from server to be sure
         })
         .catch(error => {

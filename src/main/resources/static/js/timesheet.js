@@ -69,3 +69,27 @@ function saveTimesheet() {
         }
     });
 }
+
+function deleteTimesheet(id) {
+    if (!confirm('Are you sure you want to delete this timesheet entry? This action cannot be undone.')) {
+        return;
+    }
+    
+    $('#loader').show();
+    $.ajax({
+        url: `/NRS/timesheet/${id}`,
+        type: 'DELETE',
+        success: function(response) {
+            $('#loader').hide();
+            showToast(response.message || 'Timesheet deleted successfully', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        },
+        error: function(xhr) {
+            $('#loader').hide();
+            const message = xhr.responseJSON?.message || 'Failed to delete timesheet';
+            showToast(message, 'error');
+        }
+    });
+}

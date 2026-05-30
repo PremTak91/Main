@@ -22,13 +22,15 @@ public class HomeController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String email = auth.getName();
         
+        Long[] currentUserId = new Long[1];
         employeeRepository.findEmployeeByEmail(email).ifPresent(emp -> {
+            currentUserId[0] = emp.getId();
             model.addAttribute("currentUserId", emp.getId());
             model.addAttribute("currentUserPhoto", emp.getPhoto());
             model.addAttribute("currentUserName", emp.getFirstName() + " " + (emp.getLastName() != null ? emp.getLastName() : ""));
         });
         
-        model.addAttribute("posts", postActivityService.getAllPostsWithEmployeeDetails());
+        model.addAttribute("posts", postActivityService.getAllPostsWithEmployeeDetails(currentUserId[0]));
         return "home";
     }
 }

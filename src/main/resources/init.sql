@@ -525,3 +525,30 @@ INSERT INTO notification_type (code, description, default_priority) VALUES
 ('LEAVE_REJECTED', 'Leave Request Rejected', 'HIGH');
 
 ALTER TABLE employeeinfo ADD COLUMN fcm_token varchar(255);
+
+-- Create the Post Likes Table
+CREATE TABLE `post_likes` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `post_id` bigint NOT NULL,
+  `emp_id` int NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UK_post_emp_like` (`post_id`,`emp_id`),
+  KEY `FK_post_like_emp` (`emp_id`),
+  CONSTRAINT `FK_post_like_emp` FOREIGN KEY (`emp_id`) REFERENCES `employeeinfo` (`id`),
+  CONSTRAINT `FK_post_like_post` FOREIGN KEY (`post_id`) REFERENCES `post_activity` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Create the Post Comments Table
+CREATE TABLE `post_comments` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `post_id` bigint NOT NULL,
+  `emp_id` int NOT NULL,
+  `comment_text` text NOT NULL,
+  `created_at` datetime(6) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `FK_post_comment_emp` (`emp_id`),
+  KEY `FK_post_comment_post` (`post_id`),
+  CONSTRAINT `FK_post_comment_emp` FOREIGN KEY (`emp_id`) REFERENCES `employeeinfo` (`id`),
+  CONSTRAINT `FK_post_comment_post` FOREIGN KEY (`post_id`) REFERENCES `post_activity` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
