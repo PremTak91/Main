@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 import java.util.Optional;
 
+import com.web.nrs.notification.service.NotificationService;
+
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
@@ -26,6 +28,7 @@ public class PostInteractionController {
     private final EmployeeRepository employeeRepository;
     private final PostLikeRepository postLikeRepository;
     private final PostCommentRepository postCommentRepository;
+    private final NotificationService notificationService;
 
     @PostMapping("/{postId}/like")
     public ResponseEntity<ApiResponse> toggleLike(@PathVariable Long postId, Authentication authentication) {
@@ -55,6 +58,14 @@ public class PostInteractionController {
                     .build();
             postLikeRepository.save(newLike);
             long newCount = postLikeRepository.countByPostId(postId);
+            
+            // Notify post author
+            if (!post.getEmpId().equals(empId)) {
+                String authorName = empOpt.get().getFirstName() + " " + (empOpt.get().getLastName() != null ? empOpt.get().getLastName() : "");
+                String message = authorName + " liked your post.";
+                notificationService.createAndSendNotification("LIKE", "New Like", message, "/NRS/home#post-" + post.getId(), java.util.List.of(post.getEmpId()));
+            }
+            
             return ResponseEntity.ok(ApiResponse.success("Liked", Map.of("liked", true, "likeCount", newCount)));
         }
     }
@@ -87,6 +98,21 @@ public class PostInteractionController {
         
         // Return author info so JS can append it
         String authorName = empOpt.get().getFirstName() + " " + (empOpt.get().getLastName() != null ? empOpt.get().getLastName() : "");
+        
+        // Notify logic
+        if (commentText.toLowerCase().contains("@all")) {
+            String message = authorName + " mentioned everyone in a comment.";
+            
+            java.util.List<Long> allEmpIds = employeeRepository.findAll().stream()
+                    .map(EmployeeEntity::getId)
+                    .filter(id -> !id.equals(empOpt.get().getId()))
+                    .collect(java.util.stream.Collectors.toList());
+                    
+            notificationService.createAndSendNotification("MENTION", "New Mention", message, "/NRS/home#post-" + post.getId(), allEmpIds);
+        } else if (!post.getEmpId().equals(empOpt.get().getId())) {
+            String message = authorName + " commented on your post.";
+            notificationService.createAndSendNotification("COMMENT", "New Comment", message, "/NRS/home#post-" + post.getId(), java.util.List.of(post.getEmpId()));
+        }
         
         java.util.Map<String, Object> responseData = new java.util.HashMap<>();
         responseData.put("id", comment.getId() != null ? comment.getId() : 0L);

@@ -80,7 +80,7 @@ public class PostActivityServiceImpl implements PostActivityService {
     }
 
     @Override
-    public void savePost(Long empId, String postText, MultipartFile postImage) throws Exception {
+    public PostActivityEntity savePost(Long empId, String postText, MultipartFile postImage) throws Exception {
         String fileName = null;
         if (postImage != null && !postImage.isEmpty()) {
             fileName = UUID.randomUUID().toString() + "_" + postImage.getOriginalFilename();
@@ -93,7 +93,7 @@ public class PostActivityServiceImpl implements PostActivityService {
                 .postImage(fileName)
                 .build();
 
-        postActivityRepository.save(post);
+        return postActivityRepository.save(post);
     }
 
     @Override

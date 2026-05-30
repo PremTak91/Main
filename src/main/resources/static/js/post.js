@@ -54,6 +54,7 @@ function editPost(id) {
     showLoader();
 
     fetch(`/NRS/api/posts/${id}`)
+        .then(res => res.json())
         .then(res => {
             hideLoader();
             if (res.success) {
