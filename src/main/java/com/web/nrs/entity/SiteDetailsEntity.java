@@ -22,6 +22,9 @@ public class SiteDetailsEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "sr_no")
+    private String srNo;
+
     @Column(name = "customer_name", nullable = false)
     private String customerName;
 

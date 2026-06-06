@@ -18,9 +18,20 @@ public class DatabaseCharsetConfig implements CommandLineRunner {
             jdbcTemplate.execute("ALTER TABLE post_activity MODIFY post_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
             jdbcTemplate.execute("ALTER TABLE post_comments MODIFY comment_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
             
-            System.out.println("✅ Successfully updated database character sets to utf8mb4!");
+            // Add sr_no column if it doesn't exist
+            try {
+                jdbcTemplate.execute("ALTER TABLE site_details ADD COLUMN IF NOT EXISTS sr_no VARCHAR(255);");
+            } catch (Exception ex) {
+                try {
+                    jdbcTemplate.execute("ALTER TABLE site_details ADD COLUMN sr_no VARCHAR(255);");
+                } catch (Exception e2) {
+                    // Ignore if column already exists
+                }
+            }
+            
+            System.out.println("✅ Successfully updated database character sets and columns!");
         } catch (Exception e) {
-            System.err.println("⚠️ Could not update character set. Tables might not exist yet or user lacks ALTER permissions: " + e.getMessage());
+            System.err.println("⚠️ Could not update character set or columns: " + e.getMessage());
         }
     }
 }

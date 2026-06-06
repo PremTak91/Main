@@ -115,12 +115,12 @@
                         <table class="table table-hover align-middle table-bordered">
                             <thead class="table-light">
                                 <tr>
-                                    <th>ID</th>
+                                    <th style="white-space: nowrap;">SR NO</th>
+                                    <th style="white-space: nowrap;">Created Date</th>
                                     <th>Customer Name</th>
                                     <th>Contact No</th>
                                     <th>Address</th>
-                                    <th>Created Date</th>
-                                    <th>Expected Date</th>
+                                    <th style="white-space: nowrap;">Expected Date</th>
                                     <th>Kilowatt</th>
                                     <th>Team Lead</th>
                                     <th>Team Members</th>
@@ -132,14 +132,14 @@
                             </thead>
                             <tbody>
                                 <tr th:each="site : ${sites}">
-                                    <td th:text="${site.id}"></td>
+                                    <td th:text="${site.srNo != null ? site.srNo : site.id}" style="white-space: nowrap;"></td>
+                                    <td th:text="${#temporals.format(site.createdAt, 'dd-MM-yyyy')}" style="white-space: nowrap;"></td>
                                     <td th:text="${site.customerName}" class="fw-bold"></td>
                                     <td th:text="${site.contactNo}"></td>
                                     <td>
                                         <span class="d-inline-block text-truncate" style="max-width: 200px;" th:title="${site.address}" th:text="${site.address}"></span>
                                     </td>
-                                    <td th:text="${#temporals.format(site.createdAt, 'dd-MM-yyyy')}"></td>
-                                    <td th:text="${site.expectedCompletedDate}"></td>
+                                    <td th:text="${site.expectedCompletedDate}" style="white-space: nowrap;"></td>
                                     <td th:text="${site.kilowatt}"></td>
                                     <td>
                                         <span th:each="emp : ${employees}" th:if="${emp.id == site.assignedTechnicianId}" th:text="${emp.employeeName}"></span>
@@ -233,11 +233,15 @@
                     <form id="siteForm">
                         <input type="hidden" id="siteId" name="id">
                         <div class="row g-3">
-                            <div class="col-md-6">
+                            <div class="col-md-2">
+                                <label for="srNo" class="form-label">SR NO</label>
+                                <input type="text" class="form-control" id="srNo" name="srNo">
+                            </div>
+                            <div class="col-md-5">
                                 <label for="customerName" class="form-label">Customer Name *</label>
                                 <input type="text" class="form-control" id="customerName" name="customerName" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-5">
                                 <label for="contactNo" class="form-label">Contact No</label>
                                 <input type="text" class="form-control" id="contactNo" name="contactNo">
                             </div>

@@ -73,20 +73,20 @@ function exportExpenses() {
 
     fetch(url)
         .then(response => {
-            if (!response.ok) throw new Error('Failed to download Excel file');
+            if (!response.ok) throw new Error('Failed to download CSV file');
             return response.blob();
         })
         .then(blob => {
             hideLoader();
-            const filename = 'Expenses_Export_' + new Date().getTime() + '.xlsx';
+            const filename = 'Expenses_Export_' + new Date().getTime() + '.csv';
 
             if (window.Android && typeof window.Android.saveBase64File === "function") {
                 // We are inside the Android App, convert blob to Base64 and pass to native method
                 const reader = new FileReader();
                 reader.readAsDataURL(blob);
                 reader.onloadend = function() {
-                    const base64data = reader.result; // contains data:application/vnd.openxmlformats...;base64,.....
-                    window.Android.saveBase64File(base64data, filename, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+                    const base64data = reader.result; // contains data:text/csv;base64,.....
+                    window.Android.saveBase64File(base64data, filename, "text/csv");
                 };
             } else {
                 // We are in a standard Web Browser, create a hidden link and click it

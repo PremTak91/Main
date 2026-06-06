@@ -597,4 +597,4 @@ ALTER TABLE `quotation_logs` ADD COLUMN IF NOT EXISTS `created_by_name` varchar(
 
 ALTER TABLE `site_details` ADD COLUMN IF NOT EXISTS `team_members` varchar(500) DEFAULT NULL;
 ALTER TABLE `site_details` ADD COLUMN IF NOT EXISTS `site_owner` varchar(255) DEFAULT NULL;
-
+ALTER TABLE site_details ADD COLUMN IF NOT EXISTS sr_no VARCHAR(255)

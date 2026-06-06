@@ -53,6 +53,7 @@ public class SiteServiceImpl implements SiteService {
         SiteDetailsEntity existing = siteDetailsRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Site not found"));
 
+        existing.setSrNo(siteDetails.getSrNo());
         existing.setCustomerName(siteDetails.getCustomerName());
         existing.setContactNo(siteDetails.getContactNo());
         existing.setAddress(siteDetails.getAddress());
