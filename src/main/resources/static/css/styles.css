@@ -35,6 +35,13 @@ h1, h2, h3, h4, h5, h6 {
     flex-grow: 1;
 }
 
+/* Content column layout adjustment to prevent overflow */
+.dashboard-wrapper > .d-flex.flex-column {
+    flex: 1;
+    min-width: 0;
+    width: auto !important;
+}
+
 /* Sidebar Styling - This applies to all screen sizes initially */
 .sidebar {
     width: 250px; /* Fixed width for sidebar on large screens */
