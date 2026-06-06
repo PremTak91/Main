@@ -207,11 +207,11 @@ function loadSitePhotos(siteId) {
             } else {
                 noPhotosMsg.style.display = "block";
                 if (downloadBtn) downloadBtn.style.display = "none";
-                gallery.appendChild(noPhotosMsg);
             }
         })
-        .catch(function () {
+        .catch(function (error) {
             hideLoader();
+            console.error("Error loading photos:", error);
             showToast("Error loading photos", "error");
         });
 }

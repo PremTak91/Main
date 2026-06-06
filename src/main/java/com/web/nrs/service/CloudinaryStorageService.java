@@ -43,10 +43,11 @@ public class CloudinaryStorageService {
         }
 
         String uniqueFilename = UUID.randomUUID().toString();
+        String sanitizedFolder = sanitizeFolderName(folderName);
 
         // Let Cloudinary handle the resizing and compression to avoid OutOfMemoryError on our server heap
         Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
-                "folder", folderName,
+                "folder", sanitizedFolder,
                 "public_id", uniqueFilename,
                 "transformation", new com.cloudinary.Transformation().width(1080).height(1080).crop("limit").quality(70).fetchFormat("jpg")
         ));
@@ -61,10 +62,11 @@ public class CloudinaryStorageService {
         }
 
         String uniqueFilename = UUID.randomUUID().toString();
+        String sanitizedFolder = sanitizeFolderName(folderName);
 
         // Use 'raw' resource_type for documents (PDF, DOCX, etc.)
         Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
-                "folder", folderName,
+                "folder", sanitizedFolder,
                 "public_id", uniqueFilename,
                 "resource_type", "raw"
         ));
@@ -99,4 +101,13 @@ public class CloudinaryStorageService {
         if (cloudinary == null) return "";
         return cloudinary.url().secure(true).generate(publicId);
     }
+
+    private String sanitizeFolderName(String folderName) {
+        if (folderName == null) return null;
+        return java.util.Arrays.stream(folderName.split("/"))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(java.util.stream.Collectors.joining("/"));
+    }
 }
+

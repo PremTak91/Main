@@ -25,6 +25,26 @@ function setupEventListeners() {
             });
         });
     }
+
+    // Toggle Password Visibility
+    const toggleEmpPasswordBtn = document.getElementById('toggleEmpPasswordBtn');
+    if (toggleEmpPasswordBtn) {
+        toggleEmpPasswordBtn.addEventListener('click', function () {
+            const passwordInput = document.getElementById('password');
+            const icon = document.getElementById('toggleEmpPasswordIcon');
+            if (passwordInput && icon) {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            }
+        });
+    }
 }
 
 /**
@@ -142,6 +162,17 @@ function resetEmployeeForm() {
     document.getElementById('employeeForm').reset();
     document.getElementById('employeeId').value = '';
     document.getElementById('employeeModalTitle').textContent = 'Add User';
+
+    // Reset password visibility state
+    const passwordInput = document.getElementById('password');
+    if (passwordInput) {
+        passwordInput.type = 'password';
+    }
+    const icon = document.getElementById('toggleEmpPasswordIcon');
+    if (icon) {
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
 }
 
 /**
