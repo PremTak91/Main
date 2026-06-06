@@ -62,8 +62,57 @@ $(document).on("keyup", "#discount", function () {
     }
 });
   $(document).ready(function() {
+      // Check for query parameters to auto-fill (Regeneration)
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('customerName')) {
+          $("#customerName").val(urlParams.get('customerName'));
+          $("#customerMobileNumber").val(urlParams.get('customerNumber'));
+          $("#solarType").val(urlParams.get('solarType') || 'Residential');
+          $("#panelsName").val(urlParams.get('panelsName') || 'ADANI TOPCON, ADANI BIFACIAL , WAAREE');
+          $("#noOfPanels").val(urlParams.get('noOfPanels') || '');
+          $("#panelWatt").val(urlParams.get('panelWatt') || '540');
+          $("#rateKw").val(urlParams.get('rateKw') || '');
+          $("#discomMeter").val(urlParams.get('discomMeter') || '0');
+          $("#pqHsCost").val(urlParams.get('pqHsCost') || '0');
+          $("#subsidy").val(urlParams.get('subsidy') || '78000');
+          
+          const subByVal = urlParams.get('submittedBy');
+          if (subByVal) {
+              if ($("#submittedBy").length > 0) {
+                  $("#submittedBy option").each(function() {
+                      if ($(this).text() === subByVal) {
+                          $(this).prop('selected', true);
+                          $("#submittedByName").val(subByVal);
+                      }
+                  });
+              } else {
+                  $("#submittedByName").val(subByVal);
+              }
+          }
+          if (urlParams.get('submittedNumber')) {
+              $("#submittedNumber").val(urlParams.get('submittedNumber'));
+          }
+          if (urlParams.get('discount')) {
+              $("#discount").val(urlParams.get('discount'));
+          }
+          $("#pdfType").val(urlParams.get('pdfType') || 'Standardized');
+      }
+
       // Initialize calculation on page load if values are present
       CalculateActualPrice();
+
+      // Apply discount calculation if discount is present
+      if (urlParams.has('customerName') && urlParams.get('discount')) {
+          let discount = parseFloat(urlParams.get('discount'));
+          if (!isNaN(discount) && discount > 0) {
+              let actualAmount = parseFloat($("#actualPrice").val()) || 0;
+              let baseEffectivePrice = Math.round(actualAmount - parseFloat($("#subsidy").val())) || 0;
+              let discountAmount = discount;
+              let afterDiscountEffectivePrice = baseEffectivePrice - discountAmount;
+              $("#discountAmount").val(discountAmount);
+              $("#effectivePrice").val(Math.round(afterDiscountEffectivePrice));
+          }
+      }
 
       $("form").on("submit", function(event) {
           event.preventDefault();

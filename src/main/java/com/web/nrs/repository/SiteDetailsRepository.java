@@ -17,10 +17,12 @@ public interface SiteDetailsRepository extends JpaRepository<SiteDetailsEntity, 
            "LOWER(s.contactNo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(s.siteStatus) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
            "(:startDate IS NULL OR s.createdAt >= :startDate) AND " +
-           "(:endDate IS NULL OR s.createdAt <= :endDate)")
+           "(:endDate IS NULL OR s.createdAt <= :endDate) AND " +
+           "(:siteOwner IS NULL OR :siteOwner = '' OR s.siteOwner = :siteOwner)")
     Page<SiteDetailsEntity> searchSites(
             @Param("keyword") String keyword, 
             @Param("startDate") java.time.LocalDateTime startDate, 
             @Param("endDate") java.time.LocalDateTime endDate, 
+            @Param("siteOwner") String siteOwner,
             Pageable pageable);
 }

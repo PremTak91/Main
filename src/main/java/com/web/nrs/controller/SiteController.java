@@ -52,10 +52,27 @@ public class SiteController {
             @RequestParam(defaultValue = "") String keyword,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate startDate,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate endDate,
+            Authentication authentication,
             Model model
     ) {
         Pageable pageable = PaginationUtils.createPageable(page, size, sortBy, sortDir);
-        Page<SiteDetailsEntity> sitePage = siteService.getAllSites(keyword, startDate, endDate, pageable);
+        
+        boolean isDealer = false;
+        String siteOwnerFilter = null;
+        if (authentication != null && authentication.isAuthenticated()) {
+            isDealer = authentication.getAuthorities().stream()
+                    .anyMatch(r -> r.getAuthority().equals("ROLE_DEALER") || r.getAuthority().equals("DEALER"));
+            if (isDealer) {
+                String email = authentication.getName();
+                java.util.Optional<EmployeeEntity> empOpt = employeeService.getEmployeeByEmailId(email);
+                if (empOpt.isPresent()) {
+                    EmployeeEntity emp = empOpt.get();
+                    siteOwnerFilter = emp.getFullName();
+                }
+            }
+        }
+        
+        Page<SiteDetailsEntity> sitePage = siteService.getAllSites(keyword, startDate, endDate, siteOwnerFilter, pageable);
 
         model.addAttribute("sites", sitePage.getContent());
         model.addAttribute("currentPage", page);
@@ -72,6 +89,7 @@ public class SiteController {
         // Fetch technicians for the dropdown (assuming role 'technician' or all employees)
         // For now, pass all employees or a specific list
         model.addAttribute("employees", employeeService.getAllEmployees(Pageable.unpaged()).getContent());
+        model.addAttribute("dealers", employeeService.getDealerEmployees());
 
         return "site-list";
     }

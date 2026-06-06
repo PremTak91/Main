@@ -19,10 +19,12 @@ import java.util.HashMap;
 import java.util.Map;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Controller
 @RequestMapping("/expenses")
 @RequiredArgsConstructor
+@PreAuthorize("!hasRole('DEALER')")
 public class ExpensesController {
 
     private final ExpensesService expensesService;

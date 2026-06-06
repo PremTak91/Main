@@ -8,6 +8,8 @@ import com.web.nrs.model.SolarQuotation;
 import com.web.nrs.service.DocumentSequenceService;
 import com.web.nrs.service.QuotationService;
 import com.web.nrs.utils.ConstantUtils;
+import com.web.nrs.entity.QuotationLogEntity;
+import com.web.nrs.repository.QuotationLogRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Service
@@ -22,6 +25,8 @@ import java.time.format.DateTimeFormatter;
 public class QuotationServiceImpl implements QuotationService {
 
     private final DocumentSequenceService documentSequenceService;
+    private final QuotationLogRepository quotationLogRepository;
+    private final com.web.nrs.repository.EmployeeRepository employeeRepository;
 
     // ===== BRAND COLORS =====
     private static final Color PRIMARY   = new Color(0x0B, 0x2C, 0x5F);
@@ -95,8 +100,75 @@ public class QuotationServiceImpl implements QuotationService {
         }
 
         doc.close();
+
+        // Log the quotation to DB
+        try {
+            Integer noOfPanelsInt = null;
+            if (q.getNoOfPanels() != null && !q.getNoOfPanels().trim().isEmpty()) {
+                try {
+                    noOfPanelsInt = Integer.parseInt(q.getNoOfPanels().trim());
+                } catch (NumberFormatException ignored) {}
+            }
+
+            String createdByName = null;
+            try {
+                org.springframework.security.core.Authentication auth = 
+                        org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+                    String email = auth.getName();
+                    java.util.Optional<com.web.nrs.entity.EmployeeEntity> empOpt = employeeRepository.findEmployeeByEmail(email);
+                    if (empOpt.isPresent()) {
+                        com.web.nrs.entity.EmployeeEntity emp = empOpt.get();
+                        createdByName = emp.getFirstName() + " " + (emp.getLastName() != null ? emp.getLastName() : "");
+                    } else {
+                        createdByName = email;
+                    }
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            QuotationLogEntity logEntity = QuotationLogEntity.builder()
+                    .quotationNo(q.getQuationNumber())
+                    .customerName(q.getCustomerName())
+                    .customerNumber(q.getCustomerMobileNumber())
+                    .kw(q.getKw())
+                    .solarType(q.getSolarType())
+                    .panelsName(q.getPanelsName())
+                    .effectivePrice(q.getEffectivePrice())
+                    .submittedBy(q.getSubmittedBy())
+                    .submittedNumber(q.getSubmittedNumber())
+                    .createdDate(LocalDateTime.now())
+                    .createdByName(createdByName)
+                    .discount(q.getDiscountAmount())
+                    .pdfFormat(q.getPdfType())
+                    .rateKw(q.getRateKw())
+                    .discomMeter(q.getDiscomMeter())
+                    .pqHsCost(q.getPqHsCost())
+                    .subsidy(q.getSubsidy())
+                    .panelWatt(q.getPanelWatt())
+                    .noOfPanels(noOfPanelsInt)
+                    .build();
+            quotationLogRepository.save(logEntity);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         updateDocumentSequence(q.getQuationNumber() != null ? q.getQuationNumber().split("/")[2] : "01");
         return out.toByteArray();
+    }
+
+    @Override
+    public org.springframework.data.domain.Page<QuotationLogEntity> getQuotationLogs(
+            String customerName, String submittedBy, LocalDate startDate, LocalDate endDate, org.springframework.data.domain.Pageable pageable) {
+        LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
+        LocalDateTime end = endDate != null ? endDate.atTime(23, 59, 59) : null;
+        return quotationLogRepository.searchLogs(customerName, submittedBy, start, end, pageable);
+    }
+
+    @Override
+    public void deleteQuotationLog(Long id) {
+        quotationLogRepository.deleteById(id);
     }
 
     // ── helper: load Image from classpath ─────────────────────────────────────

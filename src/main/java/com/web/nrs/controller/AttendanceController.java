@@ -6,6 +6,7 @@ import com.web.nrs.service.EmployeeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -13,6 +14,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/attendance")
 @RequiredArgsConstructor
+@PreAuthorize("!hasRole('DEALER')")
 public class AttendanceController {
 
     private final EmployeeService employeeService;

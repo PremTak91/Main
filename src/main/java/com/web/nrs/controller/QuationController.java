@@ -9,6 +9,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -114,6 +116,55 @@ public class QuationController {
                 .filename(filename)
                 .build());
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+    }
+
+    @GetMapping("/logs")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'DEALER')")
+    public String viewQuotationLogs(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String customerName,
+            @RequestParam(required = false) String submittedBy,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Model model) {
+            
+        org.springframework.data.domain.Pageable pageable = com.web.nrs.utils.PaginationUtils.createPageable(page, size, sortBy, sortDir);
+        org.springframework.data.domain.Page<com.web.nrs.entity.QuotationLogEntity> logsPage = 
+                quotationService.getQuotationLogs(customerName, submittedBy, startDate, endDate, pageable);
+                
+        model.addAttribute("logs", logsPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", logsPage.getTotalPages());
+        model.addAttribute("totalItems", logsPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("sortBy", sortBy);
+        model.addAttribute("sortDir", sortDir);
+        model.addAttribute("reverseSortDir", sortDir.equals("asc") ? "desc" : "asc");
+        
+        model.addAttribute("customerName", customerName);
+        model.addAttribute("submittedBy", submittedBy);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        
+        return "quotation-logs";
+    }
+
+    @DeleteMapping("/logs/{id}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> deleteQuotationLog(@PathVariable Long id) {
+        Map<String, String> response = new HashMap<>();
+        try {
+            quotationService.deleteQuotationLog(id);
+            response.put("message", "Quotation log deleted successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("message", "Error deleting log: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 }
 

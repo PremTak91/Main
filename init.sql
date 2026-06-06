@@ -319,7 +319,7 @@ CREATE TABLE `roles` (
 
 LOCK TABLES `roles` WRITE;
 /*!40000 ALTER TABLE `roles` DISABLE KEYS */;
-INSERT INTO `roles` VALUES (1,'SUPERADMIN','Administrator role with full access to the system',1),(2,'ADMIN','Moderator role with limited access to manage content',2),(3,'MANAGER','Manager site with basic access',3),(4,'USER','user role with regular access',5),(5,'TECHNICIAN','Its for site engineer',4);
+INSERT INTO `roles` VALUES (1,'SUPERADMIN','Administrator role with full access to the system',1),(2,'ADMIN','Moderator role with limited access to manage content',2),(3,'MANAGER','Manager site with basic access',3),(4,'USER','user role with regular access',5),(5,'TECHNICIAN','Its for site engineer',4),(6,'DEALER','Dealer role with quotation and site access only',6);
 /*!40000 ALTER TABLE `roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -448,6 +448,8 @@ CREATE TABLE IF NOT EXISTS `site_details` (
     `assigned_technician_id` BIGINT DEFAULT NULL,
     `expected_completed_date` DATE DEFAULT NULL,
     `remarks` TEXT DEFAULT NULL,
+    `team_members` VARCHAR(500) DEFAULT NULL,
+    `site_owner` VARCHAR(255) DEFAULT NULL,
     `created_by` BIGINT DEFAULT NULL,
     `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
     `updated_by` BIGINT DEFAULT NULL,
@@ -530,3 +532,32 @@ ALTER TABLE post_comments CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unico
 ALTER TABLE post_comments MODIFY comment_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE post_activity MODIFY post_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ALTER TABLE post_comments MODIFY comment_text TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `quotation_logs` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `quotation_no` varchar(255) DEFAULT NULL,
+  `customer_name` varchar(255) DEFAULT NULL,
+  `customer_number` varchar(255) DEFAULT NULL,
+  `kw` double DEFAULT NULL,
+  `solar_type` varchar(255) DEFAULT NULL,
+  `panels_name` varchar(255) DEFAULT NULL,
+  `effective_price` double DEFAULT NULL,
+  `submitted_by` varchar(255) DEFAULT NULL,
+  `submitted_number` varchar(255) DEFAULT NULL,
+  `created_date` datetime DEFAULT NULL,
+  `discount` bigint DEFAULT NULL,
+  `pdf_format` varchar(255) DEFAULT NULL,
+  `rate_kw` double DEFAULT NULL,
+  `discom_meter` varchar(255) DEFAULT NULL,
+  `pq_hs_cost` double DEFAULT NULL,
+  `subsidy` double DEFAULT NULL,
+  `panel_watt` int DEFAULT NULL,
+  `no_of_panels` int DEFAULT NULL,
+  `created_by_name` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+ALTER TABLE `quotation_logs` ADD COLUMN IF NOT EXISTS `created_by_name` varchar(255) DEFAULT NULL;
+
+ALTER TABLE `site_details` ADD COLUMN IF NOT EXISTS `team_members` varchar(500) DEFAULT NULL;
+ALTER TABLE `site_details` ADD COLUMN IF NOT EXISTS `site_owner` varchar(255) DEFAULT NULL;

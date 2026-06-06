@@ -27,11 +27,11 @@ public class SiteServiceImpl implements SiteService {
     private final CloudinaryStorageService cloudinaryStorageService;
 
     @Override
-    public Page<SiteDetailsEntity> getAllSites(String keyword, java.time.LocalDate startDate, java.time.LocalDate endDate, Pageable pageable) {
+    public Page<SiteDetailsEntity> getAllSites(String keyword, java.time.LocalDate startDate, java.time.LocalDate endDate, String siteOwner, Pageable pageable) {
         LocalDateTime start = (startDate != null) ? startDate.atStartOfDay() : null;
         LocalDateTime end = (endDate != null) ? endDate.atTime(23, 59, 59) : null;
         
-        return siteDetailsRepository.searchSites(keyword, start, end, pageable);
+        return siteDetailsRepository.searchSites(keyword, start, end, siteOwner, pageable);
     }
 
     @Override
@@ -60,6 +60,8 @@ public class SiteServiceImpl implements SiteService {
         existing.setAssignedTechnicianId(siteDetails.getAssignedTechnicianId());
         existing.setExpectedCompletedDate(siteDetails.getExpectedCompletedDate());
         existing.setKilowatt(siteDetails.getKilowatt());
+        existing.setTeamMembers(siteDetails.getTeamMembers());
+        existing.setSiteOwner(siteDetails.getSiteOwner());
         existing.setRemarks(siteDetails.getRemarks());
         existing.setUpdatedBy(userId);
 

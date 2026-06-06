@@ -43,6 +43,12 @@ public class SiteDetailsEntity {
     @Column(name = "kilowatt")
     private String kilowatt;
 
+    @Column(name = "team_members")
+    private String teamMembers;
+
+    @Column(name = "site_owner")
+    private String siteOwner;
+
     @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;
 

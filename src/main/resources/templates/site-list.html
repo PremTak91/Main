@@ -83,7 +83,7 @@
             <main class="main-content-area flex-grow-1">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h3 class="mb-0 text-primary fw-bold"><i class="fas fa-map-marked-alt me-2"></i>Site Management</h3>
-                    <button class="btn btn-primary" onclick="openAddSiteModal()">
+                    <button sec:authorize="!hasRole('DEALER')" class="btn btn-primary" onclick="openAddSiteModal()">
                         <i class="fas fa-plus me-1"></i> Add New Site
                     </button>
                 </div>
@@ -122,6 +122,9 @@
                                     <th>Created Date</th>
                                     <th>Expected Date</th>
                                     <th>Kilowatt</th>
+                                    <th>Team Lead</th>
+                                    <th>Team Members</th>
+                                    <th>Site Owner</th>
                                     <th>Status</th>
                                     <th>Remarks</th>
                                     <th class="text-center">Actions</th>
@@ -138,6 +141,12 @@
                                     <td th:text="${#temporals.format(site.createdAt, 'dd-MM-yyyy')}"></td>
                                     <td th:text="${site.expectedCompletedDate}"></td>
                                     <td th:text="${site.kilowatt}"></td>
+                                    <td>
+                                        <span th:each="emp : ${employees}" th:if="${emp.id == site.assignedTechnicianId}" th:text="${emp.employeeName}"></span>
+                                        <span th:if="${site.assignedTechnicianId == null}">-</span>
+                                    </td>
+                                    <td th:text="${site.teamMembers != null ? site.teamMembers : '-'}"></td>
+                                    <td th:text="${site.siteOwner != null ? site.siteOwner : 'NRS'}"></td>
                                     <td>
                                         <span class="badge"
                                             th:classappend="${site.siteStatus == 'Completed' ? 'bg-success' : (site.siteStatus == 'Initiate' || site.siteStatus == 'Structure Completed' || site.siteStatus == 'Wiring Completed' ? 'bg-warning text-dark' : 'bg-secondary')}"
@@ -170,7 +179,7 @@
                                     </td>
                                 </tr>
                                 <tr th:if="${#lists.isEmpty(sites)}">
-                                    <td colspan="9" class="text-center py-4 text-muted">No sites found.</td>
+                                    <td colspan="13" class="text-center py-4 text-muted">No sites found.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -253,17 +262,31 @@
                                 <label for="expectedCompletedDate" class="form-label">Expected Date</label>
                                 <input type="date" class="form-control" id="expectedCompletedDate" name="expectedCompletedDate">
                             </div>
-                            <div class="col-md-4">
-                                <label for="assignedTechnicianId" class="form-label">Technician</label>
-                                <select class="form-select" id="assignedTechnicianId" name="assignedTechnicianId">
-                                    <option value="">-- Select --</option>
-                                    <option th:each="emp : ${employees}" th:value="${emp.id}" th:text="${emp.employeeName}"></option>
-                                </select>
-                            </div>
-                            <div class="col-md-12">
-                                <label for="remarks" class="form-label">Remarks</label>
-                                <textarea class="form-control" id="remarks" name="remarks" rows="2"></textarea>
-                            </div>
+                             <div class="col-md-4">
+                                 <label for="assignedTechnicianId" class="form-label">Team Lead</label>
+                                 <select class="form-select" id="assignedTechnicianId" name="assignedTechnicianId">
+                                     <option value="">-- Select --</option>
+                                     <option th:each="emp : ${employees}" th:value="${emp.id}" th:text="${emp.employeeName}"></option>
+                                 </select>
+                             </div>
+                             <div class="col-md-4">
+                                 <label for="siteOwner" class="form-label">Site Owner</label>
+                                 <select class="form-select" id="siteOwner" name="siteOwner">
+                                     <option value="NRS" selected>NRS</option>
+                                     <option th:each="dealer : ${dealers}" th:value="${dealer.fullName}" th:text="${dealer.fullName}"></option>
+                                 </select>
+                             </div>
+                             <div class="col-md-12">
+                                 <label for="teamMembersSelect" class="form-label fw-semibold">Team Members</label>
+                                 <select class="form-select" id="teamMembersSelect" multiple size="5">
+                                     <option th:each="emp : ${employees}" th:value="${emp.employeeName}" th:text="${emp.employeeName}"></option>
+                                 </select>
+                                 <input type="hidden" id="teamMembers" name="teamMembers">
+                             </div>
+                             <div class="col-md-12">
+                                 <label for="remarks" class="form-label">Remarks</label>
+                                 <textarea class="form-control" id="remarks" name="remarks" rows="2"></textarea>
+                             </div>
                         </div>
                     </form>
                 </div>

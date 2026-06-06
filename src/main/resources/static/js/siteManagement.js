@@ -57,6 +57,12 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
     }
+
+    // Listen to changes on team-member select dropdown to update the hidden input
+    $(document).on("change", "#teamMembersSelect", function() {
+        var selected = $(this).val() || [];
+        $("#teamMembers").val(selected.join(", "));
+    });
 });
 
 // ── Site CRUD ─────────────────────────────────────────────────────────────────
@@ -64,6 +70,9 @@ document.addEventListener("DOMContentLoaded", function () {
 function openAddSiteModal() {
     document.getElementById("siteForm").reset();
     document.getElementById("siteId").value = "";
+    $("#teamMembersSelect").val([]);
+    $("#teamMembers").val("");
+    $("#siteOwner").val("NRS");
     document.getElementById("siteModalLabel").innerText = "Add New Site";
     siteModal.show();
 }
@@ -84,7 +93,15 @@ function editSite(id) {
                 document.getElementById("expectedCompletedDate").value = site.expectedCompletedDate || "";
                 document.getElementById("kilowatt").value              = site.kilowatt || "";
                 document.getElementById("assignedTechnicianId").value  = site.assignedTechnicianId || "";
+                document.getElementById("siteOwner").value             = site.siteOwner || "NRS";
                 document.getElementById("remarks").value               = site.remarks || "";
+                
+                // Populate team member select dropdown
+                var teamMembersStr = site.teamMembers || "";
+                var membersArray = teamMembersStr ? teamMembersStr.split(",").map(function(s) { return s.trim(); }) : [];
+                $("#teamMembersSelect").val(membersArray);
+                document.getElementById("teamMembers").value = teamMembersStr;
+                
                 document.getElementById("siteModalLabel").innerText    = "Edit Site Details";
                 siteModal.show();
             } else {

@@ -24,6 +24,7 @@ public class GlobalControllerAdvice {
                 model.addAttribute("currentUserId", emp.getId());
                 model.addAttribute("currentUserPhoto", emp.getPhoto());
                 model.addAttribute("currentUserName", emp.getFirstName() + " " + (emp.getLastName() != null ? emp.getLastName() : ""));
+                model.addAttribute("currentUserPhone", emp.getPhoneNo() != null ? emp.getPhoneNo() : "");
             });
         }
     }
