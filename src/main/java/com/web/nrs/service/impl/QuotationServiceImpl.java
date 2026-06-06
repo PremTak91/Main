@@ -160,10 +160,10 @@ public class QuotationServiceImpl implements QuotationService {
 
     @Override
     public org.springframework.data.domain.Page<QuotationLogEntity> getQuotationLogs(
-            String customerName, String submittedBy, LocalDate startDate, LocalDate endDate, org.springframework.data.domain.Pageable pageable) {
+            String customerName, String submittedBy, LocalDate startDate, LocalDate endDate, String createdByName, org.springframework.data.domain.Pageable pageable) {
         LocalDateTime start = startDate != null ? startDate.atStartOfDay() : null;
         LocalDateTime end = endDate != null ? endDate.atTime(23, 59, 59) : null;
-        return quotationLogRepository.searchLogs(customerName, submittedBy, start, end, pageable);
+        return quotationLogRepository.searchLogs(customerName, submittedBy, start, end, createdByName, pageable);
     }
 
     @Override

@@ -131,12 +131,16 @@ h1, h2, h3, h4, h5, h6 {
     flex-grow: 1; /* Allows main content to take remaining space */
     padding: 1rem 2rem;
     background-color: var(--nrs-bg-light); /* Light background */
+    width: 100%;
+    min-width: 0;
 }
 
 .card {
     border: none; /* Remove default card border */
     border-radius: 0.75rem; /* Softer rounded corners */
     box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.05); /* Lighter shadow for cards */
+    width: 100%;
+    min-width: 0;
 }
 
 /* Responsive Adjustments for Sidebar (Offcanvas behavior) */
@@ -376,4 +380,20 @@ h1, h2, h3, h4, h5, h6 {
     height: 150px;
     object-fit: cover;
     border-radius: 50%;
+}
+
+/* Custom scrollbar for table-responsive to make it very visible and premium */
+.table-responsive::-webkit-scrollbar {
+    height: 8px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
 }
