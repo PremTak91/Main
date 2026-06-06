@@ -21,6 +21,9 @@ public class QuationController {
     @Autowired
     private QuotationService quotationService;
 
+    @Autowired
+    private com.web.nrs.service.EmployeeService employeeService;
+
     // ── Short-lived in-memory PDF store ──────────────────────────────────────
     // Maps one-time UUID token → raw PDF bytes.
     // Tokens are removed on first access (single-use) and auto-expire after
@@ -129,11 +132,34 @@ public class QuationController {
             @RequestParam(required = false) String submittedBy,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate endDate,
+            org.springframework.security.core.Authentication authentication,
             Model model) {
             
         org.springframework.data.domain.Pageable pageable = com.web.nrs.utils.PaginationUtils.createPageable(page, size, sortBy, sortDir);
+        
+        boolean isAllLogsVisible = false;
+        String filterCreatedByName = null;
+        
+        if (authentication != null && authentication.isAuthenticated()) {
+            isAllLogsVisible = authentication.getAuthorities().stream()
+                    .anyMatch(r -> r.getAuthority().equals("ROLE_SUPERADMIN") || 
+                                   r.getAuthority().equals("SUPERADMIN") || 
+                                   r.getAuthority().equals("ROLE_ADMIN") || 
+                                   r.getAuthority().equals("ADMIN"));
+            if (!isAllLogsVisible) {
+                String email = authentication.getName();
+                java.util.Optional<com.web.nrs.entity.EmployeeEntity> empOpt = employeeService.getEmployeeByEmailId(email);
+                if (empOpt.isPresent()) {
+                    com.web.nrs.entity.EmployeeEntity emp = empOpt.get();
+                    filterCreatedByName = emp.getFirstName() + " " + (emp.getLastName() != null ? emp.getLastName() : "");
+                } else {
+                    filterCreatedByName = email;
+                }
+            }
+        }
+        
         org.springframework.data.domain.Page<com.web.nrs.entity.QuotationLogEntity> logsPage = 
-                quotationService.getQuotationLogs(customerName, submittedBy, startDate, endDate, pageable);
+                quotationService.getQuotationLogs(customerName, submittedBy, startDate, endDate, filterCreatedByName, pageable);
                 
         model.addAttribute("logs", logsPage.getContent());
         model.addAttribute("currentPage", page);
