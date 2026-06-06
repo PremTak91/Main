@@ -86,6 +86,7 @@ function editSite(id) {
             if (data.success) {
                 var site = data.data;
                 document.getElementById("siteId").value                = site.id;
+                document.getElementById("srNo").value                  = site.srNo || "";
                 document.getElementById("customerName").value          = site.customerName || "";
                 document.getElementById("contactNo").value             = site.contactNo || "";
                 document.getElementById("address").value               = site.address || "";

@@ -33,7 +33,7 @@
                     </h3>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-success" onclick="exportExpenses()">
-                            <i class="fas fa-file-excel me-2"></i> Export Excel
+                            <i class="fas fa-file-csv me-2"></i> Export CSV
                         </button>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
                             <i class="fas fa-plus me-2"></i> Add Entry
@@ -258,7 +258,12 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="expenseType" class="form-label">Expense Type</label>
-                                <input type="text" class="form-control" id="expenseType" placeholder="e.g. Fixed, Unfixed, Travel">
+                                <select class="form-select" id="expenseType">
+                                    <option value="">Select Expense Type</option>
+                                    <option value="Site">Site</option>
+                                    <option value="Project">Project</option>
+                                    <option value="Trading">Trading</option>
+                                </select>
                             </div>
                         </div>
                     </form>
