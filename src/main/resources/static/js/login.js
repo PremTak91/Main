@@ -6,6 +6,19 @@ $(document).ready(function() {
         $("#rememberMe").prop("checked", true);
     }
 
+    // Toggle Password Visibility
+    $("#togglePasswordBtn").click(function() {
+        var passwordInput = $("#passwordInput");
+        var icon = $("#togglePasswordIcon");
+        if (passwordInput.attr("type") === "password") {
+            passwordInput.attr("type", "text");
+            icon.removeClass("fa-eye").addClass("fa-eye-slash");
+        } else {
+            passwordInput.attr("type", "password");
+            icon.removeClass("fa-eye-slash").addClass("fa-eye");
+        }
+    });
+
     $("#loginForm").submit(function(event) {
         event.preventDefault();
         var username = $("#emailInput").val();
