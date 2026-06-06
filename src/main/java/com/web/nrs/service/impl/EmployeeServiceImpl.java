@@ -117,6 +117,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setEmpStatus(1);
         employee.setAuditTimeStamp(LocalDateTime.now());
         employee.setPreviousExperience(employeeDetails.getPreviousExperience());
+        if (employeeDetails.getDateOfBirth() != null) {
+            employee.setDateOfBirth(employeeDetails.getDateOfBirth().trim().isEmpty() ? null : employeeDetails.getDateOfBirth());
+        }
 
         employee = employeeRepository.save(employee);
 
@@ -216,6 +219,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
         if (employeeDetails.getQualification() != null && !employeeDetails.getQualification().isEmpty()) {
             employee.setQualification(employeeDetails.getQualification());
+        }
+        if (employeeDetails.getDateOfBirth() != null) {
+            employee.setDateOfBirth(employeeDetails.getDateOfBirth().trim().isEmpty() ? null : employeeDetails.getDateOfBirth());
         }
 
         if (employeeDetails.getDesignation() != null && !employeeDetails.getDesignation().isEmpty()) {
@@ -404,6 +410,9 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
         if (request.getEmpStatus() != null) {
             employee.setEmpStatus(request.getEmpStatus());
+        }
+        if (request.getDateOfBirth() != null) {
+            employee.setDateOfBirth(request.getDateOfBirth().trim().isEmpty() ? null : request.getDateOfBirth());
         }
 
         employeeRepository.save(employee);
