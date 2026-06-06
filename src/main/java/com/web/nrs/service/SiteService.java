@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SiteService {
-    Page<SiteDetailsEntity> getAllSites(String keyword, java.time.LocalDate startDate, java.time.LocalDate endDate, Pageable pageable);
+    Page<SiteDetailsEntity> getAllSites(String keyword, java.time.LocalDate startDate, java.time.LocalDate endDate, String siteOwner, Pageable pageable);
     
     Optional<SiteDetailsEntity> getSiteById(Long id);
     

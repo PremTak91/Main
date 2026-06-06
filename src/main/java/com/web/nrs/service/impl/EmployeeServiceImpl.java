@@ -526,5 +526,10 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeAttendanceRepository.deleteById(timesheetId);
         return true;
     }
+
+    @Override
+    public List<EmployeeEntity> getDealerEmployees() {
+        return employeeRepository.findDealers();
+    }
 }
 

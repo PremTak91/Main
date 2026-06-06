@@ -92,7 +92,7 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="panelsName" class="form-label">Panels Name:</label>
-                                <input type="text" class="form-control" id="panelsName" placeholder="Enter Panels Name" value="ADANI TOPCON, ADANI BIFACIAL , RAYZON" required>
+                                <input type="text" class="form-control" id="panelsName" placeholder="Enter Panels Name" value="ADANI TOPCON, ADANI BIFACIAL , WAAREE" required>
                             </div>
                         </div>
                         <div class="row g-3 mt-2">
@@ -128,7 +128,18 @@
                                 <label for="effectivePrice" class="form-label">Effective Price:</label>
                                 <input type="number" class="form-control" id="effectivePrice" placeholder="Enter Effective Price" onkeyup="CalculateActualPrice()" required readonly> <!-- Added readonly -->
                             </div>
-                            <div class="col-md-4">
+                            <!-- For DEALER role -->
+                            <div class="col-md-4" sec:authorize="hasRole('DEALER')">
+                                <label for="submittedByName" class="form-label">Submitted By:</label>
+                                <input type="text" class="form-control" id="submittedByName" th:value="${currentUserName}" readonly required>
+                            </div>
+                            <div class="col-md-4" sec:authorize="hasRole('DEALER')">
+                                <label for="submittedNumber" class="form-label">Submitted Number:</label>
+                                <input type="text" class="form-control" id="submittedNumber" th:value="${currentUserPhone}" readonly required>
+                            </div>
+
+                            <!-- For non-DEALER roles -->
+                            <div class="col-md-4" sec:authorize="!hasRole('DEALER')">
                                 <label for="submittedBy" class="form-label">Submitted By:</label>
                                 <input type="hidden" class="form-control" id="submittedByName" placeholder="Enter Submitted By" value="Amit Vyas" required>
                                 <select class="form-control" id="submittedBy" required>
@@ -136,7 +147,7 @@
                                     <option value="+91-8488953026">Pramod Kansara</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-4" sec:authorize="!hasRole('DEALER')">
                                 <label for="submittedNumber" class="form-label">Submitted Number:</label>
                                 <input type="text" class="form-control" id="submittedNumber" placeholder="Enter Submitted Number" value="+91-8866389038" required>
                             </div>

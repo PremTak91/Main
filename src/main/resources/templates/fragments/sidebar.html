@@ -20,9 +20,14 @@
                     </a>
                 </li>
                 <li class="sidebar-heading">COMPANY MODULE</li>
-                <li class="nav-item" sec:authorize="hasAnyRole('SUPERADMIN', 'ADMIN')">
-                    <a class="nav-link active" th:href="@{/quts}">
+                <li class="nav-item" sec:authorize="hasAnyRole('SUPERADMIN', 'ADMIN', 'DEALER')">
+                    <a class="nav-link" th:href="@{/quts}">
                         <i class="fas fa-fw fa-file-invoice-dollar"></i> Quotation Generate
+                    </a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('DEALER')">
+                    <a class="nav-link" th:href="@{/quts/logs}">
+                        <i class="fas fa-fw fa-history"></i> Quotation Logs
                     </a>
                 </li>
                 <li class="nav-item">
@@ -30,12 +35,12 @@
                         <i class="fas fa-fw fa-map-marked-alt"></i> Site Management
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" sec:authorize="!hasRole('DEALER')">
                     <a class="nav-link" th:href="@{/timesheet}">
                         <i class="fas fa-fw fa-clock"></i> Timesheet
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" sec:authorize="!hasRole('DEALER')">
                     <a class="nav-link" th:href="@{/worklogs}">
                         <i class="fas fa-fw fa-clipboard-list"></i> Daily Work Log
                     </a>
@@ -63,23 +68,24 @@
                             <li class="nav-item"><a class="nav-link" th:href="@{/leaveRole}">Leave Role</a></li>
                             <li class="nav-item"><a class="nav-link" th:href="@{/leave/approval}">Leave Request Approval</a></li>
                             <li class="nav-item"><a class="nav-link" th:href="@{/admin/documents}">Document Management</a></li>
+                            <li class="nav-item"><a class="nav-link" th:href="@{/quts/logs}">Quotation Logs</a></li>
                             <li class="nav-item" sec:authorize="hasRole('SUPERADMIN')">
                                 <a class="nav-link" th:href="@{/roles-permissions}">Roles & Permissions</a>
                             </li>
                         </ul>
                     </div>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" sec:authorize="!hasRole('DEALER')">
                     <a class="nav-link" th:href="@{/leave}">
                         <i class="fas fa-fw fa-plane-departure"></i> Leave
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" sec:authorize="!hasRole('DEALER')">
                     <a class="nav-link" th:href="@{/expenses}">
                         <i class="fas fa-fw fa-money-bill-wave"></i> Expenses
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" sec:authorize="!hasRole('DEALER')">
                     <a class="nav-link" th:href="@{/inquiry}">
                         <i class="fas fa-fw fa-keyboard"></i> Inquiry Entry
                     </a>
@@ -90,7 +96,7 @@
                         <i class="fas fa-fw fa-user-edit"></i> Profile Updates
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" sec:authorize="!hasRole('DEALER')">
                     <a class="nav-link" th:href="@{/download-hr-policy}">
                         <i class="fas fa-fw fa-building"></i> Company Policies
                     </a>

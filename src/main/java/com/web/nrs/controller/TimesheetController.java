@@ -26,6 +26,7 @@ import java.util.Optional;
 @Controller
 @RequestMapping("/timesheet")
 @RequiredArgsConstructor
+@PreAuthorize("!hasRole('DEALER')")
 public class TimesheetController {
 
     private final EmployeeService employeeService;

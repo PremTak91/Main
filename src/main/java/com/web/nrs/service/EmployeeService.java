@@ -48,4 +48,6 @@ public interface EmployeeService {
     String calculateTotalWorkingHours(Long employeeId, String employeeName, LocalDate startDate, LocalDate endDate);
     boolean editTimesheetRecord(Long timesheetId, LocalDateTime inTime, LocalDateTime outTime);
     boolean deleteTimesheetRecord(Long timesheetId);
+
+    List<EmployeeEntity> getDealerEmployees();
 }

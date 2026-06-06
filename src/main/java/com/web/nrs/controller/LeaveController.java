@@ -21,6 +21,7 @@ import java.util.Map;
 @Controller
 @RequestMapping("/leave")
 @RequiredArgsConstructor
+@PreAuthorize("!hasRole('DEALER')")
 public class LeaveController {
 
     private final LeaveService leaveService;
