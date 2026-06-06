@@ -109,6 +109,9 @@ function populateEditForm(data, roleId) {
     if (data.dateOfJoining) {
         document.getElementById('dateOfJoining').value = data.dateOfJoining;
     }
+    if (data.dateOfBirth) {
+        document.getElementById('dateOfBirth').value = data.dateOfBirth;
+    }
 
     // Handle select fields
     if (data.designationId) {
@@ -160,6 +163,7 @@ function saveEmployee() {
         state: document.getElementById('state').value,
         branch: document.getElementById('branch').value,
         dateOfJoining: document.getElementById('dateOfJoining').value || null,
+        dateOfBirth: document.getElementById('dateOfBirth').value || null,
         designationId: document.getElementById('designationId').value || null,
         roleId: document.getElementById('roleId').value || null,
         password: document.getElementById('password').value || null,

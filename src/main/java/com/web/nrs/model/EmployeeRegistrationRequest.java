@@ -33,4 +33,5 @@ public class EmployeeRegistrationRequest {
     private String branch;
     private Long empMainterId;
     private Integer empStatus;
+    private String dateOfBirth;
 }

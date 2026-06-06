@@ -43,6 +43,7 @@ document.getElementById("updateProfileBtn").addEventListener("click", function (
     formData.append("phoneNo", document.getElementById("modalPhoneNo").value);
     formData.append("designation", document.getElementById("modalPosition").value);
     formData.append("qualification", document.getElementById("modalEducation").value);
+    formData.append("dateOfBirth", document.getElementById("modalDOB").value);
 
     // Do not append photo here because it is uploaded instantly via the change listener
     // However, if for some reason they bypassed the change listener, we can still attach it

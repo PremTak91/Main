@@ -195,6 +195,7 @@ function loadAllRolesForManagement() {
                 return;
             }
             const roles = res.data;
+            const tbody = document.getElementById('allRolesTableBody');
             tbody.innerHTML = '';
 
             roles.forEach(role => {

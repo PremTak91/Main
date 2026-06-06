@@ -98,6 +98,10 @@
                                     <span class="fw-semibold">Education:</span>
                                     <span th:text="${emp.qualification}"></span>
                                 </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <span class="fw-semibold">Date of Birth:</span>
+                                    <span th:text="${emp.dateOfBirth != null ? emp.dateOfBirth : '-'}"></span>
+                                </li>
                             </ul>
                             <div class="mt-4">
                                 <button class="btn btn-primary" data-bs-toggle="modal"
@@ -188,6 +192,11 @@
                                 <label for="modalEducation" class="form-label">Qualification</label>
                                 <input type="text" class="form-control" id="modalEducation"
                                     th:value="${emp.qualification}" placeholder="Enter your qualification">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="modalDOB" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="modalDOB"
+                                    th:value="${emp.dateOfBirth}">
                             </div>
 
                             <div class="col-md-6">
