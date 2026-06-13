@@ -20,8 +20,8 @@ public class ExpensesServiceImpl implements ExpensesService {
     }
 
     @Override
-    public Page<ExpensesEntity> getExpensesByCreatorAndDate(Long createdBy, java.time.LocalDateTime startOfDay, String keyword, String searchType, java.time.LocalDate startDate, java.time.LocalDate endDate, Pageable pageable) {
-        return expensesRepository.searchByCreatorAndDate(createdBy, startOfDay, keyword, searchType, startDate, endDate, pageable);
+    public Page<ExpensesEntity> getExpensesByCreator(Long createdBy, String keyword, String searchType, java.time.LocalDate startDate, java.time.LocalDate endDate, Pageable pageable) {
+        return expensesRepository.searchByCreator(createdBy, keyword, searchType, startDate, endDate, pageable);
     }
 
     @Override
@@ -29,7 +29,7 @@ public class ExpensesServiceImpl implements ExpensesService {
         if (isAdmin) {
             return expensesRepository.exportAllExpenses(keyword, searchType, startDate, endDate);
         } else {
-            return expensesRepository.exportByCreatorAndDate(createdBy, java.time.LocalDate.now().atStartOfDay(), keyword, searchType, startDate, endDate);
+            return expensesRepository.exportByCreator(createdBy, keyword, searchType, startDate, endDate);
         }
     }
 
@@ -39,7 +39,7 @@ public class ExpensesServiceImpl implements ExpensesService {
         if (isAdmin) {
             total = expensesRepository.sumAllExpenses(keyword, searchType, startDate, endDate);
         } else {
-            total = expensesRepository.sumByCreatorAndDate(createdBy, java.time.LocalDate.now().atStartOfDay(), keyword, searchType, startDate, endDate);
+            total = expensesRepository.sumByCreator(createdBy, keyword, searchType, startDate, endDate);
         }
         return total != null ? total : java.math.BigDecimal.ZERO;
     }

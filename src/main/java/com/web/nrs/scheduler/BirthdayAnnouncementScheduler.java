@@ -34,7 +34,11 @@ public class BirthdayAnnouncementScheduler {
                     .filter(e -> e.getDateOfBirth() != null && !e.getDateOfBirth().toString().trim().isEmpty())
                     .filter(e -> {
                         try {
-                            LocalDate dob = LocalDate.parse(e.getDateOfBirth().toString());
+                            String dobStr = e.getDateOfBirth().toString().trim();
+                            LocalDate dob = parseDate(dobStr);
+                            if (dob == null) {
+                                return false;
+                            }
                             return dob.getMonthValue() == targetMonth && dob.getDayOfMonth() == targetDay;
                         } catch (Exception ex) {
                             return false;
@@ -90,6 +94,37 @@ public class BirthdayAnnouncementScheduler {
         } catch (Exception e) {
             log.error("Error creating birthday announcement post", e);
         }
+    }
+
+    private LocalDate parseDate(String dateStr) {
+        if (dateStr == null || dateStr.isEmpty()) {
+            return null;
+        }
+        // Try yyyy-MM-dd (standard ISO format)
+        try {
+            return LocalDate.parse(dateStr);
+        } catch (Exception e) {
+            // ignore
+        }
+        // Try dd/MM/yyyy
+        try {
+            return LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        } catch (Exception e) {
+            // ignore
+        }
+        // Try dd-MM-yyyy
+        try {
+            return LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+        } catch (Exception e) {
+            // ignore
+        }
+        // Try yyyy/MM/dd
+        try {
+            return LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
     }
 }
 

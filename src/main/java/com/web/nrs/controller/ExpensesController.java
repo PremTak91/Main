@@ -58,8 +58,8 @@ public class ExpensesController {
         if (isAdmin) {
             expensesPage = expensesService.getAllExpenses(keyword, searchType, startDate, endDate, pageable);
         } else {
-            // Non-admin can only see their own entries from today
-            expensesPage = expensesService.getExpensesByCreatorAndDate(employeeId, LocalDate.now().atStartOfDay(), keyword, searchType, startDate, endDate, pageable);
+            // Non-admin can only see their own entries
+            expensesPage = expensesService.getExpensesByCreator(employeeId, keyword, searchType, startDate, endDate, pageable);
         }
 
         model.addAttribute("expenses", expensesPage.getContent());
