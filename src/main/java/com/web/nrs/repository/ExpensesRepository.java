@@ -36,7 +36,7 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
                                            Pageable pageable);
 
     // Search for normal user
-    @Query("SELECT e FROM ExpensesEntity e WHERE e.createdBy = :createdBy AND e.createdAt >= :startOfDay AND " +
+    @Query("SELECT e FROM ExpensesEntity e WHERE e.createdBy = :createdBy AND " +
            "(:startDate IS NULL OR e.expenseDate >= :startDate) AND " +
            "(:endDate IS NULL OR e.expenseDate <= :endDate) AND " +
            "(:keyword IS NULL OR :keyword = '' OR " +
@@ -46,13 +46,12 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
            "  (:searchType = 'TYPE' AND LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'DESC' AND LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
            ")")
-    Page<ExpensesEntity> searchByCreatorAndDate(@Param("createdBy") Long createdBy, 
-                                                @Param("startOfDay") LocalDateTime startOfDay, 
-                                                @Param("keyword") String keyword, 
-                                                @Param("searchType") String searchType, 
-                                                @Param("startDate") java.time.LocalDate startDate, 
-                                                @Param("endDate") java.time.LocalDate endDate, 
-                                                Pageable pageable);
+    Page<ExpensesEntity> searchByCreator(@Param("createdBy") Long createdBy, 
+                                         @Param("keyword") String keyword, 
+                                         @Param("searchType") String searchType, 
+                                         @Param("startDate") java.time.LocalDate startDate, 
+                                         @Param("endDate") java.time.LocalDate endDate, 
+                                         Pageable pageable);
 
     // Export for admin
     @Query("SELECT e FROM ExpensesEntity e WHERE " +
@@ -71,7 +70,7 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
                                            @Param("endDate") java.time.LocalDate endDate);
 
     // Export for normal user
-    @Query("SELECT e FROM ExpensesEntity e WHERE e.createdBy = :createdBy AND e.createdAt >= :startOfDay AND " +
+    @Query("SELECT e FROM ExpensesEntity e WHERE e.createdBy = :createdBy AND " +
            "(:startDate IS NULL OR e.expenseDate >= :startDate) AND " +
            "(:endDate IS NULL OR e.expenseDate <= :endDate) AND " +
            "(:keyword IS NULL OR :keyword = '' OR " +
@@ -81,12 +80,11 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
            "  (:searchType = 'TYPE' AND LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'DESC' AND LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
            ") ORDER BY e.id DESC")
-    List<ExpensesEntity> exportByCreatorAndDate(@Param("createdBy") Long createdBy, 
-                                                @Param("startOfDay") LocalDateTime startOfDay, 
-                                                @Param("keyword") String keyword, 
-                                                @Param("searchType") String searchType, 
-                                                @Param("startDate") java.time.LocalDate startDate, 
-                                                @Param("endDate") java.time.LocalDate endDate);
+    List<ExpensesEntity> exportByCreator(@Param("createdBy") Long createdBy, 
+                                         @Param("keyword") String keyword, 
+                                         @Param("searchType") String searchType, 
+                                         @Param("startDate") java.time.LocalDate startDate, 
+                                         @Param("endDate") java.time.LocalDate endDate);
 
     // Sum for admin
     @Query("SELECT SUM(e.totalAmount) FROM ExpensesEntity e WHERE " +
@@ -105,7 +103,7 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
                                         @Param("endDate") java.time.LocalDate endDate);
 
     // Sum for normal user
-    @Query("SELECT SUM(e.totalAmount) FROM ExpensesEntity e WHERE e.createdBy = :createdBy AND e.createdAt >= :startOfDay AND " +
+    @Query("SELECT SUM(e.totalAmount) FROM ExpensesEntity e WHERE e.createdBy = :createdBy AND " +
            "(:startDate IS NULL OR e.expenseDate >= :startDate) AND " +
            "(:endDate IS NULL OR e.expenseDate <= :endDate) AND " +
            "(:keyword IS NULL OR :keyword = '' OR " +
@@ -115,10 +113,9 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
            "  (:searchType = 'TYPE' AND LOWER(e.expenseType) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR " +
            "  (:searchType = 'DESC' AND LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))" +
            ")")
-    java.math.BigDecimal sumByCreatorAndDate(@Param("createdBy") Long createdBy, 
-                                             @Param("startOfDay") LocalDateTime startOfDay, 
-                                             @Param("keyword") String keyword, 
-                                             @Param("searchType") String searchType, 
-                                             @Param("startDate") java.time.LocalDate startDate, 
-                                             @Param("endDate") java.time.LocalDate endDate);
+    java.math.BigDecimal sumByCreator(@Param("createdBy") Long createdBy, 
+                                      @Param("keyword") String keyword, 
+                                      @Param("searchType") String searchType, 
+                                      @Param("startDate") java.time.LocalDate startDate, 
+                                      @Param("endDate") java.time.LocalDate endDate);
 }
