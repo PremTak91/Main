@@ -325,45 +325,59 @@ public class QuotationServiceImpl implements QuotationService {
         txt(cb, Element.ALIGN_RIGHT, new Phrase("Hon'ble Prime Minister of India", new Font(Font.HELVETICA, 8, Font.NORMAL, new Color(180, 220, 255))), pmX + qW - 10, sigY - 14);
 
         // Client info card (bottom-left) — solid slightly-lighter navy, expanded height & padding
-        float cx = 25, cy = 90, cw = 275, ch = 135; // Increased height for wrapping
+        boolean hasCustomerDetails = (q.getCustomerName() != null && !q.getCustomerName().trim().isEmpty())
+                || (q.getCustomerMobileNumber() != null && !q.getCustomerMobileNumber().trim().isEmpty());
+
+        float cx = 25, cy = 90, cw = 275;
+        float ch = hasCustomerDetails ? 135 : 85;
+
         cb.setColorFill(new Color(16, 52, 110));
         cb.roundRectangle(cx, cy, cw, ch, 10); cb.fill();
         cb.setColorStroke(ORANGE); cb.setLineWidth(1.5f); cb.roundRectangle(cx, cy, cw, ch, 10); cb.stroke();
 
         float topY = cy + ch;
-        txt(cb, Element.ALIGN_LEFT, new Phrase("PREPARED FOR", fLight(8.5f)), cx + 18, topY - 20);
-        String client = q.getCustomerName() != null ? q.getCustomerName() : "Valued Customer";
-        String mobile = q.getCustomerMobileNumber() != null ? q.getCustomerMobileNumber().trim() : "";
 
-        ColumnText ctClient = new ColumnText(cb);
-        ctClient.setSimpleColumn(cx + 18, topY - 70, cx + cw - 15, topY - 22);
-        
-        Font nameFont = client.length() > 22 ? fWhiteBold(13) : fWhiteBold(16);
-        Paragraph pClient = new Paragraph(client, nameFont);
-        pClient.setLeading(client.length() > 22 ? 15f : 18f);
-        ctClient.addElement(pClient);
-        
-        if (!mobile.isEmpty()) {
-            Paragraph pMobile = new Paragraph("+91 " + mobile, fLight(11f));
-            if (!mobile.startsWith("+")) {
-                pMobile = new Paragraph(mobile.length() == 10 ? "+91 " + mobile : mobile, fLight(11f));
-            } else {
-                pMobile = new Paragraph(mobile, fLight(11f));
+        if (hasCustomerDetails) {
+            txt(cb, Element.ALIGN_LEFT, new Phrase("PREPARED FOR", fLight(8.5f)), cx + 18, topY - 20);
+            String client = q.getCustomerName() != null ? q.getCustomerName().trim() : "";
+            String mobile = q.getCustomerMobileNumber() != null ? q.getCustomerMobileNumber().trim() : "";
+
+            ColumnText ctClient = new ColumnText(cb);
+            ctClient.setSimpleColumn(cx + 18, topY - 70, cx + cw - 15, topY - 22);
+            
+            Font nameFont = client.length() > 22 ? fWhiteBold(13) : fWhiteBold(16);
+            Paragraph pClient = new Paragraph(client, nameFont);
+            pClient.setLeading(client.length() > 22 ? 15f : 18f);
+            ctClient.addElement(pClient);
+            
+            if (!mobile.isEmpty()) {
+                Paragraph pMobile = new Paragraph("+91 " + mobile, fLight(11f));
+                if (!mobile.startsWith("+")) {
+                    pMobile = new Paragraph(mobile.length() == 10 ? "+91 " + mobile : mobile, fLight(11f));
+                } else {
+                    pMobile = new Paragraph(mobile, fLight(11f));
+                }
+                pMobile.setSpacingBefore(4f);
+                pMobile.setLeading(14f);
+                ctClient.addElement(pMobile);
             }
-            pMobile.setSpacingBefore(4f);
-            pMobile.setLeading(14f);
-            ctClient.addElement(pMobile);
+            
+            try { ctClient.go(); } catch (Exception e) {}
+            
+            // Separator line with proper horizontal padding
+            fillRect(cb, new Color(80, 120, 180), cx + 15, topY - 72, cw - 30, 1);
+            
+            txt(cb, Element.ALIGN_LEFT, new Phrase("System: " + q.getKw() + " kW", fOrange(11)), cx + 18, topY - 88);
+            txt(cb, Element.ALIGN_LEFT, new Phrase("Date: " + q.getQuotationDate(), fLight(9.5f)), cx + 18, topY - 106);
+            String prop = q.getQuationNumber() != null ? q.getQuationNumber() : "NRS/2026/001";
+            txt(cb, Element.ALIGN_LEFT, new Phrase("Proposal: " + prop, fLight(9.5f)), cx + 18, topY - 124);
+        } else {
+            // Shift system details up and align properly
+            txt(cb, Element.ALIGN_LEFT, new Phrase("System: " + q.getKw() + " kW", fOrange(11)), cx + 18, topY - 24);
+            txt(cb, Element.ALIGN_LEFT, new Phrase("Date: " + q.getQuotationDate(), fLight(9.5f)), cx + 18, topY - 42);
+            String prop = q.getQuationNumber() != null ? q.getQuationNumber() : "NRS/2026/001";
+            txt(cb, Element.ALIGN_LEFT, new Phrase("Proposal: " + prop, fLight(9.5f)), cx + 18, topY - 60);
         }
-        
-        try { ctClient.go(); } catch (Exception e) {}
-        
-        // Separator line with proper horizontal padding
-        fillRect(cb, new Color(80, 120, 180), cx + 15, topY - 72, cw - 30, 1);
-        
-        txt(cb, Element.ALIGN_LEFT, new Phrase("System: " + q.getKw() + " kW", fOrange(11)), cx + 18, topY - 88);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Date: " + q.getQuotationDate(), fLight(9.5f)), cx + 18, topY - 106);
-        String prop = q.getQuationNumber() != null ? q.getQuationNumber() : "NRS/2026/001";
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Proposal: " + prop, fLight(9.5f)), cx + 18, topY - 124);
 
         // Bottom orange footer
         fillRect(cb, ORANGE, 0, 0, PW, 60);
@@ -1106,20 +1120,30 @@ public class QuotationServiceImpl implements QuotationService {
         document.add(logo);
         document.add(createHalfLineSpace());
 
-        PdfPTable customerSection = new PdfPTable(1);
-        customerSection.setWidthPercentage(100);
-        customerSection.addCell(getCell("Customer Details", PdfPCell.ALIGN_CENTER, new Color(50, 100, 200), Color.WHITE, true));
-        document.add(customerSection);
+        boolean hasName = quotation.getCustomerName() != null && !quotation.getCustomerName().trim().isEmpty();
+        boolean hasNumber = quotation.getCustomerMobileNumber() != null && !quotation.getCustomerMobileNumber().trim().isEmpty();
+        boolean hasCustomerDetails = hasName || hasNumber;
 
-        PdfPTable customerDetailsTable = new PdfPTable(2);
-        customerDetailsTable.setWidthPercentage(100);
-        customerDetailsTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        customerDetailsTable.addCell(getCell("Customer Name",    PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
-        customerDetailsTable.addCell(getCell(quotation.getCustomerName(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
-        customerDetailsTable.addCell(getCell("Customer Number",  PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
-        customerDetailsTable.addCell(getCell(quotation.getCustomerMobileNumber(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
-        document.add(customerDetailsTable);
-        document.add(createHalfLineSpace());
+        if (hasCustomerDetails) {
+            PdfPTable customerSection = new PdfPTable(1);
+            customerSection.setWidthPercentage(100);
+            customerSection.addCell(getCell("Customer Details", PdfPCell.ALIGN_CENTER, new Color(50, 100, 200), Color.WHITE, true));
+            document.add(customerSection);
+
+            PdfPTable customerDetailsTable = new PdfPTable(2);
+            customerDetailsTable.setWidthPercentage(100);
+            customerDetailsTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            if (hasName) {
+                customerDetailsTable.addCell(getCell("Customer Name",    PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
+                customerDetailsTable.addCell(getCell(quotation.getCustomerName().trim(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
+            }
+            if (hasNumber) {
+                customerDetailsTable.addCell(getCell("Customer Number",  PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
+                customerDetailsTable.addCell(getCell(quotation.getCustomerMobileNumber().trim(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
+            }
+            document.add(customerDetailsTable);
+            document.add(createHalfLineSpace());
+        }
 
         PdfPTable descTable = new PdfPTable(new float[]{4f, 6f});
         descTable.setWidthPercentage(100); descTable.setSpacingAfter(7f);
@@ -1157,7 +1181,7 @@ public class QuotationServiceImpl implements QuotationService {
         PdfPTable priceTable = new PdfPTable(2);
         priceTable.setWidthPercentage(100); priceTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
         priceTable.addCell(getCell("Customer Actual Payable", PdfPCell.ALIGN_LEFT,  new Color(50, 100, 200), Color.WHITE, true));
-        priceTable.addCell(getCell("Rs." + quotation.getActualPrice(), PdfPCell.ALIGN_RIGHT, new Color(50, 100, 200), Color.BLACK, true));
+        priceTable.addCell(getCell("Rs." + quotation.getActualPrice(), PdfPCell.ALIGN_RIGHT, new Color(50, 100, 200), Color.WHITE, true));
         priceTable.addCell(getCell("Subsidy",                          PdfPCell.ALIGN_LEFT,  Color.LIGHT_GRAY, Color.BLACK, false));
         priceTable.addCell(getCell("Rs." + quotation.getSubsidy(),     PdfPCell.ALIGN_RIGHT, Color.LIGHT_GRAY, Color.BLACK, false));
         if (quotation.getDiscountAmount() > 0) {

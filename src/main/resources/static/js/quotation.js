@@ -118,8 +118,8 @@ $(document).on("keyup", "#discount", function () {
           event.preventDefault();
 
           var quationsNumber = $("#quationNumber").val();
-          var name           = $("#customerName").val();
-          var pdfFilename    = quationsNumber + "_" + name + ".pdf";
+          var name           = $("#customerName").val() || "";
+          var pdfFilename    = quationsNumber + (name.trim() ? "_" + name.trim() : "") + ".pdf";
 
           var formData = {
               quationNumber:        quationsNumber,
