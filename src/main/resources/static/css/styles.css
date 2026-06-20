@@ -397,24 +397,3 @@ h1, h2, h3, h4, h5, h6 {
 .table-responsive::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
 }
-
-/* Responsive Pagination Styles */
-.main-content-area div:has(> nav),
-.main-content-area .mt-3.d-flex.justify-content-between {
-    flex-wrap: wrap !important;
-    gap: 1.25rem !important;
-}
-
-@media (max-width: 767.98px) {
-    .main-content-area div:has(> nav),
-    .main-content-area .mt-3.d-flex.justify-content-between {
-        flex-direction: column !important;
-        justify-content: center !important;
-        text-align: center !important;
-    }
-}
-
-.pagination {
-    flex-wrap: wrap !important;
-    justify-content: center !important;
-}
