@@ -45,6 +45,26 @@ function setupEventListeners() {
             }
         });
     }
+
+    // Edit button click inside View Employee Modal
+    const viewEditBtn = document.getElementById('viewEditBtn');
+    if (viewEditBtn) {
+        viewEditBtn.addEventListener('click', function () {
+            const viewModalElement = document.getElementById('viewEmployeeModal');
+            const empId = viewModalElement.getAttribute('data-employee-id');
+            
+            // Hide view modal
+            const viewModal = bootstrap.Modal.getInstance(viewModalElement);
+            if (viewModal) {
+                viewModal.hide();
+            }
+            
+            // Open edit modal
+            if (empId) {
+                editEmployee(empId);
+            }
+        });
+    }
 }
 
 /**
@@ -380,4 +400,179 @@ function showToast(message, type) {
         const toast = new bootstrap.Toast(toastElement);
         toast.show();
     }
+}
+
+/**
+ * View employee details in a non-editable modal
+ */
+function viewEmployee(id) {
+    showLoader();
+
+    fetch('/NRS/employee/' + id)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Employee not found');
+            }
+            return response.json();
+        })
+        .then(res => {
+            hideLoader();
+            if (res.success) {
+                const emp = res.data.employee;
+                const roleId = res.data.roleId;
+
+                // Store employee ID on the modal element for the Edit button
+                document.getElementById('viewEmployeeModal').setAttribute('data-employee-id', id);
+
+                // Get designation text
+                let designationText = '-';
+                const designationSelect = document.getElementById('designationId');
+                if (designationSelect && emp.designationId) {
+                    const option = designationSelect.querySelector(`option[value="${emp.designationId}"]`);
+                    if (option) designationText = option.textContent.trim();
+                }
+
+                // Get role text
+                let roleText = '-';
+                const roleSelect = document.getElementById('roleId');
+                if (roleSelect && roleId) {
+                    const option = roleSelect.querySelector(`option[value="${roleId}"]`);
+                    if (option) roleText = option.textContent.trim();
+                }
+
+                // Get maintainer text
+                let maintainerText = '-';
+                const maintainerSelect = document.getElementById('empMainterId');
+                if (maintainerSelect && emp.empMainterId) {
+                    const option = maintainerSelect.querySelector(`option[value="${emp.empMainterId}"]`);
+                    if (option) maintainerText = option.textContent.trim();
+                }
+
+                // Populate modal fields
+                const fullName = [emp.firstName, emp.middleName, emp.lastName]
+                    .filter(s => s && s.trim() !== '')
+                    .join(' ');
+
+                document.getElementById('viewFullName').textContent = fullName || 'Unnamed Employee';
+                document.getElementById('viewDesignation').textContent = designationText;
+
+                // Set Status Badge
+                const badgeContainer = document.getElementById('viewStatusBadgeContainer');
+                badgeContainer.innerHTML = '';
+                const statusMap = {
+                    1: { text: 'Active', class: 'bg-success' },
+                    2: { text: 'Inactive', class: 'bg-secondary' },
+                    3: { text: 'Under Review', class: 'bg-warning text-dark' },
+                    0: { text: 'Terminated', class: 'bg-danger' }
+                };
+                const statusInfo = statusMap[emp.empStatus] || { text: 'Unknown', class: 'bg-secondary' };
+                const badge = document.createElement('span');
+                badge.className = `badge ${statusInfo.class} px-3 py-2 fs-7`;
+                badge.textContent = statusInfo.text;
+                badgeContainer.appendChild(badge);
+
+                // Photo handling: if no photo, show our common image
+                const viewPhoto = document.getElementById('viewPhoto');
+                if (emp.photo && emp.photo !== 'null' && emp.photo.trim() !== '') {
+                    viewPhoto.src = emp.photo.startsWith('http') ? emp.photo : '/NRS/images/employeePhoto/' + emp.photo;
+                } else {
+                    viewPhoto.src = '/NRS/images/defaultUserPhoto.png';
+                }
+
+                // Populate details list
+                document.getElementById('viewEmail').textContent = emp.email || '-';
+                document.getElementById('viewPhone').textContent = emp.phoneNo || '-';
+                
+                // Address formatting
+                const addrParts = [emp.address, emp.city, emp.state, emp.postalCode]
+                    .filter(p => p && p.toString().trim() !== '');
+                document.getElementById('viewAddress').textContent = addrParts.join(', ') || '-';
+
+                // Dates
+                document.getElementById('viewDOB').textContent = emp.dateOfBirth ? formatDate(emp.dateOfBirth) : '-';
+                document.getElementById('viewDOJ').textContent = emp.dateOfJoining ? formatDate(emp.dateOfJoining) : '-';
+                document.getElementById('viewQualification').textContent = emp.qualification || '-';
+                document.getElementById('viewMaintainer').textContent = maintainerText;
+                document.getElementById('viewBranch').textContent = emp.branch === '0' ? 'Ahmedabad' : (emp.branch || '-');
+
+                // Experience
+                const exp = calculateExperience(emp.dateOfJoining, emp.previousExperience);
+                document.getElementById('viewCompanyExp').textContent = exp.companyExp;
+                document.getElementById('viewTotalExp').textContent = exp.totalExp;
+
+                // Show modal
+                const modalElement = document.getElementById('viewEmployeeModal');
+                let modal = bootstrap.Modal.getInstance(modalElement);
+                if (!modal) {
+                    modal = new bootstrap.Modal(modalElement);
+                }
+                modal.show();
+            } else {
+                showToast(res.message || 'Error loading employee data', 'error');
+            }
+        })
+        .catch(error => {
+            hideLoader();
+            console.error('Error fetching employee:', error);
+            showToast('Error loading employee data', 'error');
+        });
+}
+
+/**
+ * Helper: Format date string to MM/dd/yyyy
+ */
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    try {
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            // yyyy-MM-dd
+            if (parts[0].length === 4) {
+                return `${parts[1]}/${parts[2]}/${parts[0]}`;
+            }
+        }
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${month}/${day}/${year}`;
+    } catch (e) {
+        return dateStr;
+    }
+}
+
+/**
+ * Helper: Calculate experience on client side
+ */
+function calculateExperience(dateOfJoiningStr, prevExpYears) {
+    const prev = prevExpYears ? parseInt(prevExpYears) : 0;
+    if (!dateOfJoiningStr) {
+        return {
+            companyExp: '0 Years 0 Months 0 Days',
+            totalExp: `${prev} Years 0 Months 0 Days`
+        };
+    }
+    
+    const joiningDate = new Date(dateOfJoiningStr);
+    const today = new Date();
+    
+    let years = today.getFullYear() - joiningDate.getFullYear();
+    let months = today.getMonth() - joiningDate.getMonth();
+    let days = today.getDate() - joiningDate.getDate();
+    
+    if (days < 0) {
+        months--;
+        const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+        days += prevMonth.getDate();
+    }
+    if (months < 0) {
+        years--;
+        months += 12;
+    }
+    
+    const companyExp = `${years} Years ${months} Months ${days} Days`;
+    const totalExp = `${years + prev} Years ${months} Months ${days} Days`;
+    
+    return { companyExp, totalExp };
 }

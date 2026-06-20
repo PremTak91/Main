@@ -11,6 +11,20 @@
         integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .employee-name-link {
+            transition: color 0.15s ease-in-out;
+        }
+        .employee-name-link:hover {
+            color: #0a58ca !important; /* darker blue */
+            text-decoration: underline !important;
+        }
+        .profile-details-list .list-group-item {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+    </style>
 </head>
 
 <body>
@@ -117,7 +131,10 @@
                             <tbody>
                                 <tr th:each="employee, iterStat : ${employees}">
                                     <td th:text="${(currentPage * pageSize) + iterStat.index + 1}">1</td>
-                                    <td th:text="${employee.employeeName != null ? employee.employeeName : '-'}">Name
+                                    <td>
+                                        <a href="#" class="text-primary fw-semibold text-decoration-none employee-name-link"
+                                           th:onclick="'viewEmployee(' + ${employee.id} + '); return false;'"
+                                           th:text="${employee.employeeName != null ? employee.employeeName : '-'}">Name</a>
                                     </td>
                                     <td th:text="${employee.phoneNo != null ? employee.phoneNo : '-'}">Phone</td>
                                     <td th:text="${employee.designation != null ? employee.designation : '-'}">Position
@@ -308,6 +325,96 @@
                 <div class="modal-footer justify-content-between">
                     <button type="button" class="btn btn-primary" id="saveEmployeeBtn"
                         onclick="saveEmployee()">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Employee Modal -->
+    <div class="modal fade" id="viewEmployeeModal" tabindex="-1" aria-labelledby="viewEmployeeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewEmployeeModalLabel">Employee Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <!-- Left Panel (Avatar + Name + Position + Status) -->
+                        <div class="col-md-4 text-center border-end">
+                            <div class="d-flex flex-column align-items-center justify-content-center h-100 py-3">
+                                <div class="profile-image-container mb-3 d-flex justify-content-center">
+                                    <img id="viewPhoto" src="" alt="User Profile" class="employee-photo img-fluid rounded-circle" style="width: 130px; height: 130px; object-fit: cover; border: 3px solid var(--nrs-primary, #1a237e); box-shadow: 0 0 0 5px rgba(26, 35, 126, 0.1);" onerror="this.src='/NRS/images/defaultUserPhoto.png';" />
+                                </div>
+                                <h4 id="viewFullName" class="fw-bold mb-1 text-dark"></h4>
+                                <p id="viewDesignation" class="text-muted mb-2"></p>
+                                <div id="viewStatusBadgeContainer"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Panel (Detailed Settings list + Experience) -->
+                        <div class="col-md-8">
+                            <div class="px-2">
+                                <h6 class="text-primary fw-bold mb-3"><i class="fas fa-user-circle me-2"></i>Personal & Contact Information</h6>
+                                <ul class="list-group list-group-flush profile-details-list mb-4">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="fw-semibold text-muted">Email ID:</span>
+                                        <span id="viewEmail" class="text-dark"></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="fw-semibold text-muted">Mobile Number:</span>
+                                        <span id="viewPhone" class="text-dark"></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="fw-semibold text-muted">Address:</span>
+                                        <span id="viewAddress" class="text-dark text-end" style="max-width: 70%;"></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="fw-semibold text-muted">Education/Qualification:</span>
+                                        <span id="viewQualification" class="text-dark"></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="fw-semibold text-muted">Date of Birth:</span>
+                                        <span id="viewDOB" class="text-dark"></span>
+                                    </li>
+                                </ul>
+
+                                <h6 class="text-primary fw-bold mb-3"><i class="fas fa-briefcase me-2"></i>Job & Experience Details</h6>
+                                <ul class="list-group list-group-flush profile-details-list">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="fw-semibold text-muted">Date of Joining:</span>
+                                        <span id="viewDOJ" class="text-dark"></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="fw-semibold text-muted">Role:</span>
+                                        <span id="viewRole" class="text-dark"></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="fw-semibold text-muted">Maintainer:</span>
+                                        <span id="viewMaintainer" class="text-dark"></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="fw-semibold text-muted">Branch:</span>
+                                        <span id="viewBranch" class="text-dark"></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="fw-semibold text-muted">Company Experience:</span>
+                                        <span id="viewCompanyExp" class="text-dark"></span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 bg-transparent">
+                                        <span class="fw-semibold text-muted">Total Experience:</span>
+                                        <span id="viewTotalExp" class="text-dark"></span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="viewEditBtn">
+                        <i class="fas fa-edit me-1"></i> Edit Details
+                    </button>
                 </div>
             </div>
         </div>

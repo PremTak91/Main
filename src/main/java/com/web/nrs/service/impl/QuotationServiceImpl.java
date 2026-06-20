@@ -68,7 +68,7 @@ public class QuotationServiceImpl implements QuotationService {
     public byte[] generateQuotationPdf(SolarQuotation q) throws Exception {
         if (q.getQuotationDate() == null)
             q.setQuotationDate(LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")));
-        if (q.getPaybackPeriod() == null) q.setPaybackPeriod("4-5 Years");
+        if (q.getPaybackPeriod() == null) q.setPaybackPeriod("3-4 Years");
         if (q.getAnnualSaving()  == null) q.setAnnualSaving("Rs.18,000 / year");
         if (q.getEmiOption()     == null) q.setEmiOption("From Rs.3,500 / month");
 
@@ -801,7 +801,7 @@ public class QuotationServiceImpl implements QuotationService {
             {"Inverter", "Ksolare / Solar Yaan (10 year warranty)"},
             {"MCB, CABLE", "HAVELLS / POLYCAB (As per availability)"},
             {"Earthing Kit with Lighting Arrestor", "Premium Make with 5 Years Warranty"},
-            {"Solar Mounting Structure", "As per MRE standard (Hot Dip GI pipe)"}
+            {"Solar Mounting Structure", "As per MNRE standard (Hot Dip GI pipe)"}
         };
 
         float sY = supplyY - 36;
@@ -937,38 +937,10 @@ public class QuotationServiceImpl implements QuotationService {
                     roiVals[i], roiLabels[i], roiColors[i]);
         }
 
-
         float emiSecY = roiY - 36 - rcH - 16;
         float ecH = 74; // Slightly reduced height
 
-//        // EMI comparison
-//
-//        if(isResidential){
-//
-//            fillRound(cb, PRIMARY, 30, emiSecY - 24, PW - 60, 30, 6);
-//            txt(cb, Element.ALIGN_LEFT,
-//                    new Phrase("  EMI & PAYMENT OPTIONS", fWhiteBold(10)), 38, emiSecY - 8);
-//            float ecW = (PW - 60) / 2f - 5;
-//            drawEmiCard(cb, 30,            emiSecY - 36 - ecH, ecW, ecH,
-//                    "EMI OPTION", q.getEmiOption(),
-//                    "Flexible 12-60 month tenure\nZero-cost EMI via NBFCs\nNo hidden charges", ORANGE);
-//            drawEmiCard(cb, 30 + ecW + 10, emiSecY - 36 - ecH, ecW, ecH,
-//                    "DIRECT PAYMENT BENEFIT", "Save Rs.12,000 Extra",
-//                    "One-time payment discount\nFastest installation slot\nPriority subsidy processing", PRIMARY);
-//
-//
-//        }else{
-
-            fillRound(cb, PRIMARY, 30, emiSecY - 24, PW - 60, 30, 6);
-            txt(cb, Element.ALIGN_LEFT,
-                    new Phrase(" PAYMENT OPTIONS", fWhiteBold(10)), 38, emiSecY - 8);
-            float ecW = (PW - 60) / 2f - 5;
-            drawEmiCard(cb, 30,            emiSecY - 36 - ecH, ecW, ecH,
-                    "Per Kilowatt price", "26,000",
-                    "", ORANGE);
-            drawEmiCard(cb, 30 + ecW + 10, emiSecY - 36 - ecH, ecW, ecH,
-                    "Per Kilowatt Price(Including GST)", "28,314",
-                    "", PRIMARY);
+        float ptY = emiSecY;
 
 
 
@@ -976,7 +948,6 @@ public class QuotationServiceImpl implements QuotationService {
 
 
         // Payment schedule strip
-        float ptY = emiSecY - 36 - ecH - 16;
         float ptStripH = 54;
         cb.setColorFill(Color.WHITE); cb.setColorStroke(new Color(200, 215, 240));
         cb.setLineWidth(1f); cb.roundRectangle(30, ptY - ptStripH, PW - 60, ptStripH + 8, 8); cb.fillStroke();
@@ -1158,7 +1129,7 @@ public class QuotationServiceImpl implements QuotationService {
         descTable.addCell(getCellColumn("Earthing Kit with Lighting Arrestor",    new Color(245, 245, 245)));
         descTable.addCell(getCellColumn("Premium Make with 5 Years Warranty",     new Color(245, 245, 245)));
         descTable.addCell(getCellColumn("Solar Mounting Structure",               new Color(245, 245, 245)));
-        descTable.addCell(getCellColumn("As per MRE standard (Hot Dip GI pipe)",  new Color(245, 245, 245)));
+        descTable.addCell(getCellColumn("As per MNRE standard (Hot Dip GI pipe)",  new Color(245, 245, 245)));
         document.add(descTable);
         document.add(createHalfLineSpace());
 
