@@ -68,7 +68,7 @@ public class QuotationServiceImpl implements QuotationService {
     public byte[] generateQuotationPdf(SolarQuotation q) throws Exception {
         if (q.getQuotationDate() == null)
             q.setQuotationDate(LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")));
-        if (q.getPaybackPeriod() == null) q.setPaybackPeriod("4-5 Years");
+        if (q.getPaybackPeriod() == null) q.setPaybackPeriod("3-4 Years");
         if (q.getAnnualSaving()  == null) q.setAnnualSaving("Rs.18,000 / year");
         if (q.getEmiOption()     == null) q.setEmiOption("From Rs.3,500 / month");
 
@@ -801,7 +801,7 @@ public class QuotationServiceImpl implements QuotationService {
             {"Inverter", "Ksolare / Solar Yaan (10 year warranty)"},
             {"MCB, CABLE", "HAVELLS / POLYCAB (As per availability)"},
             {"Earthing Kit with Lighting Arrestor", "Premium Make with 5 Years Warranty"},
-            {"Solar Mounting Structure", "As per MRE standard (Hot Dip GI pipe)"}
+            {"Solar Mounting Structure", "As per MNRE standard (Hot Dip GI pipe)"}
         };
 
         float sY = supplyY - 36;
@@ -1158,7 +1158,7 @@ public class QuotationServiceImpl implements QuotationService {
         descTable.addCell(getCellColumn("Earthing Kit with Lighting Arrestor",    new Color(245, 245, 245)));
         descTable.addCell(getCellColumn("Premium Make with 5 Years Warranty",     new Color(245, 245, 245)));
         descTable.addCell(getCellColumn("Solar Mounting Structure",               new Color(245, 245, 245)));
-        descTable.addCell(getCellColumn("As per MRE standard (Hot Dip GI pipe)",  new Color(245, 245, 245)));
+        descTable.addCell(getCellColumn("As per MNRE standard (Hot Dip GI pipe)",  new Color(245, 245, 245)));
         document.add(descTable);
         document.add(createHalfLineSpace());
 
