@@ -937,38 +937,10 @@ public class QuotationServiceImpl implements QuotationService {
                     roiVals[i], roiLabels[i], roiColors[i]);
         }
 
-
         float emiSecY = roiY - 36 - rcH - 16;
         float ecH = 74; // Slightly reduced height
 
-//        // EMI comparison
-//
-//        if(isResidential){
-//
-//            fillRound(cb, PRIMARY, 30, emiSecY - 24, PW - 60, 30, 6);
-//            txt(cb, Element.ALIGN_LEFT,
-//                    new Phrase("  EMI & PAYMENT OPTIONS", fWhiteBold(10)), 38, emiSecY - 8);
-//            float ecW = (PW - 60) / 2f - 5;
-//            drawEmiCard(cb, 30,            emiSecY - 36 - ecH, ecW, ecH,
-//                    "EMI OPTION", q.getEmiOption(),
-//                    "Flexible 12-60 month tenure\nZero-cost EMI via NBFCs\nNo hidden charges", ORANGE);
-//            drawEmiCard(cb, 30 + ecW + 10, emiSecY - 36 - ecH, ecW, ecH,
-//                    "DIRECT PAYMENT BENEFIT", "Save Rs.12,000 Extra",
-//                    "One-time payment discount\nFastest installation slot\nPriority subsidy processing", PRIMARY);
-//
-//
-//        }else{
-
-            fillRound(cb, PRIMARY, 30, emiSecY - 24, PW - 60, 30, 6);
-            txt(cb, Element.ALIGN_LEFT,
-                    new Phrase(" PAYMENT OPTIONS", fWhiteBold(10)), 38, emiSecY - 8);
-            float ecW = (PW - 60) / 2f - 5;
-            drawEmiCard(cb, 30,            emiSecY - 36 - ecH, ecW, ecH,
-                    "Per Kilowatt price", "26,000",
-                    "", ORANGE);
-            drawEmiCard(cb, 30 + ecW + 10, emiSecY - 36 - ecH, ecW, ecH,
-                    "Per Kilowatt Price(Including GST)", "28,314",
-                    "", PRIMARY);
+        float ptY = emiSecY;
 
 
 
@@ -976,7 +948,6 @@ public class QuotationServiceImpl implements QuotationService {
 
 
         // Payment schedule strip
-        float ptY = emiSecY - 36 - ecH - 16;
         float ptStripH = 54;
         cb.setColorFill(Color.WHITE); cb.setColorStroke(new Color(200, 215, 240));
         cb.setLineWidth(1f); cb.roundRectangle(30, ptY - ptStripH, PW - 60, ptStripH + 8, 8); cb.fillStroke();
