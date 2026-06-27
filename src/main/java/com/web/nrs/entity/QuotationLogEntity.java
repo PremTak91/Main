@@ -70,4 +70,6 @@ public class QuotationLogEntity {
 
     @Column(name = "no_of_panels")
     private Integer noOfPanels;
+
+    private String inverter;
 }

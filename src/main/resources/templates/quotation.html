@@ -56,7 +56,7 @@
 						    </div>
 						</div>
                         <div class="row g-3 mt-2"> <!-- Using Bootstrap 5 gutter classes -->
-                            <div class="col-12 col-md-4">
+                            <div class="col-12 col-md-3">
                                 <div class="row g-2">
 
                                     <div class="col-12 col-sm-6">
@@ -83,16 +83,20 @@
 
                                 </div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-12 col-md-3">
                                 <label for="solarType" class="form-label">Solar Type:</label>
                                 <select class="form-control" id="solarType" required>
                                     <option value="Residential">Residential</option>
                                     <option value="Commercial">Commercial</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-12 col-md-3">
                                 <label for="panelsName" class="form-label">Panels Name:</label>
                                 <input type="text" class="form-control" id="panelsName" placeholder="Enter Panels Name" value="ADANI TOPCON, ADANI BIFACIAL , WAAREE" required>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label for="inverter" class="form-label">Inverter:</label>
+                                <input type="text" class="form-control" id="inverter" placeholder="Enter Inverter Name" value="Ksolare / Solar Yaan (10 year warranty)" required>
                             </div>
                         </div>
                         <div class="row g-3 mt-2">
@@ -145,7 +149,9 @@
                                 <select class="form-control" id="submittedBy" required>
                                     <option value="+91-8866389038">Amit Vyas</option>
                                     <option value="+91-8488953026">Pramod Kansara</option>
+                                    <option value="other">Other</option>
                                 </select>
+                                <input type="text" class="form-control mt-2" id="otherSubmittedByName" placeholder="Enter Submitter's Name" style="display: none;">
                             </div>
                             <div class="col-md-4" sec:authorize="!hasRole('DEALER')">
                                 <label for="submittedNumber" class="form-label">Submitted Number:</label>
