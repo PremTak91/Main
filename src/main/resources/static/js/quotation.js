@@ -79,12 +79,19 @@ $(document).on("keyup", "#discount", function () {
           const subByVal = urlParams.get('submittedBy');
           if (subByVal) {
               if ($("#submittedBy").length > 0) {
+                  let matched = false;
                   $("#submittedBy option").each(function() {
                       if ($(this).text() === subByVal) {
                           $(this).prop('selected', true);
                           $("#submittedByName").val(subByVal);
+                          matched = true;
                       }
                   });
+                  if (!matched) {
+                      $("#submittedBy").val("other");
+                      $("#otherSubmittedByName").val(subByVal).show();
+                      $("#submittedByName").val(subByVal);
+                  }
               } else {
                   $("#submittedByName").val(subByVal);
               }
@@ -96,6 +103,9 @@ $(document).on("keyup", "#discount", function () {
               $("#discount").val(urlParams.get('discount'));
           }
           $("#pdfType").val(urlParams.get('pdfType') || 'Standardized');
+          if (urlParams.has('inverter')) {
+              $("#inverter").val(urlParams.get('inverter'));
+          }
       }
 
       // Initialize calculation on page load if values are present
@@ -119,7 +129,7 @@ $(document).on("keyup", "#discount", function () {
 
           var quationsNumber = $("#quationNumber").val();
           var name           = $("#customerName").val() || "";
-          var pdfFilename    = quationsNumber + (name.trim() ? "_" + name.trim() : "") + ".pdf";
+          var pdfFilename    = (name.trim() ? name.trim() + "_" : "") + quationsNumber + ".pdf";
 
           var formData = {
               quationNumber:        quationsNumber,
@@ -142,6 +152,7 @@ $(document).on("keyup", "#discount", function () {
               pdfType:              $("#pdfType").val(),
               panelWatt:            $("#panelWatt").val(),
               noOfPanels:           $("#noOfPanels").val(),
+              inverter:             $("#inverter").val(),
           };
 
           // Show loader for the entire duration of PDF generation
@@ -204,10 +215,19 @@ $(document).on("keyup", "#discount", function () {
 $(document)
   .off("change", "#submittedBy")
   .on("change", "#submittedBy", function () {
+    if ($(this).val() === "other") {
+      $("#otherSubmittedByName").show().val("").focus();
+      $("#submittedByName").val("");
+      $("#submittedNumber").val("");
+    } else {
+      $("#otherSubmittedByName").hide().val("");
+      $("#submittedByName").val($("#submittedBy option:selected").text());
+      $("#submittedNumber").val($(this).val());
+    }
+});
 
-    $("#submittedByName").val($("#submittedBy option:selected").text());
-    $("#submittedNumber").val($(this).val());
-
+$(document).on("input", "#otherSubmittedByName", function () {
+    $("#submittedByName").val($(this).val());
 });
 
 $("#solarType").on("change", function(){

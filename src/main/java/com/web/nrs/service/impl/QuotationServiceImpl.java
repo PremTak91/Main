@@ -92,7 +92,7 @@ public class QuotationServiceImpl implements QuotationService {
             doc.newPage();
             page3(doc, writer, q);
             doc.newPage();
-            page4(doc, writer);
+            page4(doc, writer, q);
             doc.newPage();
             page5(doc, writer, q);
             doc.setMargins(40, 40, 50, 30);
@@ -148,6 +148,7 @@ public class QuotationServiceImpl implements QuotationService {
                     .subsidy(q.getSubsidy())
                     .panelWatt(q.getPanelWatt())
                     .noOfPanels(noOfPanelsInt)
+                    .inverter(q.getInverter())
                     .build();
             quotationLogRepository.save(logEntity);
         } catch (Exception e) {
@@ -732,7 +733,7 @@ public class QuotationServiceImpl implements QuotationService {
     // ======================================================
     // PAGE 4 – NET METERING INFOGRAPHIC + DOCUMENTS
     // ======================================================
-    private void page4(Document doc, PdfWriter writer) throws Exception {
+    private void page4(Document doc, PdfWriter writer, SolarQuotation q) throws Exception {
         PdfContentByte cb = writer.getDirectContent();
         fillRect(cb, LIGHT_BG, 0, 0, PW, PH);
         pageHeader(cb, "Net Metering Process",
@@ -798,7 +799,7 @@ public class QuotationServiceImpl implements QuotationService {
                 38, supplyY - 8);
 
         String[][] supplies = {
-            {"Inverter", "Ksolare / Solar Yaan (10 year warranty)"},
+            {"Inverter", q.getInverter() != null && !q.getInverter().trim().isEmpty() ? q.getInverter() : "Ksolare / Solar Yaan (10 year warranty)"},
             {"MCB, CABLE", "HAVELLS / POLYCAB (As per availability)"},
             {"Earthing Kit with Lighting Arrestor", "Premium Make with 5 Years Warranty"},
             {"Solar Mounting Structure", "As per MNRE standard (Hot Dip GI pipe)"}
@@ -1009,6 +1010,25 @@ public class QuotationServiceImpl implements QuotationService {
         txt(cb, Element.ALIGN_LEFT, new Phrase("Branch:", fDark(9.5f)), lCol, detailY);
         txt(cb, Element.ALIGN_LEFT, new Phrase("ISANPUR AHMEDABAD", fPrimary(9.5f)), lCol + 80, detailY);
 
+        // --- SUBMITTED BY DETAILS SECTION ---
+        float subSecY = bankSecY - bdH - 12; // 225 - 12 = 213
+        float sdH = 46; 
+        
+        // Card Body Background
+        cb.setColorFill(Color.WHITE); cb.setColorStroke(new Color(210, 220, 240));
+        cb.setLineWidth(1f); cb.roundRectangle(30, subSecY - sdH, PW - 60, sdH, 8); cb.fillStroke();
+        
+        // Accent line on the left side
+        fillRect(cb, ORANGE, 30, subSecY - sdH, 4, sdH);
+        
+        // Text details inside the card
+        float subDetailY = subSecY - sdH / 2f - 3f;
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Submitted By:", fDark(9.5f)), 45, subDetailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase(q.getSubmittedBy() != null ? q.getSubmittedBy() : "Amit Vyas", fPrimary(10f)), 130, subDetailY);
+        
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Contact Number:", fDark(9.5f)), PW / 2 + 10, subDetailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase(q.getSubmittedNumber() != null ? q.getSubmittedNumber() : "+91-8866389038", fPrimary(10f)), PW / 2 + 110, subDetailY);
+
         // Bottom CTA
         fillRect(cb, ORANGE, 0, 0, PW, 62);
         fillRect(cb, new Color(220, 60, 0), 0, 59, PW, 3);
@@ -1123,7 +1143,7 @@ public class QuotationServiceImpl implements QuotationService {
         descTable.addCell(getCellColumn("Solar PV Modules",                       new Color(245, 245, 245)));
         descTable.addCell(getCellColumn(quotation.getPanelsName() + "\n(As per availability)", new Color(245, 245, 245)));
         descTable.addCell(getCellColumn("Inverter",                               new Color(245, 245, 245)));
-        descTable.addCell(getCellColumn("Ksolare / Solar Yaan (10 year warranty)", new Color(245, 245, 245)));
+        descTable.addCell(getCellColumn(quotation.getInverter() != null && !quotation.getInverter().trim().isEmpty() ? quotation.getInverter() : "Ksolare / Solar Yaan (10 year warranty)", new Color(245, 245, 245)));
         descTable.addCell(getCellColumn("MCB, CABLE",                             new Color(245, 245, 245)));
         descTable.addCell(getCellColumn("HAVELLS / POLYCAB (As per availability)",new Color(245, 245, 245)));
         descTable.addCell(getCellColumn("Earthing Kit with Lighting Arrestor",    new Color(245, 245, 245)));
