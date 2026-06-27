@@ -11,7 +11,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "site_details")
+@Table(name = "site_details", indexes = {
+    @Index(name = "idx_site_details_assigned_tech", columnList = "assigned_technician_id"),
+    @Index(name = "idx_site_details_site_owner", columnList = "site_owner"),
+    @Index(name = "idx_site_details_created_at", columnList = "created_at")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -39,6 +43,10 @@ public class SiteDetailsEntity {
 
     @Column(name = "assigned_technician_id")
     private Long assignedTechnicianId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_technician_id", insertable = false, updatable = false)
+    private EmployeeEntity assignedTechnician;
 
     @Column(name = "expected_completed_date")
     private LocalDate expectedCompletedDate;

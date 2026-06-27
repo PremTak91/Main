@@ -142,8 +142,7 @@
                                     <td th:text="${site.expectedCompletedDate}" style="white-space: nowrap;"></td>
                                     <td th:text="${site.kilowatt}"></td>
                                     <td>
-                                        <span th:each="emp : ${employees}" th:if="${emp.id == site.assignedTechnicianId}" th:text="${emp.employeeName}"></span>
-                                        <span th:if="${site.assignedTechnicianId == null}">-</span>
+                                        <span th:text="${site.assignedTechnician != null ? site.assignedTechnician.fullName : '-'}"></span>
                                     </td>
                                     <td th:text="${site.teamMembers != null ? site.teamMembers : '-'}"></td>
                                     <td th:text="${site.siteOwner != null ? site.siteOwner : 'NRS'}"></td>
