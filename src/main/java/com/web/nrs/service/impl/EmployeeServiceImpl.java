@@ -741,16 +741,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     @Transactional
-    public void deleteManualTimesheetRequest(Long requestId, Long employeeId) {
+    public void deleteManualTimesheetRequest(Long requestId) {
         ManualTimesheetRequestEntity request = manualTimesheetRequestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
-        
-        if (!request.getEmployeeId().equals(employeeId)) {
-            throw new RuntimeException("Unauthorized to delete this request");
-        }
-        if (!"Pending".equalsIgnoreCase(request.getStatus())) {
-            throw new RuntimeException("Only pending requests can be deleted");
-        }
         
         manualTimesheetRequestRepository.delete(request);
     }

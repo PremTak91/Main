@@ -57,6 +57,6 @@ public interface EmployeeService {
     List<java.util.Map<String, Object>> getPendingManualRequestsForApprover(Long approverId, boolean isSuperAdmin);
     void approveManualTimesheetRequest(Long requestId, String approverEmail);
     void rejectManualTimesheetRequest(Long requestId, String reason, String approverEmail);
-    void deleteManualTimesheetRequest(Long requestId, Long employeeId);
+    void deleteManualTimesheetRequest(Long requestId);
     List<java.util.Map<String, Object>> getEmployeeIdAndNames();
 }

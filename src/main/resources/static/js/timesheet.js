@@ -47,7 +47,7 @@ function saveTimesheet() {
         outTime: outTime
     };
 
-    $('#loader').show();
+    showLoader();
 
     $.ajax({
         url: `/NRS/timesheet/${id}`,
@@ -55,7 +55,7 @@ function saveTimesheet() {
         contentType: 'application/json',
         data: JSON.stringify(requestData),
         success: function(response) {
-            $('#loader').hide();
+            hideLoader();
             $('#editTimesheetModal').modal('hide');
             showToast(response.message || 'Timesheet updated successfully', 'success');
             setTimeout(() => {
@@ -63,7 +63,7 @@ function saveTimesheet() {
             }, 1000);
         },
         error: function(xhr) {
-            $('#loader').hide();
+            hideLoader();
             const message = xhr.responseJSON?.message || 'Failed to update timesheet';
             showToast(message, 'error');
         }
@@ -71,26 +71,24 @@ function saveTimesheet() {
 }
 
 function deleteTimesheet(id) {
-    if (!confirm('Are you sure you want to delete this timesheet entry? This action cannot be undone.')) {
-        return;
-    }
-    
-    $('#loader').show();
-    $.ajax({
-        url: `/NRS/timesheet/${id}`,
-        type: 'DELETE',
-        success: function(response) {
-            $('#loader').hide();
-            showToast(response.message || 'Timesheet deleted successfully', 'success');
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        },
-        error: function(xhr) {
-            $('#loader').hide();
-            const message = xhr.responseJSON?.message || 'Failed to delete timesheet';
-            showToast(message, 'error');
-        }
+    showConfirm("Delete Timesheet", "Are you sure you want to delete this timesheet entry? This action cannot be undone.", function() {
+        showLoader();
+        $.ajax({
+            url: `/NRS/timesheet/${id}`,
+            type: 'DELETE',
+            success: function(response) {
+                hideLoader();
+                showToast(response.message || 'Timesheet deleted successfully', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            },
+            error: function(xhr) {
+                hideLoader();
+                const message = xhr.responseJSON?.message || 'Failed to delete timesheet';
+                showToast(message, 'error');
+            }
+        });
     });
 }
 
@@ -123,6 +121,10 @@ function submitManualRequest() {
         return;
     }
 
+    const $btn = $('#submitRequestBtn');
+    const originalHtml = $btn.html();
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Submitting...');
+
     const requestData = {
         attendanceDate: date,
         inTime: inTime,
@@ -131,7 +133,7 @@ function submitManualRequest() {
         reason: reason
     };
 
-    $('#loader').show();
+    showLoader();
 
     $.ajax({
         url: '/NRS/timesheet/request',
@@ -139,7 +141,7 @@ function submitManualRequest() {
         contentType: 'application/json',
         data: JSON.stringify(requestData),
         success: function(response) {
-            $('#loader').hide();
+            hideLoader();
             $('#requestTimesheetModal').modal('hide');
             showToast(response.message || 'Request submitted successfully', 'success');
             setTimeout(() => {
@@ -147,39 +149,43 @@ function submitManualRequest() {
             }, 1000);
         },
         error: function(xhr) {
-            $('#loader').hide();
+            hideLoader();
+            $btn.prop('disabled', false).html(originalHtml);
             const message = xhr.responseJSON?.message || 'Failed to submit request';
             showToast(message, 'error');
         }
     });
 }
 
-function approveRequest(id) {
-    if (!confirm('Are you sure you want to approve this manual timesheet entry request?')) {
-        return;
-    }
+function approveRequest(btn, id) {
+    showConfirm("Approve Request", "Are you sure you want to approve this manual timesheet entry request?", function() {
+        const $btn = $(btn);
+        const originalHtml = $btn.html();
+        $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
 
-    $('#loader').show();
+        showLoader();
 
-    $.ajax({
-        url: `/NRS/timesheet/request/approve/${id}`,
-        type: 'POST',
-        success: function(response) {
-            $('#loader').hide();
-            showToast(response.message || 'Request approved successfully', 'success');
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        },
-        error: function(xhr) {
-            $('#loader').hide();
-            const message = xhr.responseJSON?.message || 'Failed to approve request';
-            showToast(message, 'error');
-        }
+        $.ajax({
+            url: `/NRS/timesheet/request/approve/${id}`,
+            type: 'POST',
+            success: function(response) {
+                hideLoader();
+                showToast(response.message || 'Request approved successfully', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            },
+            error: function(xhr) {
+                hideLoader();
+                $btn.prop('disabled', false).html(originalHtml);
+                const message = xhr.responseJSON?.message || 'Failed to approve request';
+                showToast(message, 'error');
+            }
+        });
     });
 }
 
-function rejectRequestPrompt(id) {
+function rejectRequestPrompt(btn, id) {
     $('#rejectRequestId').val(id);
     $('#rejectReason').val('');
     $('#rejectRequestModal').modal('show');
@@ -194,11 +200,15 @@ function submitRejection() {
         return;
     }
 
+    const $btn = $('#submitRejectBtn');
+    const originalHtml = $btn.html();
+    $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Rejecting...');
+
     const requestData = {
         reason: reason
     };
 
-    $('#loader').show();
+    showLoader();
 
     $.ajax({
         url: `/NRS/timesheet/request/reject/${id}`,
@@ -206,7 +216,7 @@ function submitRejection() {
         contentType: 'application/json',
         data: JSON.stringify(requestData),
         success: function(response) {
-            $('#loader').hide();
+            hideLoader();
             $('#rejectRequestModal').modal('hide');
             showToast(response.message || 'Request rejected successfully', 'success');
             setTimeout(() => {
@@ -214,7 +224,8 @@ function submitRejection() {
             }, 1000);
         },
         error: function(xhr) {
-            $('#loader').hide();
+            hideLoader();
+            $btn.prop('disabled', false).html(originalHtml);
             const message = xhr.responseJSON?.message || 'Failed to reject request';
             showToast(message, 'error');
         }
@@ -222,27 +233,25 @@ function submitRejection() {
 }
 
 function deleteRequest(id) {
-    if (!confirm('Are you sure you want to delete this pending manual request?')) {
-        return;
-    }
+    showConfirm("Delete Request", "Are you sure you want to delete this manual request?", function() {
+        showLoader();
 
-    $('#loader').show();
-
-    $.ajax({
-        url: `/NRS/timesheet/request/${id}`,
-        type: 'DELETE',
-        success: function(response) {
-            $('#loader').hide();
-            showToast(response.message || 'Request deleted successfully', 'success');
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
-        },
-        error: function(xhr) {
-            $('#loader').hide();
-            const message = xhr.responseJSON?.message || 'Failed to delete request';
-            showToast(message, 'error');
-        }
+        $.ajax({
+            url: `/NRS/timesheet/request/${id}`,
+            type: 'DELETE',
+            success: function(response) {
+                hideLoader();
+                showToast(response.message || 'Request deleted successfully', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            },
+            error: function(xhr) {
+                hideLoader();
+                const message = xhr.responseJSON?.message || 'Failed to delete request';
+                showToast(message, 'error');
+            }
+        });
     });
 }
 

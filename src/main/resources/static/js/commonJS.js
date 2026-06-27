@@ -100,3 +100,13 @@ function showConfirm(title, message, onConfirm) {
 
     modal.show();
 }
+
+// ─── Sidebar Loader ──────────────────────────────────────
+$(document).ready(function() {
+    $('.sidebar-nav a:not([data-bs-toggle="collapse"])').on('click', function() {
+        const href = $(this).attr('href');
+        if (href && href !== '#' && !href.startsWith('javascript:')) {
+            showLoader();
+        }
+    });
+});

@@ -95,6 +95,7 @@ public class TimesheetController {
         model.addAttribute("activeApprovers", employeeService.getActiveApprovers());
         model.addAttribute("myRequests", currentEmployeeId != null ? employeeService.getManualRequestsForEmployee(currentEmployeeId) : java.util.List.of());
         model.addAttribute("pendingRequests", currentEmployeeId != null ? employeeService.getPendingManualRequestsForApprover(currentEmployeeId, isSuperAdmin) : java.util.List.of());
+        model.addAttribute("isSuperAdmin", isSuperAdmin);
 
         return "timesheet";
     }
@@ -205,15 +206,12 @@ public class TimesheetController {
 
     @DeleteMapping("/request/{id}")
     @ResponseBody
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<ApiResponse> deleteManualRequest(
-            @PathVariable Long id,
-            Authentication authentication
+            @PathVariable Long id
     ) {
         try {
-            String email = authentication.getName();
-            EmployeeEntity currentEmployee = employeeService.getEmployeeByEmailId(email)
-                    .orElseThrow(() -> new RuntimeException("Current employee not found"));
-            employeeService.deleteManualTimesheetRequest(id, currentEmployee.getId());
+            employeeService.deleteManualTimesheetRequest(id);
             return ResponseEntity.ok(ApiResponse.success("Request deleted successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
