@@ -50,4 +50,13 @@ public interface EmployeeService {
     boolean deleteTimesheetRecord(Long timesheetId);
 
     List<EmployeeEntity> getDealerEmployees();
+
+    List<EmployeeEntity> getActiveApprovers();
+    void createManualTimesheetRequest(Long employeeId, LocalDate date, LocalDateTime inTime, LocalDateTime outTime, String reason, Long approverId);
+    List<java.util.Map<String, Object>> getManualRequestsForEmployee(Long employeeId);
+    List<java.util.Map<String, Object>> getPendingManualRequestsForApprover(Long approverId, boolean isSuperAdmin);
+    void approveManualTimesheetRequest(Long requestId, String approverEmail);
+    void rejectManualTimesheetRequest(Long requestId, String reason, String approverEmail);
+    void deleteManualTimesheetRequest(Long requestId, Long employeeId);
+    List<java.util.Map<String, Object>> getEmployeeIdAndNames();
 }
