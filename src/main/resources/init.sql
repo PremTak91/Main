@@ -622,5 +622,10 @@ INSERT IGNORE INTO notification_type (code, description, default_priority) VALUE
 ('TIMESHEET_APPROVED', 'Manual Timesheet Request Approved', 'MEDIUM'),
 ('TIMESHEET_REJECTED', 'Manual Timesheet Request Rejected', 'HIGH');
 
+ALTER TABLE `site_details` ADD INDEX IF NOT EXISTS `idx_site_details_assigned_tech` (`assigned_technician_id`);
+ALTER TABLE `site_details` ADD INDEX IF NOT EXISTS `idx_site_details_site_owner` (`site_owner`);
+ALTER TABLE `site_details` ADD INDEX IF NOT EXISTS `idx_site_details_created_at` (`created_at`);
+
+
 
 

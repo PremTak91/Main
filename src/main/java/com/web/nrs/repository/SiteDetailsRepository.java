@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SiteDetailsRepository extends JpaRepository<SiteDetailsEntity, Long> {
 
-    @Query("SELECT s FROM SiteDetailsEntity s WHERE " +
+    @Query("SELECT s FROM SiteDetailsEntity s LEFT JOIN FETCH s.assignedTechnician WHERE " +
            "(:keyword IS NULL OR :keyword = '' OR " +
            "LOWER(s.customerName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
            "LOWER(s.contactNo) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
