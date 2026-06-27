@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NRS Solar Solution - Roof Layout Designer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <style>
+        .designer-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .canvas-workspace {
+            position: relative;
+            background: #2b2b2b;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 450px;
+            border: 2px dashed #444;
+            transition: all 0.3s ease;
+        }
+
+        .canvas-workspace.dragover {
+            border-color: #0d6efd;
+            background: #253344;
+        }
+
+        #designCanvas {
+            max-width: 100%;
+            max-height: 70vh;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            cursor: move;
+        }
+
+        .upload-placeholder {
+            text-align: center;
+            color: #aaa;
+            padding: 40px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .upload-placeholder i {
+            font-size: 4rem;
+            color: #0d6efd;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .upload-placeholder:hover i {
+            transform: scale(1.1);
+        }
+
+        .metrics-card {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .control-slider::-webkit-slider-runnable-track {
+            background: #ddd;
+            height: 6px;
+            border-radius: 3px;
+        }
+
+        .control-slider::-webkit-slider-thumb {
+            margin-top: -5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="dashboard-wrapper">
+
+        <div th:replace="~{fragments/sidebar :: sidebarMenu}"> </div>
+
+        <div class="d-flex flex-column w-100">
+
+            <div th:replace="~{fragments/header :: headerPart}"> </div>
+
+            <main class="main-content-area flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0 text-primary fw-bold"><i class="fas fa-solar-panel me-2"></i>Roof Layout Designer</h3>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-secondary" onclick="resetLayout()"><i class="fas fa-undo me-1"></i> Reset</button>
+                        <button class="btn btn-success" id="exportBtn" onclick="exportProposal()" style="display: none;"><i class="fas fa-download me-1"></i> Export Layout</button>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <!-- Canvas Area -->
+                    <div class="col-12 col-lg-8">
+                        <div class="card p-3 shadow-sm border-0 h-100">
+                            <div class="canvas-workspace" id="workspaceContainer">
+                                <div class="upload-placeholder" id="uploadPlaceholder" onclick="triggerImageUpload()">
+                                    <i class="fas fa-cloud-upload-alt d-block"></i>
+                                    <span class="fs-5 fw-bold d-block mb-1">Drag & Drop Roof Photo Here</span>
+                                    <span class="small text-muted">or click to browse local files</span>
+                                    <input type="file" id="roofImageUpload" accept="image/*" class="d-none" onchange="loadRoofImage(event)">
+                                </div>
+                                <canvas id="designCanvas"></canvas>
+                            </div>
+                            <div class="d-flex justify-content-center gap-3 mt-3">
+                                <button class="btn btn-primary" id="addArrayBtn" onclick="addPanelArray()" style="display: none;"><i class="fas fa-plus me-1"></i> Add Solar Panel Array</button>
+                                <button class="btn btn-danger" id="removeArrayBtn" onclick="removePanelArray()" style="display: none;"><i class="fas fa-trash me-1"></i> Remove Panels</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Config / Info Panel -->
+                    <div class="col-12 col-lg-4">
+                        <div class="designer-container">
+                            <!-- Metrics Summary Card -->
+                            <div class="card metrics-card p-4 shadow-sm">
+                                <h5 class="fw-bold mb-3"><i class="fas fa-chart-line me-2"></i>Design Metrics</h5>
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <span class="small text-white-50 d-block">System Size</span>
+                                        <span class="fs-4 fw-bold text-warning" id="metricCapacity">0.0 kW</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="small text-white-50 d-block">Total Panels</span>
+                                        <span class="fs-4 fw-bold text-info" id="metricCount">0</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="small text-white-50 d-block">Estimated Area</span>
+                                        <span class="fs-4 fw-bold text-success" id="metricArea">0.0 m²</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="small text-white-50 d-block">Est. Generation</span>
+                                        <span class="fs-4 fw-bold text-warning" id="metricGeneration">0 kWh/m</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Layout Controls -->
+                            <div class="card p-4 shadow-sm border-0" id="controlsCard" style="display: none;">
+                                <h5 class="fw-bold text-primary mb-3"><i class="fas fa-sliders-h me-2"></i>Layout Configurator</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="roofType" class="form-label fw-semibold">Roof Type</label>
+                                    <select class="form-select" id="roofType" onchange="updateCalculations()">
+                                        <option value="flat">Concrete Flat Roof</option>
+                                        <option value="tin">Pitched Tin Shade</option>
+                                        <option value="tile">Pitched Tile Roof</option>
+                                        <option value="ground">Ground Field</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="panelWattage" class="form-label fw-semibold">Panel Wattage</label>
+                                    <select class="form-select" id="panelWattage" onchange="updateCalculations()">
+                                        <option value="500">500 W Mono PERC</option>
+                                        <option value="550" selected>550 W Half-Cut</option>
+                                        <option value="600">600 W Bifacial</option>
+                                    </select>
+                                </div>
+
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label for="gridCols" class="form-label fw-semibold">Columns</label>
+                                        <input type="number" class="form-control" id="gridCols" min="1" max="20" value="4" onchange="rebuildArray()">
+                                    </div>
+                                    <div class="col-6">
+                                        <label for="gridRows" class="form-label fw-semibold">Rows</label>
+                                        <input type="number" class="form-control" id="gridRows" min="1" max="5" value="2" onchange="rebuildArray()">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <label for="panelScale" class="form-label fw-semibold">Panel Scale</label>
+                                        <span class="text-muted small" id="scaleVal">1.0</span>
+                                    </div>
+                                    <input type="range" class="form-range control-slider" id="panelScale" min="0.2" max="2.5" step="0.05" value="1.0" oninput="updateSliders()">
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <label for="panelRotate" class="form-label fw-semibold">Rotate Angle</label>
+                                        <span class="text-muted small" id="rotateVal">0°</span>
+                                    </div>
+                                    <input type="range" class="form-range control-slider" id="panelRotate" min="-180" max="180" step="1" value="0" oninput="updateSliders()">
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <label for="panelTilt" class="form-label fw-semibold">Perspective Skew (Tilt)</label>
+                                        <span class="text-muted small" id="tiltVal">0°</span>
+                                    </div>
+                                    <input type="range" class="form-range control-slider" id="panelTilt" min="-45" max="45" step="1" value="0" oninput="updateSliders()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <div th:replace="~{fragments/footer :: footerPart}"> </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/commonUI :: loader}"></div>
+    <div th:replace="~{fragments/commonUI :: toaster}"></div>
+    <div th:replace="~{fragments/commonUI :: confirmModal}"></div>
+    <div th:replace="~{fragments/commonJquery :: commonJquery}"></div>
+
+    <script th:src="@{/js/roofDesigner.js}"></script>
+</body>
+
+</html>

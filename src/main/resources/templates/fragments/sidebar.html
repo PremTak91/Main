@@ -37,6 +37,11 @@
                         <i class="fas fa-fw fa-map-marked-alt"></i> Site Management
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/roof-designer}">
+                        <i class="fas fa-fw fa-solar-panel"></i> Roof Designer
+                    </a>
+                </li>
                 <li class="nav-item" sec:authorize="!hasRole('DEALER')">
                     <a class="nav-link" th:href="@{/timesheet}">
                         <i class="fas fa-fw fa-clock"></i> Timesheet
