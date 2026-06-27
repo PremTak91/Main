@@ -2,8 +2,10 @@ package com.web.nrs.service.impl;
 
 import com.web.nrs.entity.SiteDetailsEntity;
 import com.web.nrs.entity.SitePhotoEntity;
+import com.web.nrs.entity.SiteStatusHistoryEntity;
 import com.web.nrs.repository.SiteDetailsRepository;
 import com.web.nrs.repository.SitePhotoRepository;
+import com.web.nrs.repository.SiteStatusHistoryRepository;
 import com.web.nrs.service.CloudinaryStorageService;
 import com.web.nrs.service.SiteService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,7 @@ public class SiteServiceImpl implements SiteService {
     private final SiteDetailsRepository siteDetailsRepository;
     private final SitePhotoRepository sitePhotoRepository;
     private final CloudinaryStorageService cloudinaryStorageService;
+    private final SiteStatusHistoryRepository siteStatusHistoryRepository;
 
     @Override
     public Page<SiteDetailsEntity> getAllSites(String keyword, java.time.LocalDate startDate, java.time.LocalDate endDate, String siteOwner, Pageable pageable) {
@@ -44,7 +47,18 @@ public class SiteServiceImpl implements SiteService {
     public SiteDetailsEntity saveSite(SiteDetailsEntity siteDetails, Long userId) {
         siteDetails.setCreatedBy(userId);
         siteDetails.setUpdatedBy(userId);
-        return siteDetailsRepository.save(siteDetails);
+        SiteDetailsEntity saved = siteDetailsRepository.save(siteDetails);
+
+        if (saved.getSiteStatus() != null && !saved.getSiteStatus().isEmpty()) {
+            siteStatusHistoryRepository.save(SiteStatusHistoryEntity.builder()
+                    .siteId(saved.getId())
+                    .status(saved.getSiteStatus())
+                    .updatedAt(LocalDateTime.now())
+                    .updatedBy(userId)
+                    .build());
+        }
+
+        return saved;
     }
 
     @Override
@@ -53,11 +67,14 @@ public class SiteServiceImpl implements SiteService {
         SiteDetailsEntity existing = siteDetailsRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Site not found"));
 
+        String oldStatus = existing.getSiteStatus();
+        String newStatus = siteDetails.getSiteStatus();
+
         existing.setSrNo(siteDetails.getSrNo());
         existing.setCustomerName(siteDetails.getCustomerName());
         existing.setContactNo(siteDetails.getContactNo());
         existing.setAddress(siteDetails.getAddress());
-        existing.setSiteStatus(siteDetails.getSiteStatus());
+        existing.setSiteStatus(newStatus);
         existing.setAssignedTechnicianId(siteDetails.getAssignedTechnicianId());
         existing.setExpectedCompletedDate(siteDetails.getExpectedCompletedDate());
         existing.setKilowatt(siteDetails.getKilowatt());
@@ -66,7 +83,18 @@ public class SiteServiceImpl implements SiteService {
         existing.setRemarks(siteDetails.getRemarks());
         existing.setUpdatedBy(userId);
 
-        return siteDetailsRepository.save(existing);
+        SiteDetailsEntity saved = siteDetailsRepository.save(existing);
+
+        if (newStatus != null && !newStatus.equals(oldStatus)) {
+            siteStatusHistoryRepository.save(SiteStatusHistoryEntity.builder()
+                    .siteId(saved.getId())
+                    .status(newStatus)
+                    .updatedAt(LocalDateTime.now())
+                    .updatedBy(userId)
+                    .build());
+        }
+
+        return saved;
     }
 
     @Override
@@ -119,5 +147,10 @@ public class SiteServiceImpl implements SiteService {
             sitePhotoRepository.delete(photo);
             return true;
         }).orElse(false);
+    }
+
+    @Override
+    public List<SiteStatusHistoryEntity> getStatusHistory(Long siteId) {
+        return siteStatusHistoryRepository.findBySiteIdOrderByUpdatedAtDesc(siteId);
     }
 }

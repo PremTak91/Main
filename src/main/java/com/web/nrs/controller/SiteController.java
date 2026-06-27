@@ -191,4 +191,14 @@ public class SiteController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
+
+    @GetMapping("/{id}/status-history")
+    @ResponseBody
+    public ResponseEntity<ApiResponse> getSiteStatusHistory(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(ApiResponse.success("Status history fetched", siteService.getStatusHistory(id)));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
 }

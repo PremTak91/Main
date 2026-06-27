@@ -67,6 +67,41 @@
             margin: 0 !important;
             font-weight: 500;
         }
+        .timeline-item {
+            position: relative;
+            padding-left: 25px;
+            margin-bottom: 20px;
+            border-left: 2px solid #dee2e6;
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #6c757d;
+        }
+        .timeline-item.status-completed::before {
+            background: #198754;
+        }
+        .timeline-item.status-initiate::before {
+            background: #ffc107;
+        }
+        .timeline-item.status-structure::before {
+            background: #fd7e14;
+        }
+        .timeline-item.status-wiring::before {
+            background: #0dcaf0;
+        }
+        .timeline-date {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        .timeline-status {
+            font-weight: 600;
+        }
     </style>
 </head>
 
@@ -156,6 +191,13 @@
                                         <span class="d-inline-block text-truncate" style="max-width: 150px;" th:title="${site.remarks}" th:text="${site.remarks}"></span>
                                     </td>
                                     <td class="text-center">
+                                        <button class="btn btn-sm btn-warning text-white me-1" 
+                                            th:data-id="${site.id}" 
+                                            th:data-name="${site.customerName}"
+                                            onclick="openStatusHistoryModal(this.getAttribute('data-id'), this.getAttribute('data-name'))" 
+                                            title="Status History">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
                                         <button class="btn btn-sm btn-info text-white me-1" 
                                             th:data-id="${site.id}" 
                                             th:data-name="${site.customerName}"
@@ -341,6 +383,27 @@
             </div>
         </div>
     </div>
+    <!-- Status History Modal -->
+    <div class="modal fade" id="statusHistoryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Site Status Track: <span id="historyCustomerName" class="text-primary fw-bold"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="historyTimeline" class="position-relative px-2">
+                        <!-- Timeline items will be dynamically generated here -->
+                    </div>
+                    <div id="noHistoryMsg" class="text-center py-4 text-muted" style="display: none;">
+                        <i class="fas fa-history fs-2 mb-2 d-block text-warning"></i>
+                        No status updates recorded.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Image Preview Modal -->
     <div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
