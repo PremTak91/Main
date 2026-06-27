@@ -92,8 +92,15 @@ public class TimesheetController {
         Long currentEmployeeId = currentEmployee.map(EmployeeEntity::getId).orElse(null);
         boolean isSuperAdmin = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
 
+        java.util.List<java.util.Map<String, Object>> myRequests;
+        if (isSuperAdmin) {
+            myRequests = employeeService.getAllManualRequests();
+        } else {
+            myRequests = currentEmployeeId != null ? employeeService.getManualRequestsForEmployee(currentEmployeeId) : java.util.List.of();
+        }
+
         model.addAttribute("activeApprovers", employeeService.getActiveApprovers());
-        model.addAttribute("myRequests", currentEmployeeId != null ? employeeService.getManualRequestsForEmployee(currentEmployeeId) : java.util.List.of());
+        model.addAttribute("myRequests", myRequests);
         model.addAttribute("pendingRequests", currentEmployeeId != null ? employeeService.getPendingManualRequestsForApprover(currentEmployeeId, isSuperAdmin) : java.util.List.of());
         model.addAttribute("isSuperAdmin", isSuperAdmin);
 
