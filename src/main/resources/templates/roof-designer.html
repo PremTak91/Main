@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NRS Solar Solution - Roof Layout Designer</title>
+    <title>NRS Solar Solution - AI Roof Layout Designer</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
@@ -15,46 +15,221 @@
         .designer-container {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
         }
 
         .canvas-workspace {
             position: relative;
-            background: #2b2b2b;
+            background: #0f172a;
             border-radius: 12px;
-            overflow: hidden;
+            overflow: auto;
+            min-height: 600px;
+            height: 75vh;
+            border: 2px dashed #334155;
+            transition: all 0.3s ease;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 450px;
-            border: 2px dashed #444;
-            transition: all 0.3s ease;
         }
 
         .canvas-workspace.dragover {
-            border-color: #0d6efd;
-            background: #253344;
+            border-color: #3b82f6;
+            background: #1e293b;
         }
 
-        #designCanvas {
-            max-width: 100%;
-            max-height: 70vh;
-            display: none;
+        /* 3D Visualizer Wrapper */
+        #designWrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            cursor: move;
+            background: #0f172a;
+        }
+
+        #roofBgImage {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        #roofOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            pointer-events: none;
+            border-radius: 8px;
+        }
+
+        /* SVG Annotation & Leg Drawing Layer */
+        #annotationSvg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Animated Annotation Paths */
+        .animated-svg-path {
+            stroke-dasharray: 6, 3;
+            animation: dash 35s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -1000;
+            }
+        }
+
+        /* 3D Solar Panel Grid Wrapper */
+        #panelGridWrapper {
+            position: absolute;
+            transform-style: preserve-3d;
+            cursor: grab;
+            z-index: 20;
+            transition: transform 0.1s ease-out;
+        }
+
+        #panelGridWrapper:active {
+            cursor: grabbing;
+        }
+
+        /* Realistic Tesla Solar Panel */
+        .solar-panel-3d {
+            background: linear-gradient(135deg, #173b67, #0b2145);
+            border: 1.5px solid #475569;
+            border-radius: 3px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+            box-sizing: border-box;
+            overflow: hidden;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            transform-style: preserve-3d;
+        }
+
+        .solar-panel-3d:hover {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.85);
+            border-color: #3b82f6;
+        }
+
+        /* Wafer Silicon Cell Grids inside Panel */
+        .solar-panel-wafer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            pointer-events: none;
+        }
+
+        .solar-panel-wafer div {
+            border: 0.5px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Glass reflective swipe gloss effect */
+        .solar-panel-3d::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                115deg,
+                rgba(255, 255, 255, 0) 30%,
+                rgba(255, 255, 255, 0.12) 45%,
+                rgba(255, 255, 255, 0.20) 50%,
+                rgba(255, 255, 255, 0.12) 55%,
+                rgba(255, 255, 255, 0) 70%
+            );
+            transform: rotate(30deg) translateX(-100%);
+            transition: transform 0.6s ease;
+            pointer-events: none;
+        }
+
+        .solar-panel-3d:hover::after {
+            transform: rotate(30deg) translateX(100%);
+        }
+
+        /* Floating Callout Badge HTML Labels */
+        .floating-badge-callout {
+            position: absolute;
+            width: 210px;
+            height: 48px;
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            color: #ffffff;
+            pointer-events: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            z-index: 30;
+            transition: opacity 0.3s ease;
+            font-family: sans-serif;
+        }
+
+        .floating-badge-callout .badge-tag {
+            width: 6px;
+            height: 100%;
+            border-top-left-radius: 7px;
+            border-bottom-left-radius: 7px;
+        }
+
+        .floating-badge-callout .badge-content {
+            padding-left: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .floating-badge-callout .badge-title {
+            font-size: 8px;
+            font-weight: bold;
+            color: #94a3b8;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .floating-badge-callout .badge-val {
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        /* Hidden Export Canvas Utility */
+        #hiddenExportCanvas {
+            display: none;
         }
 
         .upload-placeholder {
             text-align: center;
-            color: #aaa;
+            color: #94a3b8;
             padding: 40px;
             cursor: pointer;
             width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 560px;
         }
 
         .upload-placeholder i {
             font-size: 4rem;
-            color: #0d6efd;
+            color: #3b82f6;
             margin-bottom: 15px;
             transition: transform 0.3s ease;
         }
@@ -63,22 +238,84 @@
             transform: scale(1.1);
         }
 
-        .metrics-card {
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        /* Right Sidebar Glassmorphic Card */
+        .glass-card {
+            background: rgba(10, 18, 40, 0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            color: #f1f5f9;
+        }
+
+        .system-overview-card {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            color: #f1f5f9;
+        }
+
+        .capacity-option-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid #334155;
+            border-radius: 14px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            text-align: center;
+        }
+
+        .capacity-option-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .capacity-option-card.active {
+            border-color: #e2e8f0;
+            background: rgba(30, 41, 59, 0.8);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .capacity-option-card.active.recommended {
+            border-color: #eab308; /* Gold border for recommended */
+            box-shadow: 0 0 12px rgba(234, 179, 8, 0.2);
+        }
+
+        .badge-recommended {
+            background: #eab308;
+            color: #0f172a;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
         }
 
         .control-slider::-webkit-slider-runnable-track {
-            background: #ddd;
+            background: #475569;
             height: 6px;
             border-radius: 3px;
         }
 
         .control-slider::-webkit-slider-thumb {
             margin-top: -5px;
+        }
+
+        /* Laser scanning effect animation */
+        @keyframes scan {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        .scanning-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(to right, transparent, #3b82f6, transparent);
+            box-shadow: 0 0 8px #3b82f6;
+            animation: scan 3s linear infinite;
+            z-index: 101;
+            display: none;
         }
     </style>
 </head>
@@ -95,26 +332,55 @@
 
             <main class="main-content-area flex-grow-1">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="mb-0 text-primary fw-bold"><i class="fas fa-solar-panel me-2"></i>Roof Layout Designer</h3>
+                    <h3 class="mb-0 text-primary fw-bold"><i class="fas fa-microchip me-2"></i>AI Solar Roof Analyzer</h3>
                     <div class="d-flex gap-2">
                         <button class="btn btn-outline-secondary" onclick="resetLayout()"><i class="fas fa-undo me-1"></i> Reset</button>
-                        <button class="btn btn-success" id="exportBtn" onclick="exportProposal()" style="display: none;"><i class="fas fa-download me-1"></i> Export Layout</button>
+                        <button class="btn btn-primary" onclick="saveDesignToServer()"><i class="fas fa-save me-1"></i> Save Design</button>
+                        <button class="btn btn-success" id="exportBtn" onclick="exportProposal()" style="display: none;"><i class="fas fa-download me-1"></i> Export Proposal</button>
                     </div>
                 </div>
 
                 <div class="row g-4">
-                    <!-- Canvas Area -->
+                    <!-- Canvas/HTML Workspace Area (70% on desktop) -->
                     <div class="col-12 col-lg-8">
-                        <div class="card p-3 shadow-sm border-0 h-100">
+                        <div class="card p-3 shadow-sm border-0 h-100" style="background: #0f172a;">
                             <div class="canvas-workspace" id="workspaceContainer">
+                                <!-- Scanning laser line -->
+                                <div id="laserLine" class="scanning-line"></div>
+
+                                <!-- High Tech AI Scanning Overlay -->
+                                <div id="scanningOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center" style="display: none !important; z-index: 100; background: rgba(15, 23, 42, 0.9);">
+                                    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                                    <h4 class="text-white fw-bold mb-2"><i class="fas fa-network-wired text-info me-2"></i>Analyzing Rooftop Surface...</h4>
+                                    <div class="progress w-50 bg-secondary mb-2" style="height: 10px;">
+                                        <div id="scanProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <span id="scanProgressText" class="text-white-50 small">Calibrating shadow vectors... 0%</span>
+                                </div>
+
                                 <div class="upload-placeholder" id="uploadPlaceholder" onclick="triggerImageUpload()">
                                     <i class="fas fa-cloud-upload-alt d-block"></i>
                                     <span class="fs-5 fw-bold d-block mb-1">Drag & Drop Roof Photo Here</span>
                                     <span class="small text-muted">or click to browse local files</span>
                                     <input type="file" id="roofImageUpload" accept="image/*" class="d-none" onchange="loadRoofImage(event)">
                                 </div>
-                                <canvas id="designCanvas"></canvas>
+
+                                <!-- High-fidelity HTML 3D Visualizer -->
+                                <div id="designWrapper" style="display: none;">
+                                    <img id="roofBgImage" src="" alt="Rooftop Installation Preview">
+                                    <div id="roofOverlay"></div>
+                                    
+                                    <!-- Dynamic SVG Structural Steel legs and dimensions -->
+                                    <svg id="annotationSvg"></svg>
+                                    
+                                    <!-- 3D CSS transformed panel container -->
+                                    <div id="panelGridWrapper"></div>
+                                </div>
                             </div>
+                            
+                            <!-- Export utility canvas -->
+                            <canvas id="hiddenExportCanvas"></canvas>
+
                             <div class="d-flex justify-content-center gap-3 mt-3">
                                 <button class="btn btn-primary" id="addArrayBtn" onclick="addPanelArray()" style="display: none;"><i class="fas fa-plus me-1"></i> Add Solar Panel Array</button>
                                 <button class="btn btn-danger" id="removeArrayBtn" onclick="removePanelArray()" style="display: none;"><i class="fas fa-trash me-1"></i> Remove Panels</button>
@@ -122,96 +388,178 @@
                         </div>
                     </div>
 
-                    <!-- Config / Info Panel -->
+                    <!-- Professional Sidebar Panel (30% on desktop) -->
                     <div class="col-12 col-lg-4">
                         <div class="designer-container">
-                            <!-- Metrics Summary Card -->
-                            <div class="card metrics-card p-4 shadow-sm">
-                                <h5 class="fw-bold mb-3"><i class="fas fa-chart-line me-2"></i>Design Metrics</h5>
-                                <div class="row g-3">
-                                    <div class="col-6">
-                                        <span class="small text-white-50 d-block">System Size</span>
-                                        <span class="fs-4 fw-bold text-warning" id="metricCapacity">0.0 kW</span>
-                                    </div>
-                                    <div class="col-6">
-                                        <span class="small text-white-50 d-block">Total Panels</span>
-                                        <span class="fs-4 fw-bold text-info" id="metricCount">0</span>
-                                    </div>
-                                    <div class="col-6">
-                                        <span class="small text-white-50 d-block">Estimated Area</span>
-                                        <span class="fs-4 fw-bold text-success" id="metricArea">0.0 m²</span>
-                                    </div>
-                                    <div class="col-6">
-                                        <span class="small text-white-50 d-block">Est. Generation</span>
-                                        <span class="fs-4 fw-bold text-warning" id="metricGeneration">0 kWh/m</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Layout Controls -->
-                            <div class="card p-4 shadow-sm border-0" id="controlsCard" style="display: none;">
-                                <h5 class="fw-bold text-primary mb-3"><i class="fas fa-sliders-h me-2"></i>Layout Configurator</h5>
+                            
+                            <!-- 1. Manual Layout Adjustments Card (EDITABLE CONTROLS FIRST) -->
+                            <div class="card p-3 shadow-sm border-0 glass-card" id="controlsCard" style="display: none;">
+                                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-sliders-h me-2"></i>Workspace Configuration</h6>
                                 
                                 <div class="mb-3">
-                                    <label for="roofType" class="form-label fw-semibold">Roof Type</label>
-                                    <select class="form-select" id="roofType" onchange="updateCalculations()">
-                                        <option value="flat">Concrete Flat Roof</option>
-                                        <option value="tin">Pitched Tin Shade</option>
-                                        <option value="tile">Pitched Tile Roof</option>
-                                        <option value="ground">Ground Field</option>
+                                    <label for="workspaceZoom" class="form-label fw-semibold text-warning"><i class="fas fa-search-plus me-1"></i>Workspace Zoom</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="workspaceZoom" onchange="updateWorkspaceZoom()">
+                                        <option value="fit" selected>Fit to Screen (Responsive)</option>
+                                        <option value="1.0">100% Zoom (Original)</option>
+                                        <option value="1.5">150% Zoom</option>
+                                        <option value="2.0">200% Zoom</option>
+                                        <option value="3.0">300% Zoom</option>
                                     </select>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="panelWattage" class="form-label fw-semibold">Panel Wattage</label>
-                                    <select class="form-select" id="panelWattage" onchange="updateCalculations()">
-                                        <option value="500">500 W Mono PERC</option>
-                                        <option value="550" selected>550 W Half-Cut</option>
-                                        <option value="600">600 W Bifacial</option>
+                                    <label for="panelDirection" class="form-label fw-semibold text-white-50 small">Direction (Facing)</label>
+                                    <select class="form-select bg-dark text-white border-secondary" id="panelDirection" onchange="updateDirection()">
+                                        <option value="South" selected>South (Recommended)</option>
+                                        <option value="West">West</option>
+                                        <option value="East">East</option>
+                                        <option value="North">North</option>
                                     </select>
                                 </div>
 
                                 <div class="row g-2 mb-3">
                                     <div class="col-6">
-                                        <label for="gridCols" class="form-label fw-semibold">Columns</label>
-                                        <input type="number" class="form-control" id="gridCols" min="1" max="20" value="4" onchange="rebuildArray()">
+                                        <div class="d-flex justify-content-between">
+                                            <label for="panelScale" class="form-label text-white-50 small">Scale</label>
+                                            <span class="text-muted small" id="scaleVal">1.0</span>
+                                        </div>
+                                        <input type="range" class="form-range control-slider" id="panelScale" min="0.2" max="5.0" step="0.05" value="1.0" oninput="updateSliders()">
                                     </div>
                                     <div class="col-6">
-                                        <label for="gridRows" class="form-label fw-semibold">Rows</label>
-                                        <input type="number" class="form-control" id="gridRows" min="1" max="5" value="2" onchange="rebuildArray()">
+                                        <div class="d-flex justify-content-between">
+                                            <label for="panelRotate" class="form-label text-white-50 small">Rotate</label>
+                                            <span class="text-muted small" id="rotateVal">0°</span>
+                                        </div>
+                                        <input type="range" class="form-range control-slider" id="panelRotate" min="-180" max="180" step="1" value="0" oninput="updateSliders()">
                                     </div>
                                 </div>
 
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between">
-                                        <label for="panelScale" class="form-label fw-semibold">Panel Scale</label>
-                                        <span class="text-muted small" id="scaleVal">1.0</span>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <div class="d-flex justify-content-between">
+                                            <label for="panelTilt" class="form-label text-white-50 small">Tilt</label>
+                                            <span class="text-muted small" id="tiltVal">0°</span>
+                                        </div>
+                                        <input type="range" class="form-range control-slider" id="panelTilt" min="-45" max="45" step="1" value="0" oninput="updateSliders()">
                                     </div>
-                                    <input type="range" class="form-range control-slider" id="panelScale" min="0.2" max="2.5" step="0.05" value="1.0" oninput="updateSliders()">
+                                    <div class="col-6">
+                                        <div class="d-flex justify-content-between">
+                                            <label for="structureHeight" class="form-label text-white-50 small">Leg Height</label>
+                                            <span class="text-muted small" id="heightVal">1.2m</span>
+                                        </div>
+                                        <input type="range" class="form-range control-slider" id="structureHeight" min="0.5" max="3.0" step="0.1" value="1.2" oninput="updateSliders()">
+                                    </div>
                                 </div>
 
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between">
-                                        <label for="panelRotate" class="form-label fw-semibold">Rotate Angle</label>
-                                        <span class="text-muted small" id="rotateVal">0°</span>
-                                    </div>
-                                    <input type="range" class="form-range control-slider" id="panelRotate" min="-180" max="180" step="1" value="0" oninput="updateSliders()">
-                                </div>
-
-                                <div class="mb-3">
-                                    <div class="d-flex justify-content-between">
-                                        <label for="panelTilt" class="form-label fw-semibold">Perspective Skew (Tilt)</label>
-                                        <span class="text-muted small" id="tiltVal">0°</span>
-                                    </div>
-                                    <input type="range" class="form-range control-slider" id="panelTilt" min="-45" max="45" step="1" value="0" oninput="updateSliders()">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="showStructure" checked onchange="toggleStructure()">
+                                    <label class="form-check-label text-white-50 small" for="showStructure">Show Dimension Labels</label>
                                 </div>
                             </div>
+
+                            <!-- 2. Estimated Capacity Selector Cards -->
+                            <div class="card glass-card p-3 shadow-sm" id="selectorCard" style="display: none;">
+                                <h6 class="fw-bold mb-3 text-uppercase text-white-50 small"><i class="fas fa-tachometer-alt me-2 text-success"></i>System Capacity Selector</h6>
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <div class="capacity-option-card" id="opt3kW" onclick="selectCapacityOption(3)">
+                                            <span class="fw-bold d-block text-white" style="font-size: 0.95rem;">3 kW</span>
+                                            <span class="text-white-50 d-block" style="font-size: 0.7rem;">6 Panels</span>
+                                            <span class="text-info d-block fw-bold mt-1" style="font-size: 0.65rem;">~12-15 kWh/d</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="capacity-option-card active recommended" id="opt5kW" onclick="selectCapacityOption(5)">
+                                            <span class="badge-recommended d-inline-block mb-1">Rec.</span>
+                                            <span class="fw-bold d-block text-white" style="font-size: 0.95rem;">5 kW</span>
+                                            <span class="text-white-50 d-block" style="font-size: 0.7rem;">10 Panels</span>
+                                            <span class="text-warning d-block fw-bold mt-1" style="font-size: 0.65rem;">~20-25 kWh/d</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="capacity-option-card" id="opt7kW" onclick="selectCapacityOption(7.5)">
+                                            <span class="fw-bold d-block text-white" style="font-size: 0.95rem;">7.5 kW</span>
+                                            <span class="text-white-50 d-block" style="font-size: 0.7rem;">14 Panels</span>
+                                            <span class="text-info d-block fw-bold mt-1" style="font-size: 0.65rem;">~30-35 kWh/d</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. System Overview Glass Card -->
+                            <div class="card system-overview-card p-3 shadow-sm" id="overviewCard" style="display: none;">
+                                <h6 class="fw-bold mb-3 text-uppercase text-white-50 small"><i class="fas fa-chart-pie me-2 text-primary"></i>System Overview</h6>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small"><i class="fas fa-solar-panel me-1 text-info"></i>Recommended Size</span>
+                                    <span class="fw-bold text-white" id="viewCapacity">5.5 kW</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small"><i class="fas fa-bolt me-1 text-warning"></i>Daily Generation</span>
+                                    <span class="fw-bold text-warning" id="viewDaily">~20-25 kWh</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small"><i class="fas fa-calendar-alt me-1 text-success"></i>Monthly Generation</span>
+                                    <span class="fw-bold text-success" id="viewMonthly">~600-750 kWh</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-white-50 small"><i class="fas fa-home me-1 text-white-50"></i>Suitable For</span>
+                                    <span class="fw-semibold text-white" id="viewSuitable">Homes, Small Offices</span>
+                                </div>
+                            </div>
+
+                            <!-- 4. Solar Installation Summary Card -->
+                            <div class="card glass-card p-3 shadow-sm" id="summaryCard" style="display: none;">
+                                <h6 class="fw-bold mb-3 text-uppercase text-white-50 small"><i class="fas fa-info-circle me-2 text-info"></i>Installation Details</h6>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">Solar Style</span>
+                                    <span class="fw-semibold" id="viewStyle">Tilted Fixed Mount</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">Panel Placement</span>
+                                    <span class="fw-semibold" id="viewPlacement">South Facing</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">Tilt Angle</span>
+                                    <span class="fw-semibold text-warning" id="viewTilt">18° (Optimum)</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">Structure Height</span>
+                                    <span class="fw-semibold text-white" id="viewHeight">1.2 m (Front) / 2.1 m (Back)</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-white-50 small">No. of Panels</span>
+                                    <span class="fw-semibold text-info" id="viewPanels">10 Panels</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-white-50 small">Panel Capacity</span>
+                                    <span class="fw-semibold">550 Wp Each</span>
+                                </div>
+                            </div>
+
+                            <!-- 5. Shadow Analysis Card -->
+                            <div class="card glass-card p-3 shadow-sm" id="shadowCard" style="display: none;">
+                                <h6 class="fw-bold mb-2 text-uppercase text-white-50 small"><i class="fas fa-cloud-sun me-2 text-warning"></i>Shadow Analysis</h6>
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <span class="badge bg-success bg-opacity-25 text-success mb-1"><i class="fas fa-check me-1"></i>No Significant Shadow</span>
+                                        <p class="text-white-50 mb-0" style="font-size: 0.75rem;">Ideal solar radiation throughout day.</p>
+                                    </div>
+                                    <!-- Sun Path Arc -->
+                                    <svg width="80" height="40" viewBox="0 0 80 40">
+                                        <path d="M 10,35 A 30,30 0 0,1 70,35" fill="none" stroke="rgba(255,255,255,0.2)" stroke-dasharray="3,3" stroke-width="2"/>
+                                        <circle cx="40" cy="10" r="4" fill="#ffb300"/>
+                                        <path d="M 40,10 L 40,35" fill="none" stroke="rgba(255,179,0,0.3)" stroke-width="1"/>
+                                        <text x="10" y="38" fill="rgba(255,255,255,0.5)" font-size="8" text-anchor="middle">E</text>
+                                        <text x="70" y="38" fill="rgba(255,255,255,0.5)" font-size="8" text-anchor="middle">W</text>
+                                    </svg>
+                                </div>
+                            </div>
+                            
                         </div>
                     </div>
                 </div>
             </main>
 
-            <div th:replace="~{fragments/footer :: footerPart}"> </div>
         </div>
     </div>
 
