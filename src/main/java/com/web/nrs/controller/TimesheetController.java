@@ -89,6 +89,13 @@ public class TimesheetController {
         model.addAttribute("isAdmin", isAdmin);
         model.addAttribute("totalWorkingHours", totalWorkingHours);
 
+        Long currentEmployeeId = currentEmployee.map(EmployeeEntity::getId).orElse(null);
+        boolean isSuperAdmin = authorities.stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN"));
+
+        model.addAttribute("activeApprovers", employeeService.getActiveApprovers());
+        model.addAttribute("myRequests", currentEmployeeId != null ? employeeService.getManualRequestsForEmployee(currentEmployeeId) : java.util.List.of());
+        model.addAttribute("pendingRequests", currentEmployeeId != null ? employeeService.getPendingManualRequestsForApprover(currentEmployeeId, isSuperAdmin) : java.util.List.of());
+
         return "timesheet";
     }
 
@@ -132,6 +139,82 @@ public class TimesheetController {
             } else {
                 return ResponseEntity.badRequest().body(ApiResponse.error("Failed to delete timesheet or not found"));
             }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/request")
+    @ResponseBody
+    public ResponseEntity<ApiResponse> createManualRequest(
+            @RequestBody Map<String, Object> requestData,
+            Authentication authentication
+    ) {
+        try {
+            String email = authentication.getName();
+            EmployeeEntity currentEmployee = employeeService.getEmployeeByEmailId(email)
+                    .orElseThrow(() -> new RuntimeException("Current employee not found"));
+            
+            LocalDate attendanceDate = LocalDate.parse(requestData.get("attendanceDate").toString());
+            LocalDateTime inTime = LocalDateTime.parse(requestData.get("inTime").toString());
+            LocalDateTime outTime = LocalDateTime.parse(requestData.get("outTime").toString());
+            String reason = requestData.get("reason").toString();
+            Long approverId = Long.valueOf(requestData.get("approverId").toString());
+
+            employeeService.createManualTimesheetRequest(currentEmployee.getId(), attendanceDate, inTime, outTime, reason, approverId);
+            return ResponseEntity.ok(ApiResponse.success("Manual timesheet request submitted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/request/approve/{id}")
+    @ResponseBody
+    public ResponseEntity<ApiResponse> approveManualRequest(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        try {
+            String email = authentication.getName();
+            employeeService.approveManualTimesheetRequest(id, email);
+            return ResponseEntity.ok(ApiResponse.success("Request approved successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/request/reject/{id}")
+    @ResponseBody
+    public ResponseEntity<ApiResponse> rejectManualRequest(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> requestData,
+            Authentication authentication
+    ) {
+        try {
+            String email = authentication.getName();
+            String reason = requestData.get("reason");
+            if (reason == null || reason.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Rejection reason is required"));
+            }
+            employeeService.rejectManualTimesheetRequest(id, reason, email);
+            return ResponseEntity.ok(ApiResponse.success("Request rejected successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/request/{id}")
+    @ResponseBody
+    public ResponseEntity<ApiResponse> deleteManualRequest(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        try {
+            String email = authentication.getName();
+            EmployeeEntity currentEmployee = employeeService.getEmployeeByEmailId(email)
+                    .orElseThrow(() -> new RuntimeException("Current employee not found"));
+            employeeService.deleteManualTimesheetRequest(id, currentEmployee.getId());
+            return ResponseEntity.ok(ApiResponse.success("Request deleted successfully"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }

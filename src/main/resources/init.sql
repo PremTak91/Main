@@ -600,4 +600,27 @@ ALTER TABLE `site_details` ADD COLUMN IF NOT EXISTS `site_owner` varchar(255) DE
 ALTER TABLE site_details ADD COLUMN IF NOT EXISTS sr_no VARCHAR(255);
 ALTER TABLE `quotation_logs` ADD COLUMN IF NOT EXISTS `inverter` varchar(255) DEFAULT NULL;
 
+CREATE TABLE `manual_timesheet_requests` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `employee_id` int NOT NULL,
+  `attendance_date` date NOT NULL,
+  `in_time` datetime DEFAULT NULL,
+  `out_time` datetime DEFAULT NULL,
+  `reason` varchar(255) DEFAULT NULL,
+  `approver_id` int NOT NULL,
+  `status` varchar(50) DEFAULT 'Pending',
+  `reject_reason` varchar(255) DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_mtr_employee` FOREIGN KEY (`employee_id`) REFERENCES `employeeinfo` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_mtr_approver` FOREIGN KEY (`approver_id`) REFERENCES `employeeinfo` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+INSERT IGNORE INTO notification_type (code, description, default_priority) VALUES 
+('TIMESHEET_REQUESTED', 'Manual Timesheet Request Submitted', 'HIGH'),
+('TIMESHEET_APPROVED', 'Manual Timesheet Request Approved', 'MEDIUM'),
+('TIMESHEET_REJECTED', 'Manual Timesheet Request Rejected', 'HIGH');
+
+
 

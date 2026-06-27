@@ -88,7 +88,7 @@ public class SiteController {
 
         // Fetch technicians for the dropdown (assuming role 'technician' or all employees)
         // For now, pass all employees or a specific list
-        model.addAttribute("employees", employeeService.getAllEmployees(Pageable.unpaged()).getContent());
+        model.addAttribute("employees", employeeService.getEmployeeIdAndNames());
         model.addAttribute("dealers", employeeService.getDealerEmployees());
 
         return "site-list";

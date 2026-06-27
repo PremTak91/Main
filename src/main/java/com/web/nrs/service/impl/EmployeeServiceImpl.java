@@ -42,6 +42,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeAttendanceRepository employeeAttendanceRepository;
     private final EmployeeMainterRepository employeeMainterRepository;
     private final com.web.nrs.service.CloudinaryStorageService cloudinaryStorageService;
+    private final ManualTimesheetRequestRepository manualTimesheetRequestRepository;
+    private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Override
     public Page<EmployeeListDTO> getAllEmployees(Pageable pageable) {
@@ -530,6 +532,238 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public List<EmployeeEntity> getDealerEmployees() {
         return employeeRepository.findDealers();
+    }
+
+    @Override
+    public List<EmployeeEntity> getActiveApprovers() {
+        List<EmployeeMainterEntity> activeRoles = employeeMainterRepository.findByActiveNot(2);
+        List<Long> approverIds = activeRoles.stream()
+                .map(EmployeeMainterEntity::getMainterId)
+                .distinct()
+                .collect(Collectors.toList());
+        return employeeRepository.findAllById(approverIds);
+    }
+
+    @Override
+    @Transactional
+    public void createManualTimesheetRequest(Long employeeId, LocalDate date, LocalDateTime inTime, LocalDateTime outTime, String reason, Long approverId) {
+        ManualTimesheetRequestEntity request = ManualTimesheetRequestEntity.builder()
+                .employeeId(employeeId)
+                .attendanceDate(date)
+                .inTime(inTime)
+                .outTime(outTime)
+                .reason(reason)
+                .approverId(approverId)
+                .status("Pending")
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+        
+        manualTimesheetRequestRepository.save(request);
+
+        String empName = employeeRepository.findById(employeeId)
+                .map(emp -> Stream.of(emp.getFirstName(), emp.getLastName())
+                        .filter(s -> s != null && !s.isBlank())
+                        .collect(Collectors.joining(" ")))
+                .orElse("Employee");
+
+        String msg = String.format("%s requested a manual timesheet entry for %s. Reason: %s", empName, date.toString(), reason);
+        
+        List<Long> superAdmins = userRoleRepository.findUserIdsByRoleId("SUPERADMIN");
+        
+        List<Long> recipients = new java.util.ArrayList<>();
+        recipients.add(approverId);
+        for (Long adminId : superAdmins) {
+            if (!recipients.contains(adminId)) {
+                recipients.add(adminId);
+            }
+        }
+
+        eventPublisher.publishEvent(new com.web.nrs.notification.event.NotificationEvent(
+                this,
+                "TIMESHEET_REQUESTED",
+                "New Manual Timesheet Request",
+                msg,
+                "/NRS/timesheet",
+                recipients
+        ));
+    }
+
+    @Override
+    public List<java.util.Map<String, Object>> getManualRequestsForEmployee(Long employeeId) {
+        List<ManualTimesheetRequestEntity> reqs = manualTimesheetRequestRepository.findByEmployeeIdOrderByCreatedAtDesc(employeeId);
+        return reqs.stream().map(req -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", req.getId());
+            map.put("attendanceDate", req.getAttendanceDate());
+            map.put("inTime", req.getInTime());
+            map.put("outTime", req.getOutTime());
+            map.put("reason", req.getReason());
+            map.put("status", req.getStatus());
+            map.put("rejectReason", req.getRejectReason() != null ? req.getRejectReason() : "");
+            
+            String approverName = employeeRepository.findById(req.getApproverId())
+                    .map(emp -> Stream.of(emp.getFirstName(), emp.getLastName())
+                            .filter(s -> s != null && !s.isBlank())
+                            .collect(Collectors.joining(" ")))
+                    .orElse("Unknown");
+            map.put("approverName", approverName);
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<java.util.Map<String, Object>> getPendingManualRequestsForApprover(Long approverId, boolean isSuperAdmin) {
+        List<ManualTimesheetRequestEntity> reqs;
+        if (isSuperAdmin) {
+            reqs = manualTimesheetRequestRepository.findByStatusOrderByCreatedAtDesc("Pending");
+        } else {
+            reqs = manualTimesheetRequestRepository.findByApproverIdAndStatusOrderByCreatedAtDesc(approverId, "Pending");
+        }
+        return reqs.stream().map(req -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", req.getId());
+            map.put("attendanceDate", req.getAttendanceDate());
+            map.put("inTime", req.getInTime());
+            map.put("outTime", req.getOutTime());
+            map.put("reason", req.getReason());
+            
+            String empName = employeeRepository.findById(req.getEmployeeId())
+                    .map(emp -> Stream.of(emp.getFirstName(), emp.getLastName())
+                            .filter(s -> s != null && !s.isBlank())
+                            .collect(Collectors.joining(" ")))
+                    .orElse("Unknown");
+            map.put("employeeName", empName);
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void approveManualTimesheetRequest(Long requestId, String approverEmail) {
+        ManualTimesheetRequestEntity request = manualTimesheetRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        
+        if (!"Pending".equalsIgnoreCase(request.getStatus())) {
+            throw new RuntimeException("Request has already been processed");
+        }
+        
+        request.setStatus("Approved");
+        request.setUpdatedAt(LocalDateTime.now());
+        manualTimesheetRequestRepository.save(request);
+
+        Optional<EmployeeAttendanceEntity> attendanceOpt = employeeAttendanceRepository
+                .findByEmployeeIdAndAttendanceDate(request.getEmployeeId(), request.getAttendanceDate());
+        
+        EmployeeAttendanceEntity attendance = attendanceOpt.orElseGet(() -> EmployeeAttendanceEntity.builder()
+                .employeeId(request.getEmployeeId())
+                .attendanceDate(request.getAttendanceDate())
+                .build());
+        
+        attendance.setInTime(request.getInTime());
+        attendance.setOutTime(request.getOutTime());
+        
+        if (request.getInTime() != null && request.getOutTime() != null) {
+            java.time.Duration duration = java.time.Duration.between(request.getInTime(), request.getOutTime());
+            long hours = duration.toHours();
+            long minutes = duration.toMinutesPart();
+            String workingHours = String.format("%02d:%02d", hours, minutes);
+            attendance.setWorkingHours(workingHours);
+            
+            if (hours >= 8) {
+                attendance.setStatus("PRESENT");
+            } else {
+                attendance.setStatus("PARTIAL");
+            }
+        } else {
+            attendance.setWorkingHours(null);
+            attendance.setStatus("IN_PROGRESS");
+        }
+        
+        employeeAttendanceRepository.save(attendance);
+
+        String msg = String.format("Your manual timesheet entry request for %s has been Approved.", request.getAttendanceDate().toString());
+        List<Long> recipients = new java.util.ArrayList<>();
+        recipients.add(request.getEmployeeId());
+        
+        List<Long> superAdmins = userRoleRepository.findUserIdsByRoleId("SUPERADMIN");
+        for (Long adminId : superAdmins) {
+            if (!recipients.contains(adminId)) {
+                recipients.add(adminId);
+            }
+        }
+
+        eventPublisher.publishEvent(new com.web.nrs.notification.event.NotificationEvent(
+                this,
+                "TIMESHEET_APPROVED",
+                "Manual Timesheet Approved",
+                msg,
+                "/NRS/timesheet",
+                recipients
+        ));
+    }
+
+    @Override
+    @Transactional
+    public void rejectManualTimesheetRequest(Long requestId, String reason, String approverEmail) {
+        ManualTimesheetRequestEntity request = manualTimesheetRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        
+        if (!"Pending".equalsIgnoreCase(request.getStatus())) {
+            throw new RuntimeException("Request has already been processed");
+        }
+        
+        request.setStatus("Rejected");
+        request.setRejectReason(reason);
+        request.setUpdatedAt(LocalDateTime.now());
+        manualTimesheetRequestRepository.save(request);
+
+        String msg = String.format("Your manual timesheet entry request for %s has been Rejected. Reason: %s", request.getAttendanceDate().toString(), reason);
+        List<Long> recipients = new java.util.ArrayList<>();
+        recipients.add(request.getEmployeeId());
+        
+        List<Long> superAdmins = userRoleRepository.findUserIdsByRoleId("SUPERADMIN");
+        for (Long adminId : superAdmins) {
+            if (!recipients.contains(adminId)) {
+                recipients.add(adminId);
+            }
+        }
+
+        eventPublisher.publishEvent(new com.web.nrs.notification.event.NotificationEvent(
+                this,
+                "TIMESHEET_REJECTED",
+                "Manual Timesheet Rejected",
+                msg,
+                "/NRS/timesheet",
+                recipients
+        ));
+    }
+
+    @Override
+    @Transactional
+    public void deleteManualTimesheetRequest(Long requestId, Long employeeId) {
+        ManualTimesheetRequestEntity request = manualTimesheetRequestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
+        
+        if (!request.getEmployeeId().equals(employeeId)) {
+            throw new RuntimeException("Unauthorized to delete this request");
+        }
+        if (!"Pending".equalsIgnoreCase(request.getStatus())) {
+            throw new RuntimeException("Only pending requests can be deleted");
+        }
+        
+        manualTimesheetRequestRepository.delete(request);
+    }
+
+    @Override
+    public List<java.util.Map<String, Object>> getEmployeeIdAndNames() {
+        List<EmployeeEntity> list = employeeRepository.findAll();
+        return list.stream().map(emp -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", emp.getId());
+            map.put("employeeName", emp.getFullName());
+            return map;
+        }).collect(Collectors.toList());
     }
 }
 
