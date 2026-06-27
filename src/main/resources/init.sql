@@ -626,6 +626,17 @@ ALTER TABLE `site_details` ADD INDEX IF NOT EXISTS `idx_site_details_assigned_te
 ALTER TABLE `site_details` ADD INDEX IF NOT EXISTS `idx_site_details_site_owner` (`site_owner`);
 ALTER TABLE `site_details` ADD INDEX IF NOT EXISTS `idx_site_details_created_at` (`created_at`);
 
+CREATE TABLE IF NOT EXISTS `site_status_history` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `site_id` BIGINT NOT NULL,
+    `status` VARCHAR(50) NOT NULL,
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    `updated_by` BIGINT DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_ssh_site` FOREIGN KEY (`site_id`) REFERENCES `site_details` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
 
 
 

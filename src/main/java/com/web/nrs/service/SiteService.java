@@ -27,4 +27,5 @@ public interface SiteService {
     SitePhotoEntity uploadPhoto(Long siteId, MultipartFile file, Long userId) throws IOException;
     
     boolean deletePhoto(Long photoId);
+    List<com.web.nrs.entity.SiteStatusHistoryEntity> getStatusHistory(Long siteId);
 }

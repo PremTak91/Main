@@ -388,3 +388,62 @@ async function saveToLocalFolder(customerName) {
         console.error(err);
     }
 }
+
+function openStatusHistoryModal(siteId, customerName) {
+    document.getElementById("historyCustomerName").innerText = customerName;
+    const timeline = document.getElementById("historyTimeline");
+    const noHistoryMsg = document.getElementById("noHistoryMsg");
+    
+    timeline.innerHTML = "";
+    noHistoryMsg.style.display = "none";
+    
+    showLoader();
+    fetch("/NRS/sites/" + siteId + "/status-history")
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            hideLoader();
+            if (data.success && data.data && data.data.length > 0) {
+                data.data.forEach(function (log) {
+                    const item = document.createElement("div");
+                    
+                    let statusClass = "";
+                    const statusLower = log.status.toLowerCase();
+                    if (statusLower.includes("complete") || statusLower.includes("done")) {
+                        statusClass = "status-completed";
+                    } else if (statusLower.includes("initiate")) {
+                        statusClass = "status-initiate";
+                    } else if (statusLower.includes("structure")) {
+                        statusClass = "status-structure";
+                    } else if (statusLower.includes("wiring")) {
+                        statusClass = "status-wiring";
+                    }
+                    
+                    item.className = "timeline-item " + statusClass;
+                    
+                    const dateObj = new Date(log.updatedAt);
+                    const day = String(dateObj.getDate()).padStart(2, '0');
+                    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const year = dateObj.getFullYear();
+                    const hours = String(dateObj.getHours()).padStart(2, '0');
+                    const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+                    const formattedDate = `${day}-${month}-${year} ${hours}:${minutes}`;
+                    
+                    item.innerHTML = 
+                        '<div class="timeline-date">' + formattedDate + '</div>' +
+                        '<div class="timeline-status text-primary">' + log.status + '</div>';
+                    
+                    timeline.appendChild(item);
+                });
+            } else {
+                noHistoryMsg.style.display = "block";
+            }
+            
+            const historyModal = new bootstrap.Modal(document.getElementById('statusHistoryModal'));
+            historyModal.show();
+        })
+        .catch(function (error) {
+            hideLoader();
+            console.error("Error loading status history:", error);
+            showToast("Error loading status history", "error");
+        });
+}
