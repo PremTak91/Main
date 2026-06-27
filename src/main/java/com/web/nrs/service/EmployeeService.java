@@ -58,5 +58,6 @@ public interface EmployeeService {
     void approveManualTimesheetRequest(Long requestId, String approverEmail);
     void rejectManualTimesheetRequest(Long requestId, String reason, String approverEmail);
     void deleteManualTimesheetRequest(Long requestId);
+    List<java.util.Map<String, Object>> getAllManualRequests();
     List<java.util.Map<String, Object>> getEmployeeIdAndNames();
 }

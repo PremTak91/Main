@@ -602,6 +602,43 @@ public class EmployeeServiceImpl implements EmployeeService {
             map.put("status", req.getStatus());
             map.put("rejectReason", req.getRejectReason() != null ? req.getRejectReason() : "");
             
+            String empName = employeeRepository.findById(req.getEmployeeId())
+                    .map(emp -> Stream.of(emp.getFirstName(), emp.getLastName())
+                            .filter(s -> s != null && !s.isBlank())
+                            .collect(Collectors.joining(" ")))
+                    .orElse("Unknown");
+            map.put("employeeName", empName);
+
+            String approverName = employeeRepository.findById(req.getApproverId())
+                    .map(emp -> Stream.of(emp.getFirstName(), emp.getLastName())
+                            .filter(s -> s != null && !s.isBlank())
+                            .collect(Collectors.joining(" ")))
+                    .orElse("Unknown");
+            map.put("approverName", approverName);
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<java.util.Map<String, Object>> getAllManualRequests() {
+        List<ManualTimesheetRequestEntity> reqs = manualTimesheetRequestRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+        return reqs.stream().map(req -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", req.getId());
+            map.put("attendanceDate", req.getAttendanceDate());
+            map.put("inTime", req.getInTime());
+            map.put("outTime", req.getOutTime());
+            map.put("reason", req.getReason());
+            map.put("status", req.getStatus());
+            map.put("rejectReason", req.getRejectReason() != null ? req.getRejectReason() : "");
+            
+            String empName = employeeRepository.findById(req.getEmployeeId())
+                    .map(emp -> Stream.of(emp.getFirstName(), emp.getLastName())
+                            .filter(s -> s != null && !s.isBlank())
+                            .collect(Collectors.joining(" ")))
+                    .orElse("Unknown");
+            map.put("employeeName", empName);
+
             String approverName = employeeRepository.findById(req.getApproverId())
                     .map(emp -> Stream.of(emp.getFirstName(), emp.getLastName())
                             .filter(s -> s != null && !s.isBlank())
