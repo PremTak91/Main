@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -44,6 +45,7 @@ public class SiteDetailsEntity {
     @Column(name = "assigned_technician_id")
     private Long assignedTechnicianId;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_technician_id", insertable = false, updatable = false)
     private EmployeeEntity assignedTechnician;
