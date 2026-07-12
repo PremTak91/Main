@@ -1115,26 +1115,32 @@ public class QuotationServiceImpl implements QuotationService {
         boolean hasNumber = quotation.getCustomerMobileNumber() != null && !quotation.getCustomerMobileNumber().trim().isEmpty();
         boolean hasCustomerDetails = hasName || hasNumber;
 
-        if (hasCustomerDetails) {
-            PdfPTable customerSection = new PdfPTable(1);
-            customerSection.setWidthPercentage(100);
-            customerSection.addCell(getCell("Customer Details", PdfPCell.ALIGN_CENTER, new Color(50, 100, 200), Color.WHITE, true));
-            document.add(customerSection);
+        PdfPTable customerSection = new PdfPTable(1);
+        customerSection.setWidthPercentage(100);
+        customerSection.addCell(getCell("Quotation & Customer Details", PdfPCell.ALIGN_CENTER, new Color(50, 100, 200), Color.WHITE, true));
+        document.add(customerSection);
 
-            PdfPTable customerDetailsTable = new PdfPTable(2);
-            customerDetailsTable.setWidthPercentage(100);
-            customerDetailsTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
-            if (hasName) {
-                customerDetailsTable.addCell(getCell("Customer Name",    PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
-                customerDetailsTable.addCell(getCell(quotation.getCustomerName().trim(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
-            }
-            if (hasNumber) {
-                customerDetailsTable.addCell(getCell("Customer Number",  PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
-                customerDetailsTable.addCell(getCell(quotation.getCustomerMobileNumber().trim(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
-            }
-            document.add(customerDetailsTable);
-            document.add(createHalfLineSpace());
+        PdfPTable customerDetailsTable = new PdfPTable(2);
+        customerDetailsTable.setWidthPercentage(100);
+        customerDetailsTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        
+        // Quotation Number & Date details (Always visible on quotation)
+        customerDetailsTable.addCell(getCell("Quotation No.", PdfPCell.ALIGN_LEFT, new Color(230, 240, 250), Color.BLACK, true));
+        customerDetailsTable.addCell(getCell(quotation.getQuationNumber() != null ? quotation.getQuationNumber().trim() : "", PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
+        
+        customerDetailsTable.addCell(getCell("Quotation Date", PdfPCell.ALIGN_LEFT, new Color(230, 240, 250), Color.BLACK, true));
+        customerDetailsTable.addCell(getCell(quotation.getQuotationDate() != null ? quotation.getQuotationDate().trim() : "", PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
+
+        if (hasName) {
+            customerDetailsTable.addCell(getCell("Customer Name",    PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
+            customerDetailsTable.addCell(getCell(quotation.getCustomerName().trim(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
         }
+        if (hasNumber) {
+            customerDetailsTable.addCell(getCell("Customer Number",  PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
+            customerDetailsTable.addCell(getCell(quotation.getCustomerMobileNumber().trim(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
+        }
+        document.add(customerDetailsTable);
+        document.add(createHalfLineSpace());
 
         PdfPTable descTable = new PdfPTable(new float[]{4f, 6f});
         descTable.setWidthPercentage(100); descTable.setSpacingAfter(7f);
@@ -1237,6 +1243,12 @@ public class QuotationServiceImpl implements QuotationService {
         ppBody.addElement(new Paragraph("20% as an advance on confirmation of the order.",  FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         ppBody.addElement(new Paragraph("75% against Proforma Invoice (PI) before dispatch of solar panels, inverters and other BoS items.", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         ppBody.addElement(new Paragraph("5% after installation and commissioning of the RTS system", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
+        
+        // Dynamic, professional validity clause
+        Paragraph validityNote = new Paragraph("Validity: This quotation is valid for 10 days from the date of issue.", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9.5f, new Color(0, 51, 102)));
+        validityNote.setSpacingBefore(6f);
+        ppBody.addElement(validityNote);
+        
         ppTable.addCell(ppBody);
         document.add(ppTable);
         document.add(createHalfLineSpace());
