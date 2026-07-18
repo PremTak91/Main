@@ -135,11 +135,11 @@
                             <!-- For DEALER role -->
                             <div class="col-md-4" sec:authorize="hasRole('DEALER')">
                                 <label for="submittedByName" class="form-label">Submitted By:</label>
-                                <input type="text" class="form-control" id="submittedByName" th:value="${currentUserName}" readonly required>
+                                <input type="text" class="form-control" id="submittedByName" th:value="${currentUserName}" disabled readonly required>
                             </div>
                             <div class="col-md-4" sec:authorize="hasRole('DEALER')">
                                 <label for="submittedNumber" class="form-label">Submitted Number:</label>
-                                <input type="text" class="form-control" id="submittedNumber" th:value="${currentUserPhone}" readonly required>
+                                <input type="text" class="form-control" id="submittedNumber" th:value="${currentUserPhone}" disabled readonly required>
                             </div>
 
                             <!-- For non-DEALER roles -->
