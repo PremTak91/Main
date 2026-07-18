@@ -835,5 +835,86 @@ public class EmployeeServiceImpl implements EmployeeService {
             return map;
         }).collect(Collectors.toList());
     }
+
+    @Override
+    public org.springframework.data.domain.Page<com.web.nrs.DTO.MissingTimesheetDTO> getMissingTimesheets(
+            Long employeeId, String employeeName, LocalDate startDate, LocalDate endDate, org.springframework.data.domain.Pageable pageable) {
+        
+        List<com.web.nrs.DTO.MissingTimesheetDTO> missingList = new java.util.ArrayList<>();
+        
+        LocalDate start = (startDate != null) ? startDate : (endDate != null ? endDate.minusDays(6) : LocalDate.now().minusDays(6));
+        LocalDate end = (endDate != null) ? endDate : LocalDate.now();
+        
+        if (start.isAfter(end)) {
+            LocalDate temp = start;
+            start = end;
+            end = temp;
+        }
+
+        // Fetch designation list to map designation names
+        java.util.Map<Long, String> designationMap = new java.util.HashMap<>();
+        designationRepository.findAll().forEach(d -> designationMap.put(d.getId(), d.getDesignation()));
+
+        // Fetch employees
+        List<EmployeeEntity> employees = new java.util.ArrayList<>();
+        if (employeeId != null) {
+            employeeRepository.findById(employeeId).ifPresent(employees::add);
+        } else {
+            List<EmployeeEntity> all = employeeRepository.findAll();
+            for (EmployeeEntity emp : all) {
+                // Check if active (empStatus is 1)
+                boolean isActive = emp.getEmpStatus() != null && (emp.getEmpStatus() == 1 || "1".equals(String.valueOf(emp.getEmpStatus())));
+                if (isActive) {
+                    if (employeeName != null && !employeeName.trim().isEmpty()) {
+                        String fullName = emp.getFullName();
+                        if (fullName != null && fullName.toLowerCase().contains(employeeName.toLowerCase().trim())) {
+                            employees.add(emp);
+                        }
+                    } else {
+                        employees.add(emp);
+                    }
+                }
+            }
+        }
+
+        // Iterate dates descending
+        for (LocalDate date = end; !date.isBefore(start); date = date.minusDays(1)) {
+            // Do not flag Sunday as missing
+            if (date.getDayOfWeek() == java.time.DayOfWeek.SUNDAY) {
+                continue;
+            }
+            for (EmployeeEntity emp : employees) {
+                // If date is before date of joining, skip
+                if (emp.getDateOfJoining() != null && date.isBefore(emp.getDateOfJoining())) {
+                    continue;
+                }
+                
+                boolean hasAttendance = employeeAttendanceRepository.findByEmployeeIdAndAttendanceDate(emp.getId(), date).isPresent();
+                if (!hasAttendance) {
+                    String desigName = emp.getDesignationId() != null ? designationMap.get(emp.getDesignationId()) : "Employee";
+                    missingList.add(com.web.nrs.DTO.MissingTimesheetDTO.builder()
+                            .employeeId(emp.getId())
+                            .employeeName(emp.getFullName())
+                            .missingDate(date)
+                            .designation(desigName)
+                            .status("Missing")
+                            .build());
+                }
+            }
+        }
+
+        // Wrap list in page
+        int startIdx = (int) pageable.getOffset();
+        int endIdx = Math.min((startIdx + pageable.getPageSize()), missingList.size());
+        
+        List<com.web.nrs.DTO.MissingTimesheetDTO> pageContent;
+        if (startIdx <= missingList.size()) {
+            pageContent = missingList.subList(startIdx, endIdx);
+        } else {
+            pageContent = java.util.Collections.emptyList();
+        }
+
+        return new org.springframework.data.domain.PageImpl<>(pageContent, pageable, missingList.size());
+    }
 }
 

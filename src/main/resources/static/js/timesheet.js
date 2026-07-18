@@ -277,3 +277,124 @@ $(document).ready(function() {
         }
     });
 });
+
+function openMissingTimesheetModal() {
+    // Set default dates: end = today, start = 6 days ago
+    const today = new Date().toISOString().split('T')[0];
+    const past = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    $('#missingSearchName').val('');
+    $('#missingStartDate').val(past);
+    $('#missingEndDate').val(today);
+    
+    loadMissingTimesheets(0);
+    $('#missingTimesheetModal').modal('show');
+}
+
+function loadMissingTimesheets(page) {
+    const employeeName = $('#missingSearchName').val() || '';
+    const startDate = $('#missingStartDate').val() || '';
+    const endDate = $('#missingEndDate').val() || '';
+    
+    showLoader();
+    
+    $.ajax({
+        url: '/NRS/timesheet/missing',
+        type: 'GET',
+        data: {
+            page: page,
+            size: 10,
+            employeeName: employeeName,
+            startDate: startDate,
+            endDate: endDate
+        },
+        success: function(response) {
+            hideLoader();
+            const pageData = response.data;
+            const content = pageData.content || [];
+            
+            let tbodyHtml = '';
+            if (content.length === 0) {
+                tbodyHtml = '<tr><td colspan="5" class="text-center text-muted py-4">No missing timesheets found.</td></tr>';
+            } else {
+                content.forEach(item => {
+                    let displayDate = item.missingDate;
+                    if (displayDate) {
+                        try {
+                            const dateObj = new Date(displayDate);
+                            const options = { day: '2-digit', month: 'short', year: 'numeric' };
+                            displayDate = dateObj.toLocaleDateString('en-US', options);
+                        } catch (e) {}
+                    }
+                    
+                    tbodyHtml += `
+                        <tr>
+                            <td>NRS-${item.employeeId}</td>
+                            <td class="fw-medium">${item.employeeName}</td>
+                            <td><span class="badge bg-warning text-dark px-3 py-2">${displayDate || '-'}</span></td>
+                            <td>${item.designation || '-'}</td>
+                            <td><span class="badge bg-danger">Missing</span></td>
+                        </tr>
+                    `;
+                });
+            }
+            $('#missingTimesheetTableBody').html(tbodyHtml);
+            
+            // Build pagination
+            const totalPages = pageData.totalPages || 0;
+            const currentPage = pageData.number || 0;
+            const totalElements = pageData.totalElements || 0;
+            
+            let pagerHtml = '';
+            if (totalPages > 0) {
+                const startEnt = currentPage * 10 + 1;
+                const endEnt = Math.min((currentPage + 1) * 10, totalElements);
+                
+                pagerHtml += `
+                    <div class="text-muted small">
+                        Showing ${startEnt} to ${endEnt} of ${totalElements} entries
+                    </div>
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination pagination-sm mb-0">
+                `;
+                
+                // Previous button
+                const prevDisabled = currentPage === 0 ? 'disabled' : '';
+                pagerHtml += `
+                    <li class="page-item ${prevDisabled}">
+                        <a class="page-link" href="javascript:void(0)" onclick="if(${currentPage} > 0) loadMissingTimesheets(${currentPage - 1})">Previous</a>
+                    </li>
+                `;
+                
+                // Page numbers
+                for (let i = 0; i < totalPages; i++) {
+                    const activeClass = currentPage === i ? 'active' : '';
+                    pagerHtml += `
+                        <li class="page-item ${activeClass}">
+                            <a class="page-link" href="javascript:void(0)" onclick="loadMissingTimesheets(${i})">${i + 1}</a>
+                        </li>
+                    `;
+                }
+                
+                // Next button
+                const nextDisabled = currentPage === totalPages - 1 ? 'disabled' : '';
+                pagerHtml += `
+                    <li class="page-item ${nextDisabled}">
+                        <a class="page-link" href="javascript:void(0)" onclick="if(${currentPage} < ${totalPages} - 1) loadMissingTimesheets(${currentPage + 1})">Next</a>
+                    </li>
+                `;
+                
+                pagerHtml += `
+                        </ul>
+                    </nav>
+                `;
+            }
+            $('#missingPaginationContainer').html(pagerHtml);
+        },
+        error: function(xhr) {
+            hideLoader();
+            const message = xhr.responseJSON?.message || 'Failed to load missing timesheets';
+            showToast(message, 'error');
+        }
+    });
+}
