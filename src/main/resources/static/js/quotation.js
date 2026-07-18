@@ -93,11 +93,15 @@ $(document).on("keyup", "#discount", function () {
                       $("#submittedByName").val(subByVal);
                   }
               } else {
-                  $("#submittedByName").val(subByVal);
+                  if (!$("#submittedByName").is(":disabled")) {
+                      $("#submittedByName").val(subByVal);
+                  }
               }
           }
           if (urlParams.get('submittedNumber')) {
-              $("#submittedNumber").val(urlParams.get('submittedNumber'));
+              if (!$("#submittedNumber").is(":disabled")) {
+                  $("#submittedNumber").val(urlParams.get('submittedNumber'));
+              }
           }
           if (urlParams.get('discount')) {
               $("#discount").val(urlParams.get('discount'));

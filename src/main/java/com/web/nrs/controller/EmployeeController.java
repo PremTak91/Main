@@ -115,9 +115,19 @@ public class EmployeeController {
     @ResponseBody
     public ResponseEntity<ApiResponse> deleteEmployee(@PathVariable Long id) {
         try {
-            boolean deleted = employeeService.softDeleteEmployee(id);
+            boolean isSuperAdmin = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                    .getAuthentication().getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_SUPERADMIN") || a.getAuthority().equals("SUPERADMIN"));
+
+            boolean deleted;
+            if (isSuperAdmin) {
+                deleted = employeeService.hardDeleteEmployee(id);
+            } else {
+                deleted = employeeService.softDeleteEmployee(id);
+            }
+
             if (deleted) {
-                return ResponseEntity.ok(ApiResponse.success("Employee deleted successfully"));
+                return ResponseEntity.ok(ApiResponse.success(isSuperAdmin ? "Employee and all related details hard-deleted successfully" : "Employee soft-deleted successfully"));
             } else {
                 return ResponseEntity.badRequest().body(ApiResponse.error("Failed to delete employee"));
             }

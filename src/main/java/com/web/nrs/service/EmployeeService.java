@@ -42,6 +42,7 @@ public interface EmployeeService {
     EmployeeEntity getEmployeeDetailsById(Long id);
     boolean updateEmployeeById(Long id, EmployeeRegistrationRequest request);
     boolean softDeleteEmployee(Long id);
+    boolean hardDeleteEmployee(Long id);
 
     // Timesheet
     Page<TimesheetDTO> getTimesheetRecords(Long employeeId, String employeeName, LocalDate startDate, LocalDate endDate, Pageable pageable);

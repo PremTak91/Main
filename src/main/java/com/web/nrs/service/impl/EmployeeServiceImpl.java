@@ -44,6 +44,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final com.web.nrs.service.CloudinaryStorageService cloudinaryStorageService;
     private final ManualTimesheetRequestRepository manualTimesheetRequestRepository;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     @Override
     public Page<EmployeeListDTO> getAllEmployees(Pageable pageable) {
@@ -430,6 +431,45 @@ public class EmployeeServiceImpl implements EmployeeService {
         // Set status to 2 (Inactive)
         employee.setEmpStatus(2);
         employeeRepository.save(employee);
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean hardDeleteEmployee(Long id) {
+        EmployeeEntity employee = employeeRepository.findById(id).orElse(null);
+        if (employee == null) {
+            return false;
+        }
+
+        // 1. Delete matching user login from user_login and user_roles
+        loginRepository.findByUsername(employee.getEmail()).ifPresent(login -> {
+            // Delete from user_roles
+            jdbcTemplate.update("DELETE FROM user_roles WHERE user_id = ?", login.getId());
+            // Delete from password_reset_token if any
+            jdbcTemplate.update("DELETE FROM password_reset_token WHERE user_id = ?", login.getId());
+            // Delete from user_login
+            loginRepository.delete(login);
+        });
+
+        // 2. Clean up child records referencing employeeinfo id to prevent constraint violation
+        jdbcTemplate.update("DELETE FROM post_likes WHERE emp_id = ?", id);
+        jdbcTemplate.update("DELETE FROM post_comments WHERE emp_id = ?", id);
+        jdbcTemplate.update("DELETE FROM post_activity WHERE emp_id = ?", id);
+        jdbcTemplate.update("DELETE FROM work_logs WHERE employee_id = ?", id);
+        jdbcTemplate.update("DELETE FROM notification_recipient WHERE recipient_id = ?", id);
+        jdbcTemplate.update("DELETE FROM manual_timesheet_requests WHERE employee_id = ? OR approver_id = ?", id, id);
+        jdbcTemplate.update("DELETE FROM employee_attendance WHERE employee_id = ?", id);
+        jdbcTemplate.update("DELETE FROM employee_leave WHERE empMaintainerId = ?", id);
+        jdbcTemplate.update("DELETE FROM expenses WHERE created_by = ?", id);
+        jdbcTemplate.update("DELETE FROM inquiry WHERE given_by_id = ? OR created_by = ?", id, id);
+        
+        // Also update any child mappings in employeemainter
+        jdbcTemplate.update("DELETE FROM employeemainter WHERE designationid = ? OR mainterid = ?", id, id);
+
+        // 3. Delete the employee profile itself from employeeinfo
+        employeeRepository.delete(employee);
+        
         return true;
     }
 
