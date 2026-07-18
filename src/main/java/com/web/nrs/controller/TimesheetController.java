@@ -224,4 +224,46 @@ public class TimesheetController {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }
     }
+
+    @GetMapping("/missing")
+    @ResponseBody
+    public ResponseEntity<ApiResponse> getMissingTimesheets(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String employeeName,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            Authentication authentication
+    ) {
+        try {
+            org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size);
+            String email = authentication.getName();
+            Optional<EmployeeEntity> currentEmployee = employeeService.getEmployeeByEmailId(email);
+
+            boolean isAdmin = false;
+            for (GrantedAuthority authority : authentication.getAuthorities()) {
+                if (authority.getAuthority().equals("ROLE_ADMIN") || authority.getAuthority().equals("ROLE_SUPERADMIN")) {
+                    isAdmin = true;
+                    break;
+                }
+            }
+
+            Long filterEmployeeId = null;
+            String filterEmployeeName = employeeName;
+
+            if (!isAdmin) {
+                if (currentEmployee.isPresent()) {
+                    filterEmployeeId = currentEmployee.get().getId();
+                }
+                filterEmployeeName = null;
+            }
+
+            Page<com.web.nrs.DTO.MissingTimesheetDTO> missingPage = employeeService.getMissingTimesheets(
+                    filterEmployeeId, filterEmployeeName, startDate, endDate, pageable);
+
+            return ResponseEntity.ok(ApiResponse.success("Missing timesheets fetched", missingPage));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
 }
