@@ -37,6 +37,7 @@ public class DocumentSequenceServiceImpl  implements DocumentSequenceService {
     }
 
     @Override
+    @Transactional
     public void incrementSequence(String docType, String sequence) {
         String financialYear = NrsUtils.getFinancialYear();
         documentSequenceRepository.incrementSequence(docType, financialYear, sequence);

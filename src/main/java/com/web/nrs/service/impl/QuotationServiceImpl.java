@@ -13,6 +13,7 @@ import com.web.nrs.repository.QuotationLogRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
@@ -65,7 +66,16 @@ public class QuotationServiceImpl implements QuotationService {
     }
 
     @Override
+    @Transactional
     public byte[] generateQuotationPdf(SolarQuotation q) throws Exception {
+        if (q.getQuationNumber() == null || q.getQuationNumber().trim().isEmpty()) {
+            throw new IllegalArgumentException("Quotation number cannot be empty.");
+        }
+        String qNum = q.getQuationNumber().trim();
+        if (quotationLogRepository.existsByQuotationNo(qNum)) {
+            throw new IllegalArgumentException("Quotation number " + qNum + " has already been generated!");
+        }
+
         if (q.getQuotationDate() == null)
             q.setQuotationDate(LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")));
         if (q.getPaybackPeriod() == null) q.setPaybackPeriod("3-4 Years");
