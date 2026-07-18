@@ -174,11 +174,20 @@ $(document).on("keyup", "#discount", function () {
           //   1. POSTs to /quts/token (with the JWT cookie)
           //   2. Navigates the WebView to /quts/view/{token}
           //   3. Downloads the PDF bytes and opens them in the system PDF viewer
-          // This requires ZERO storage permissions and works on all Android versions.
+           // This requires ZERO storage permissions and works on all Android versions.
           if (window.Android && typeof window.Android.downloadPdf === "function") {
               try {
                   safeHideLoader();
                   window.Android.downloadPdf(JSON.stringify(formData), pdfFilename);
+                  
+                  // Refresh sequence number on screen after short delay
+                  setTimeout(function() {
+                      $.get("/NRS/quts/sequence", function(res) {
+                          if (res && res.sequence) {
+                              $("#quationNumber").val(res.sequence);
+                          }
+                      });
+                  }, 2000);
               } catch (e) {
                   safeHideLoader();
                   showToast("Mobile PDF error: " + e.message, "error");
@@ -206,10 +215,27 @@ $(document).on("keyup", "#discount", function () {
                   setTimeout(function() {
                       window.URL.revokeObjectURL(blobUrl);
                   }, 1000);
+
+                  // Dynamically fetch and update the next quotation number on the screen
+                  $.get("/NRS/quts/sequence", function(res) {
+                      if (res && res.sequence) {
+                          $("#quationNumber").val(res.sequence);
+                      }
+                  });
               },
               error: function(xhr, status, error) {
                   safeHideLoader();
-                  showToast("Error generating PDF: " + (error || "Unknown error"), "error");
+                  // Parse error message from Blob response if available
+                  if (xhr.response) {
+                      var reader = new FileReader();
+                      reader.onload = function() {
+                          var msg = reader.result || "Unknown error generating PDF";
+                          showToast(msg, "error");
+                      };
+                      reader.readAsText(xhr.response);
+                  } else {
+                      showToast("Error generating PDF: " + (error || "Unknown error"), "error");
+                  }
               }
           });
       });

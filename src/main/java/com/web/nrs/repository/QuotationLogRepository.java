@@ -25,4 +25,6 @@ public interface QuotationLogRepository extends JpaRepository<QuotationLogEntity
             @Param("toDate") LocalDateTime toDate,
             @Param("createdByName") String createdByName,
             Pageable pageable);
+
+    boolean existsByQuotationNo(String quotationNo);
 }
