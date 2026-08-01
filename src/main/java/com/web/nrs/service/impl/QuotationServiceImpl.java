@@ -155,11 +155,13 @@ public class QuotationServiceImpl implements QuotationService {
                     .rateKw(q.getRateKw())
                     .discomMeter(q.getDiscomMeter())
                     .pqHsCost(q.getPqHsCost())
+                    .gedaRegisterCharge(q.getGedaRegisterCharge())
                     .subsidy(q.getSubsidy())
                     .panelWatt(q.getPanelWatt())
                     .noOfPanels(noOfPanelsInt)
                     .inverter(q.getInverter())
                     .build();
+
             quotationLogRepository.save(logEntity);
         } catch (Exception e) {
             e.printStackTrace();
@@ -558,12 +560,9 @@ public class QuotationServiceImpl implements QuotationService {
         float rx = imgX + imgW + 30; // 235
         float rCenter = rx + (PW - 35 - rx) / 2f; 
         
-        // Yellow Label
-        fillRound(cb, new Color(255, 215, 0), rx, bTop - 110, 195, 36, 6);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("#1 Solar Panel!", new Font(Font.HELVETICA, 18, Font.BOLD, DARK)), rx + 15, bTop - 100);
 
         // Bullets
-        float by = bTop - 138;
+        float by = bTop - 110;
         String[] bullets = {"▶ High Output.", "▶ High Durability,", "▶ Zero Compromise."};
         for(String b : bullets) {
             txt(cb, Element.ALIGN_LEFT, new Phrase(b, fWhiteBold(10)), rx + 5, by);
@@ -572,7 +571,7 @@ public class QuotationServiceImpl implements QuotationService {
 
         // White Vector Shield Graphic (Instead of basic circle)
         float scx = rx + 185;
-        float scy = bTop - 155;
+        float scy = bTop - 122;
         
         // Draw Shield Base
         cb.setColorFill(Color.WHITE);
@@ -601,7 +600,7 @@ public class QuotationServiceImpl implements QuotationService {
         cb.setLineDash(0);
 
         // Banner Bottom Text
-        txt(cb, Element.ALIGN_LEFT, new Phrase( q.getPanelWatt() + " + Wp | BIFACIAL", fWhiteBold(12)), rx, bBot + 30);
+        txt(cb, Element.ALIGN_LEFT, new Phrase( q.getPanelWatt() + " + Wp", fWhiteBold(12)), rx, bBot + 30);
         txt(cb, Element.ALIGN_LEFT, new Phrase("Number of nodes = " + q.getNoOfPanels() + " PANELS | Module", fLight(11)), rx, bBot + 12);
 
         // 6. Right Side White Space (Dynamic Luxury Panel Chips)
@@ -887,27 +886,26 @@ public class QuotationServiceImpl implements QuotationService {
         pageHeader(cb, "Your Solar Investment Summary",
                 "Transparent pricing  |  Maximum subsidy  |  Best value", 5);
 
+
+
+
         // Dynamic Pricing Cards Layout
         java.util.List<String[]> pCards = new java.util.ArrayList<>();
         pCards.add(new String[]{"TOTAL SYSTEM COST", "Rs." + formatAmt(q.getActualPrice()), "Before deductions", "1"});
-        
         if (isResidential) {
             pCards.add(new String[]{"GOVT. SUBSIDY", "Rs." + formatAmt(q.getSubsidy()), "PM Surya Ghar benefit", "2"});
         }
-        
         String discomMeter = isResidential ?  "Rs."+ q.getDiscomMeter() : "At Actual";
-
         pCards.add(new String[]{"DISCOM METER Charge",  discomMeter, "Net Metering Charges", "1"});
-
-        
+        if (q.getGedaRegisterCharge() > 0) {
+            pCards.add(new String[]{"GEDA REG. CHARGE", "Rs." + formatAmt(q.getGedaRegisterCharge()), "Registration Charge", "1"});
+        }
         if (q.getPqHsCost() > 0) {
             pCards.add(new String[]{"PREMIUM STRUCTURE", "Rs." + formatAmt(q.getPqHsCost()), "Quality & Heighted Cost", "1"});
         }
-        
         if (q.getDiscountAmount() > 0) {
             pCards.add(new String[]{"SPECIAL DISCOUNT", "Rs." + formatAmt(q.getDiscountAmount()), "Exclusive Offer Applied", "2"});
         }
-        
         pCards.add(new String[]{"YOUR FINAL PAYABLE", "Rs." + formatAmt(isResidential ? q.getEffectivePrice() : q.getActualPrice()), "After all deductions", "3"});
 
         float pcW = (PW - 60 - 20) / 3f, pcH = 85, pcTopY = PH - 125;
@@ -1183,6 +1181,9 @@ public class QuotationServiceImpl implements QuotationService {
         systemTable.addCell(getCellColumn("Premium Quality and Heighted Structure Cost", new Color(245, 245, 245)));
         systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
         systemTable.addCell(getCellColumn("Rs." + quotation.getPqHsCost(),  new Color(245, 245, 245)));
+        systemTable.addCell(getCellColumn("Geda Registration Charge",       new Color(245, 245, 245)));
+        systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
+        systemTable.addCell(getCellColumn("Rs." + quotation.getGedaRegisterCharge(), new Color(245, 245, 245)));
         document.add(systemTable);
 
         PdfPTable priceTable = new PdfPTable(2);
