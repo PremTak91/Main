@@ -26,6 +26,7 @@ public class SolarQuotation {
     private String pdfType; // New parameter to determine 'Standardized' vs 'Single Page'
     private String noOfPanels;
     private String inverter;
+    private double gedaRegisterCharge;
     // --- Brochure display fields (not persisted, populated at PDF generation time) ---
     /** Display date e.g. "04 April 2026" */
     private String quotationDate;

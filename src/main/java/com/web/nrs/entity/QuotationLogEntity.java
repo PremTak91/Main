@@ -72,4 +72,7 @@ public class QuotationLogEntity {
     private Integer noOfPanels;
 
     private String inverter;
+
+    @Column(name = "geda_register_charge")
+    private Double gedaRegisterCharge;
 }
