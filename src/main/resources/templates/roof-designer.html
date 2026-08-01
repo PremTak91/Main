@@ -15,6 +15,23 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <!-- Konva.js -->
     <script src="https://unpkg.com/konva@9.3.15/konva.min.js"></script>
+
+    <!-- OpenCV.js - lazy loaded, async -->
+    <script async src="https://docs.opencv.org/4.10.0/opencv.js" onload="console.log('OpenCV.js loaded')" onerror="console.warn('OpenCV.js failed to load, using fallback detection')"></script>
+
+    <!-- TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+    <!-- DeepLab Segmentation Model -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/deeplab@0.2.1/dist/deeplab.min.js"></script>
+
+    <!-- gl-matrix for perspective transforms -->
+    <script src="https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/gl-matrix-min.js"></script>
+
+    <!-- Turf.js for polygon operations -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.1.0/turf.min.js"></script>
+
+    <!-- polygon-clipping for boolean polygon operations -->
+    <script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>
     
     <style>
         /* Modern Glassmorphic Dark UI */
@@ -293,6 +310,61 @@
         :-webkit-full-screen .canvas-workspace-wrapper {
             height: 100vh;
         }
+
+        /* AI Detection Overlay */
+        .detection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(11, 15, 25, 0.92);
+            z-index: 90;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .detection-progress-container {
+            text-align: center;
+            max-width: 400px;
+            padding: 40px;
+        }
+
+        .detection-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(59, 130, 246, 0.2);
+            border-top-color: #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .detection-step {
+            display: flex;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            transition: all 0.3s ease;
+        }
+
+        .detection-step.active {
+            color: #3b82f6;
+        }
+
+        .detection-step.done {
+            color: #10b981;
+        }
+
+        .detection-step.done i {
+            color: #10b981 !important;
+        }
     </style>
 </head>
 
@@ -333,6 +405,43 @@
 
                             <!-- Interactive Canvas Workspace Wrapper -->
                             <div class="canvas-workspace-wrapper" id="canvasWorkspaceWrapper">
+                                <div class="detection-overlay" id="detectionOverlay" style="display: none;">
+                                    <div class="detection-progress-container">
+                                        <div class="detection-spinner"></div>
+                                        <h4 class="text-white fw-bold mb-3">Analyzing Roof Image...</h4>
+                                        <div class="detection-steps">
+                                            <div class="detection-step" id="detectStep1">
+                                                <i class="fas fa-circle-notch fa-spin text-primary me-2"></i>
+                                                <span>Loading AI Engine</span>
+                                            </div>
+                                            <div class="detection-step" id="detectStep2">
+                                                <i class="far fa-circle text-muted me-2"></i>
+                                                <span>Running Edge Detection</span>
+                                            </div>
+                                            <div class="detection-step" id="detectStep3">
+                                                <i class="far fa-circle text-muted me-2"></i>
+                                                <span>Segmenting Roof Surface</span>
+                                            </div>
+                                            <div class="detection-step" id="detectStep4">
+                                                <i class="far fa-circle text-muted me-2"></i>
+                                                <span>Detecting Obstacles</span>
+                                            </div>
+                                            <div class="detection-step" id="detectStep5">
+                                                <i class="far fa-circle text-muted me-2"></i>
+                                                <span>Estimating Perspective</span>
+                                            </div>
+                                            <div class="detection-step" id="detectStep6">
+                                                <i class="far fa-circle text-muted me-2"></i>
+                                                <span>Generating Panel Layout</span>
+                                            </div>
+                                        </div>
+                                        <div class="progress mt-3" style="height: 6px; width: 80%;">
+                                            <div class="progress-bar bg-primary" id="detectionProgressBar" role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                        <p class="text-white-50 small mt-3" id="detectionStatusText">Preparing AI engine...</p>
+                                    </div>
+                                </div>
+
                                 <!-- Floating Contextual Toolbar -->
                                 <div class="workspace-toolbar" id="workspaceToolbar" style="display: none;">
                                     <button class="toolbar-btn active" id="toolSelect" onclick="setCanvasTool('select')" title="Select & Drag Panels/Obstacles">
@@ -367,6 +476,16 @@
                                     <button class="toolbar-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen">
                                         <i class="fas fa-expand"></i>
                                     </button>
+                                    <div class="toolbar-divider"></div>
+                                    <button class="toolbar-btn" id="toolRedetect" onclick="triggerRedetect()" title="Re-detect Roof Boundary">
+                                        <i class="fas fa-brain"></i>
+                                    </button>
+                                    <button class="toolbar-btn" id="toolAutoPlace" onclick="triggerAutoPlace()" title="Auto-Place Solar Panels">
+                                        <i class="fas fa-magic"></i>
+                                    </button>
+                                    <button class="toolbar-btn" id="toolPerspective" onclick="togglePerspectiveGrid()" title="Toggle Perspective Grid">
+                                        <i class="fas fa-border-all"></i>
+                                    </button>
                                 </div>
 
                                 <!-- The main Konva.js stage container -->
@@ -392,6 +511,14 @@
                                         <span class="status-metric-val" id="statRemaining">0.0 m²</span>
                                         <span class="status-metric-label">Remaining Area</span>
                                     </div>
+                                    <div class="status-metric">
+                                        <span class="status-metric-val" id="statUsableArea">0.0 m²</span>
+                                        <span class="status-metric-label">Usable Area</span>
+                                    </div>
+                                    <div class="status-metric">
+                                        <span class="status-metric-val" id="statCoverage">0%</span>
+                                        <span class="status-metric-label">Coverage</span>
+                                    </div>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
                                     <button class="btn btn-success btn-sm" id="btnExportImage" onclick="exportProposalImage()" style="display: none;">
@@ -411,6 +538,11 @@
                             <!-- Sidebar Navigation Tabs -->
                             <ul class="nav nav-tabs sidebar-tabs" id="designerTabs" role="tablist">
                                 <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="tabDetection-tab" data-bs-toggle="tab" data-bs-target="#tabDetection" type="button" role="tab">
+                                        <i class="fas fa-brain me-1"></i> Detection
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
                                     <button class="nav-link active" id="tabInputs-tab" data-bs-toggle="tab" data-bs-target="#tabInputs" type="button" role="tab"><i class="fas fa-sliders-h me-1"></i> Inputs</button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -425,6 +557,59 @@
                             </ul>
 
                             <div class="tab-content" id="designerTabsContent">
+                                <!-- TAB DETECTION -->
+                                <div class="tab-pane fade" id="tabDetection" role="tabpanel">
+                                    <div class="help-box">
+                                        <i class="fas fa-info-circle me-1"></i> AI-detected roof properties. Adjust the boundary polygon by dragging corner points.
+                                    </div>
+                                    
+                                    <!-- Detection Info -->
+                                    <div class="control-group">
+                                        <span class="control-label"><i class="fas fa-check-circle text-success me-1"></i>Detection Results</span>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <label class="text-white-50 small mb-1">Roof Area</label>
+                                                <div class="fw-bold text-white" id="detectedRoofArea">-- m²</div>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="text-white-50 small mb-1">Confidence</label>
+                                                <div class="fw-bold" id="detectedConfidence">
+                                                    <span class="badge bg-secondary">--</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row g-2 mt-2">
+                                            <div class="col-6">
+                                                <label class="text-white-50 small mb-1">Roof Orientation</label>
+                                                <div class="fw-bold text-white" id="detectedOrientation">--</div>
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="text-white-50 small mb-1">Vertices</label>
+                                                <div class="fw-bold text-white" id="detectedVertices">--</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Detected Obstacles List -->
+                                    <div class="control-group">
+                                        <span class="control-label"><i class="fas fa-exclamation-triangle text-warning me-1"></i>Detected Obstacles</span>
+                                        <div id="detectedObstaclesList" class="small text-muted py-2">No obstacles detected.</div>
+                                    </div>
+                                    
+                                    <!-- Detection Actions -->
+                                    <div class="control-group">
+                                        <span class="control-label">Actions</span>
+                                        <div class="d-flex flex-column gap-2">
+                                            <button class="btn btn-outline-primary btn-sm w-100" onclick="triggerRedetect()">
+                                                <i class="fas fa-brain me-1"></i> Re-detect Roof
+                                            </button>
+                                            <button class="btn btn-outline-success btn-sm w-100" onclick="triggerAutoPlace()">
+                                                <i class="fas fa-magic me-1"></i> Auto-Place Panels
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- TAB 1: SYSTEM INPUTS -->
                                 <div class="tab-pane fade show active" id="tabInputs" role="tabpanel">
                                     <div class="help-box">
@@ -594,6 +779,27 @@
                                             <span class="input-group-text bg-dark border-secondary text-white-50 small">meters</span>
                                         </div>
                                     </div>
+                                    
+                                    <div class="control-group">
+                                        <span class="control-label">Add Obstacle</span>
+                                        <div class="row g-2">
+                                            <div class="col-8">
+                                                <select class="form-select-dark" id="obstacleTypeSelector">
+                                                    <option value="water_tank">Water Tank</option>
+                                                    <option value="staircase">Staircase Room</option>
+                                                    <option value="chimney">Chimney</option>
+                                                    <option value="vent">Vent Pipe</option>
+                                                    <option value="parapet">Parapet Wall</option>
+                                                    <option value="custom" selected>Custom Obstacle</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-4">
+                                                <button class="btn btn-outline-danger btn-sm w-100" onclick="setCanvasTool('obstacle')">
+                                                    <i class="fas fa-plus me-1"></i> Draw
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     <div class="control-group">
                                         <span class="control-label">Exclusion Zones (Obstacles)</span>
@@ -745,7 +951,16 @@
     <div th:replace="~{fragments/commonUI :: confirmModal}"></div>
     <div th:replace="~{fragments/commonJquery :: commonJquery}"></div>
 
-    <!-- Designer Script -->
+    <!-- Solar Designer Modules -->
+    <script th:src="@{/js/roofDetection.js}"></script>
+    <script th:src="@{/js/perspectiveEngine.js}"></script>
+    <script th:src="@{/js/solarRenderer.js}"></script>
+    <script th:src="@{/js/panelPlacement.js}"></script>
+
+    <!-- Utils -->
+    <script th:src="@{/js/utils/imageUtils.js}"></script>
+
+    <!-- Main Designer Engine -->
     <script th:src="@{/js/roofDesigner.js}"></script>
 </body>
 
