@@ -5,317 +5,293 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NRS Solar Solution - AI Roof Layout Designer</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
         integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <!-- Konva.js -->
+    <script src="https://unpkg.com/konva@9.3.15/konva.min.js"></script>
+    
     <style>
-        .designer-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        /* Modern Glassmorphic Dark UI */
+        body {
+            background-color: #0b0f19;
+            color: #f1f5f9;
         }
 
-        .canvas-workspace {
-            position: relative;
+        .main-content-area {
+            background: #0b0f19 !important;
+            padding: 20px;
+        }
+
+        .glass-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .canvas-container-card {
             background: #0f172a;
-            border-radius: 12px;
-            overflow: auto;
-            min-height: 600px;
-            height: 75vh;
-            border: 2px dashed #334155;
-            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .canvas-workspace-wrapper {
+            position: relative;
+            width: 100%;
+            height: 70vh;
+            min-height: 550px;
+            background: #090d16;
+            cursor: default;
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        .canvas-workspace.dragover {
-            border-color: #3b82f6;
-            background: #1e293b;
-        }
-
-        /* 3D Visualizer Wrapper */
-        #designWrapper {
-            position: relative;
-            overflow: hidden;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            background: #0f172a;
-        }
-
-        #roofBgImage {
+        #designerCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
             display: block;
             width: 100%;
             height: 100%;
-            object-fit: contain;
-            user-select: none;
-            -webkit-user-drag: none;
         }
 
-        #roofOverlay {
+        /* Floating Toolbar */
+        .workspace-toolbar {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.2);
-            pointer-events: none;
-            border-radius: 8px;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 6px 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: flex;
+            gap: 8px;
+            align-items: center;
         }
 
-        /* SVG Annotation & Leg Drawing Layer */
-        #annotationSvg {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        /* Animated Annotation Paths */
-        .animated-svg-path {
-            stroke-dasharray: 6, 3;
-            animation: dash 35s linear infinite;
-        }
-
-        @keyframes dash {
-            to {
-                stroke-dashoffset: -1000;
-            }
-        }
-
-        /* 3D Solar Panel Grid Wrapper */
-        #panelGridWrapper {
-            position: absolute;
-            transform-style: preserve-3d;
-            cursor: grab;
-            z-index: 20;
-            transition: transform 0.1s ease-out;
-        }
-
-        #panelGridWrapper:active {
-            cursor: grabbing;
-        }
-
-        /* Realistic Tesla Solar Panel */
-        .solar-panel-3d {
-            background: linear-gradient(135deg, #173b67, #0b2145);
-            border: 1.5px solid #475569;
-            border-radius: 3px;
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
-            position: relative;
-            box-sizing: border-box;
-            overflow: hidden;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
-            transform-style: preserve-3d;
-        }
-
-        .solar-panel-3d:hover {
-            box-shadow: 0 0 15px rgba(59, 130, 246, 0.85);
-            border-color: #3b82f6;
-        }
-
-        /* Wafer Silicon Cell Grids inside Panel */
-        .solar-panel-wafer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: repeat(4, 1fr);
-            pointer-events: none;
-        }
-
-        .solar-panel-wafer div {
-            border: 0.5px solid rgba(255, 255, 255, 0.08);
-        }
-
-        /* Glass reflective swipe gloss effect */
-        .solar-panel-3d::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(
-                115deg,
-                rgba(255, 255, 255, 0) 30%,
-                rgba(255, 255, 255, 0.12) 45%,
-                rgba(255, 255, 255, 0.20) 50%,
-                rgba(255, 255, 255, 0.12) 55%,
-                rgba(255, 255, 255, 0) 70%
-            );
-            transform: rotate(30deg) translateX(-100%);
-            transition: transform 0.6s ease;
-            pointer-events: none;
-        }
-
-        .solar-panel-3d:hover::after {
-            transform: rotate(30deg) translateX(100%);
-        }
-
-        /* Floating Callout Badge HTML Labels */
-        .floating-badge-callout {
-            position: absolute;
-            width: 210px;
-            height: 48px;
-            background: rgba(15, 23, 42, 0.92);
-            border: 1px solid #334155;
-            border-radius: 8px;
+        .toolbar-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
             display: flex;
             align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(255, 255, 255, 0.08);
             color: #ffffff;
-            pointer-events: none;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-            z-index: 30;
-            transition: opacity 0.3s ease;
-            font-family: sans-serif;
         }
 
-        .floating-badge-callout .badge-tag {
-            width: 6px;
+        .toolbar-btn.active {
+            background: #2563eb;
+            color: #ffffff;
+            box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.15);
+            margin: 0 4px;
+        }
+
+        /* Sidebar Tabs & Accordions */
+        .sidebar-tabs {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 15px;
+        }
+
+        .sidebar-tabs .nav-link {
+            color: #94a3b8;
+            border: none;
+            padding: 10px 14px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .sidebar-tabs .nav-link:hover {
+            color: #ffffff;
+        }
+
+        .sidebar-tabs .nav-link.active {
+            color: #3b82f6;
+            background: transparent;
+            border-bottom: 2px solid #3b82f6;
+        }
+
+        /* Inputs and controls */
+        .control-group {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .control-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-select-dark, .form-input-dark {
+            background: #0f172a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            padding: 6px 10px;
+            width: 100%;
+        }
+
+        .form-select-dark:focus, .form-input-dark:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+        }
+
+        .form-check-input-dark {
+            background-color: #0f172a;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Upload drag & drop overlay overlay */
+        .upload-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
             height: 100%;
-            border-top-left-radius: 7px;
-            border-bottom-left-radius: 7px;
-        }
-
-        .floating-badge-callout .badge-content {
-            padding-left: 12px;
+            background: rgba(11, 15, 25, 0.95);
+            z-index: 100;
             display: flex;
             flex-direction: column;
             justify-content: center;
-        }
-
-        .floating-badge-callout .badge-title {
-            font-size: 8px;
-            font-weight: bold;
-            color: #94a3b8;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        .floating-badge-callout .badge-val {
-            font-size: 11px;
-            font-weight: bold;
-            margin-top: 2px;
-        }
-
-        /* Hidden Export Canvas Utility */
-        #hiddenExportCanvas {
-            display: none;
-        }
-
-        .upload-placeholder {
-            text-align: center;
-            color: #94a3b8;
+            align-items: center;
             padding: 40px;
             cursor: pointer;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 560px;
+            transition: all 0.3s ease;
         }
 
-        .upload-placeholder i {
+        .upload-overlay.dragover {
+            background: rgba(30, 41, 59, 0.95);
+            border: 3px dashed #3b82f6;
+        }
+
+        .upload-icon {
             font-size: 4rem;
             color: #3b82f6;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             transition: transform 0.3s ease;
         }
 
-        .upload-placeholder:hover i {
+        .upload-overlay:hover .upload-icon {
             transform: scale(1.1);
         }
 
-        /* Right Sidebar Glassmorphic Card */
-        .glass-card {
-            background: rgba(10, 18, 40, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
-            color: #f1f5f9;
+        /* Live status bar */
+        .status-metric {
+            display: flex;
+            flex-direction: column;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            min-width: 110px;
         }
 
-        .system-overview-card {
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.95));
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
-            color: #f1f5f9;
-        }
-
-        .capacity-option-card {
-            background: rgba(15, 23, 42, 0.6);
-            border: 2px solid #334155;
-            border-radius: 14px;
-            padding: 12px;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            text-align: center;
-        }
-
-        .capacity-option-card:hover {
-            border-color: #3b82f6;
-            transform: translateY(-2px);
-        }
-
-        .capacity-option-card.active {
-            border-color: #e2e8f0;
-            background: rgba(30, 41, 59, 0.8);
-            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-        }
-
-        .capacity-option-card.active.recommended {
-            border-color: #eab308; /* Gold border for recommended */
-            box-shadow: 0 0 12px rgba(234, 179, 8, 0.2);
-        }
-
-        .badge-recommended {
-            background: #eab308;
-            color: #0f172a;
-            font-size: 0.7rem;
+        .status-metric-val {
+            font-size: 1.1rem;
             font-weight: 700;
-            padding: 2px 6px;
-            border-radius: 4px;
+            color: #ffffff;
+        }
+
+        .status-metric-label {
+            font-size: 0.65rem;
+            color: #94a3b8;
             text-transform: uppercase;
+            font-weight: 600;
         }
 
-        .control-slider::-webkit-slider-runnable-track {
-            background: #475569;
-            height: 6px;
-            border-radius: 3px;
+        /* Layer item toggles */
+        .layer-toggle-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 8px;
+            margin-bottom: 6px;
         }
 
-        .control-slider::-webkit-slider-thumb {
-            margin-top: -5px;
-        }
-
-        /* Laser scanning effect animation */
-        @keyframes scan {
-            0% { top: 0%; }
-            50% { top: 100%; }
-            100% { top: 0%; }
-        }
-
-        .scanning-line {
-            position: absolute;
+        /* BOM List table styling */
+        .bom-table {
             width: 100%;
-            height: 3px;
-            background: linear-gradient(to right, transparent, #3b82f6, transparent);
-            box-shadow: 0 0 8px #3b82f6;
-            animation: scan 3s linear infinite;
-            z-index: 101;
-            display: none;
+            font-size: 0.8rem;
+            border-collapse: collapse;
+        }
+
+        .bom-table th {
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .bom-table td {
+            padding: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #e2e8f0;
+        }
+
+        .bom-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        /* Help panel Overlay */
+        .help-box {
+            background: rgba(30, 41, 59, 0.4);
+            border-left: 3px solid #3b82f6;
+            padding: 10px;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.75rem;
+            color: #cbd5e1;
+            margin-bottom: 15px;
+        }
+
+        /* Fullscreen custom layout mapping */
+        :-webkit-full-screen .canvas-workspace-wrapper {
+            height: 100vh;
         }
     </style>
 </head>
@@ -323,251 +299,453 @@
 <body>
 
     <div class="dashboard-wrapper">
-
-        <div th:replace="~{fragments/sidebar :: sidebarMenu}"> </div>
+        <!-- Include the sidebar fragment -->
+        <div th:replace="~{fragments/sidebar :: sidebarMenu}"></div>
 
         <div class="d-flex flex-column w-100">
-
-            <div th:replace="~{fragments/header :: headerPart}"> </div>
+            <!-- Include the header fragment -->
+            <div th:replace="~{fragments/header :: headerPart}"></div>
 
             <main class="main-content-area flex-grow-1">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="mb-0 text-primary fw-bold"><i class="fas fa-microchip me-2"></i>AI Solar Roof Analyzer</h3>
+                    <h3 class="mb-0 text-primary fw-bold"><i class="fas fa-solar-panel me-2"></i>AI Solar Roof Analyzer & Designer</h3>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-outline-secondary" onclick="resetLayout()"><i class="fas fa-undo me-1"></i> Reset</button>
-                        <button class="btn btn-primary" onclick="saveDesignToServer()"><i class="fas fa-save me-1"></i> Save Design</button>
-                        <button class="btn btn-success" id="exportBtn" onclick="exportProposal()" style="display: none;"><i class="fas fa-download me-1"></i> Export Proposal</button>
+                        <button class="btn btn-sm btn-outline-warning" onclick="triggerImageUpload()"><i class="fas fa-upload me-1"></i> Change Roof Photo</button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="triggerResetZoom()"><i class="fas fa-sync-alt me-1"></i> Reset View</button>
+                        <button class="btn btn-sm btn-outline-info" onclick="resetLayout()"><i class="fas fa-undo me-1"></i> Reset Layout</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="triggerClearAll()"><i class="fas fa-trash me-1"></i> Clear Workspace</button>
+                        <button class="btn btn-sm btn-primary" onclick="saveDesignToServer()"><i class="fas fa-save me-1"></i> Save Configuration</button>
                     </div>
                 </div>
 
                 <div class="row g-4">
-                    <!-- Canvas/HTML Workspace Area (70% on desktop) -->
-                    <div class="col-12 col-lg-8">
-                        <div class="card p-3 shadow-sm border-0 h-100" style="background: #0f172a;">
-                            <div class="canvas-workspace" id="workspaceContainer">
-                                <!-- Scanning laser line -->
-                                <div id="laserLine" class="scanning-line"></div>
-
-                                <!-- High Tech AI Scanning Overlay -->
-                                <div id="scanningOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center" style="display: none !important; z-index: 100; background: rgba(15, 23, 42, 0.9);">
-                                    <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
-                                    <h4 class="text-white fw-bold mb-2"><i class="fas fa-network-wired text-info me-2"></i>Analyzing Rooftop Surface...</h4>
-                                    <div class="progress w-50 bg-secondary mb-2" style="height: 10px;">
-                                        <div id="scanProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%"></div>
-                                    </div>
-                                    <span id="scanProgressText" class="text-white-50 small">Calibrating shadow vectors... 0%</span>
-                                </div>
-
-                                <div class="upload-placeholder" id="uploadPlaceholder" onclick="triggerImageUpload()">
-                                    <i class="fas fa-cloud-upload-alt d-block"></i>
-                                    <span class="fs-5 fw-bold d-block mb-1">Drag & Drop Roof Photo Here</span>
-                                    <span class="small text-muted">or click to browse local files</span>
-                                    <input type="file" id="roofImageUpload" accept="image/*" class="d-none" onchange="loadRoofImage(event)">
-                                </div>
-
-                                <!-- High-fidelity HTML 3D Visualizer -->
-                                <div id="designWrapper" style="display: none;">
-                                    <img id="roofBgImage" src="" alt="Rooftop Installation Preview">
-                                    <div id="roofOverlay"></div>
-                                    
-                                    <!-- Dynamic SVG Structural Steel legs and dimensions -->
-                                    <svg id="annotationSvg"></svg>
-                                    
-                                    <!-- 3D CSS transformed panel container -->
-                                    <div id="panelGridWrapper"></div>
-                                </div>
+                    <!-- MAIN WORKSPACE CONTAINER (70% on desktop) -->
+                    <div class="col-12 col-xl-8">
+                        <div class="canvas-container-card p-3 h-100">
+                            <!-- Drag & Drop Upload Layer -->
+                            <div class="upload-overlay" id="uploadOverlay" onclick="triggerImageUpload()">
+                                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                <h4 class="fw-bold text-white mb-2">Upload Roof Image to Begin</h4>
+                                <p class="text-white-50 text-center small mb-3">Drag & drop your JPG, PNG, or WebP roof image here<br>or click to browse from your device (Up to 20 MB)</p>
+                                <button class="btn btn-primary btn-sm px-4"><i class="fas fa-search me-1"></i> Select Photo</button>
+                                <input type="file" id="roofImageUpload" accept="image/*" class="d-none" onchange="loadRoofImage(event)">
                             </div>
-                            
-                            <!-- Export utility canvas -->
-                            <canvas id="hiddenExportCanvas"></canvas>
 
-                            <div class="d-flex justify-content-center gap-3 mt-3">
-                                <button class="btn btn-primary" id="addArrayBtn" onclick="addPanelArray()" style="display: none;"><i class="fas fa-plus me-1"></i> Add Solar Panel Array</button>
-                                <button class="btn btn-danger" id="removeArrayBtn" onclick="removePanelArray()" style="display: none;"><i class="fas fa-trash me-1"></i> Remove Panels</button>
+                            <!-- Interactive Canvas Workspace Wrapper -->
+                            <div class="canvas-workspace-wrapper" id="canvasWorkspaceWrapper">
+                                <!-- Floating Contextual Toolbar -->
+                                <div class="workspace-toolbar" id="workspaceToolbar" style="display: none;">
+                                    <button class="toolbar-btn active" id="toolSelect" onclick="setCanvasTool('select')" title="Select & Drag Panels/Obstacles">
+                                        <i class="fas fa-mouse-pointer"></i>
+                                    </button>
+                                    <button class="toolbar-btn" id="toolBoundary" onclick="setCanvasTool('boundary')" title="Draw Roof Boundary Polygon">
+                                        <i class="fas fa-draw-polygon"></i>
+                                    </button>
+                                    <button class="toolbar-btn" id="toolObstacle" onclick="setCanvasTool('obstacle')" title="Draw Obstacle / Exclusion Zone">
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    <button class="toolbar-btn" id="toolCalibrate" onclick="setCanvasTool('calibrate')" title="Calibrate Real-World Distance">
+                                        <i class="fas fa-ruler-combined"></i>
+                                    </button>
+                                    <div class="toolbar-divider"></div>
+                                    <button class="toolbar-btn" onclick="triggerUndo()" title="Undo Action">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                    <button class="toolbar-btn" onclick="triggerRedo()" title="Redo Action">
+                                        <i class="fas fa-redo"></i>
+                                    </button>
+                                    <div class="toolbar-divider"></div>
+                                    <button class="toolbar-btn" onclick="zoomIn()" title="Zoom In">
+                                        <i class="fas fa-search-plus"></i>
+                                    </button>
+                                    <button class="toolbar-btn" onclick="zoomOut()" title="Zoom Out">
+                                        <i class="fas fa-search-minus"></i>
+                                    </button>
+                                    <button class="toolbar-btn" onclick="zoomFit()" title="Fit Image to Screen">
+                                        <i class="fas fa-expand-arrows-alt"></i>
+                                    </button>
+                                    <button class="toolbar-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen">
+                                        <i class="fas fa-expand"></i>
+                                    </button>
+                                </div>
+
+                                <!-- The main Konva.js stage container -->
+                                <div id="designerCanvasContainer" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></div>
+                            </div>
+
+                            <!-- Live Stat Summary Bar -->
+                            <div class="d-flex flex-wrap justify-content-between gap-2 mt-3 pt-3 border-top border-secondary">
+                                <div class="d-flex gap-2">
+                                    <div class="status-metric">
+                                        <span class="status-metric-val" id="statCapacity">0.0 kW</span>
+                                        <span class="status-metric-label">Array Capacity</span>
+                                    </div>
+                                    <div class="status-metric">
+                                        <span class="status-metric-val" id="statPanels">0</span>
+                                        <span class="status-metric-label">Panel Count</span>
+                                    </div>
+                                    <div class="status-metric">
+                                        <span class="status-metric-val" id="statArea">0.0 m²</span>
+                                        <span class="status-metric-label">Occupied Area</span>
+                                    </div>
+                                    <div class="status-metric">
+                                        <span class="status-metric-val" id="statRemaining">0.0 m²</span>
+                                        <span class="status-metric-label">Remaining Area</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button class="btn btn-success btn-sm" id="btnExportImage" onclick="exportProposalImage()" style="display: none;">
+                                        <i class="fas fa-image me-1"></i> Export PNG
+                                    </button>
+                                    <button class="btn btn-warning btn-sm text-dark font-weight-bold" id="btnExportPdf" onclick="exportProposalPdf()" style="display: none;">
+                                        <i class="fas fa-file-pdf me-1"></i> Generate Report
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Professional Sidebar Panel (30% on desktop) -->
-                    <div class="col-12 col-lg-4">
-                        <div class="designer-container">
-                            
-                            <!-- 1. Manual Layout Adjustments Card (EDITABLE CONTROLS FIRST) -->
-                            <div class="card p-3 shadow-sm border-0 glass-card" id="controlsCard" style="display: none;">
-                                <h6 class="fw-bold text-primary mb-3"><i class="fas fa-sliders-h me-2"></i>Workspace Configuration</h6>
-                                
-                                <div class="mb-3">
-                                    <label for="workspaceZoom" class="form-label fw-semibold text-warning"><i class="fas fa-search-plus me-1"></i>Workspace Zoom</label>
-                                    <select class="form-select bg-dark text-white border-secondary" id="workspaceZoom" onchange="updateWorkspaceZoom()">
-                                        <option value="fit" selected>Fit to Screen (Responsive)</option>
-                                        <option value="1.0">100% Zoom (Original)</option>
-                                        <option value="1.5">150% Zoom</option>
-                                        <option value="2.0">200% Zoom</option>
-                                        <option value="3.0">300% Zoom</option>
-                                    </select>
+                    <!-- SIDEBAR PANEL (30% on desktop) -->
+                    <div class="col-12 col-xl-4">
+                        <div class="card glass-card p-3 h-100">
+                            <!-- Sidebar Navigation Tabs -->
+                            <ul class="nav nav-tabs sidebar-tabs" id="designerTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="tabInputs-tab" data-bs-toggle="tab" data-bs-target="#tabInputs" type="button" role="tab"><i class="fas fa-sliders-h me-1"></i> Inputs</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="tabObstacles-tab" data-bs-toggle="tab" data-bs-target="#tabObstacles" type="button" role="tab"><i class="fas fa-draw-polygon me-1"></i> Boundaries</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="tabLayers-tab" data-bs-toggle="tab" data-bs-target="#tabLayers" type="button" role="tab"><i class="fas fa-layer-group me-1"></i> Layers</button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="tabBOM-tab" data-bs-toggle="tab" data-bs-target="#tabBOM" type="button" role="tab"><i class="fas fa-list-alt me-1"></i> BOM</button>
+                                </li>
+                            </ul>
+
+                            <div class="tab-content" id="designerTabsContent">
+                                <!-- TAB 1: SYSTEM INPUTS -->
+                                <div class="tab-pane fade show active" id="tabInputs" role="tabpanel">
+                                    <div class="help-box">
+                                        <i class="fas fa-info-circle me-1"></i> Set system size and panel constraints. The AI layout automatically fits structural systems inside your boundary.
+                                    </div>
+
+                                    <!-- Capacity & Panels -->
+                                    <div class="control-group">
+                                        <span class="control-label">Solar Capacity (kW)</span>
+                                        <input type="number" class="form-input-dark" id="inputCapacity" value="5.0" min="0.5" max="500" step="0.5" onchange="onParametersChanged()">
+                                    </div>
+
+                                    <div class="control-group">
+                                        <span class="control-label">Panel Wattage & Size</span>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-6">
+                                                <select class="form-select-dark" id="inputPanelWatt" onchange="onPanelPresetChanged()">
+                                                    <option value="540">540 W</option>
+                                                    <option value="550" selected>550 W</option>
+                                                    <option value="600">600 W</option>
+                                                    <option value="custom">Custom...</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <input type="number" class="form-input-dark" id="customPanelWatt" value="550" style="display: none;" onchange="onParametersChanged()" placeholder="Wattage">
+                                            </div>
+                                        </div>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <label class="text-white-50 small mb-1">Length (mm)</label>
+                                                <input type="number" class="form-input-dark" id="inputPanelLength" value="2278" onchange="onParametersChanged()">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="text-white-50 small mb-1">Width (mm)</label>
+                                                <input type="number" class="form-input-dark" id="inputPanelWidth" value="1134" onchange="onParametersChanged()">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Orientation & Roof Type -->
+                                    <div class="control-group">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <span class="control-label">Orientation</span>
+                                                <select class="form-select-dark" id="inputOrientation" onchange="onParametersChanged()">
+                                                    <option value="portrait" selected>Portrait</option>
+                                                    <option value="landscape">Landscape</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <span class="control-label">Roof Type</span>
+                                                <select class="form-select-dark" id="inputRoofType" onchange="onParametersChanged()">
+                                                    <option value="RCC" selected>RCC Roof</option>
+                                                    <option value="Flat">Flat Terrace</option>
+                                                    <option value="Metal">Metal Sheet</option>
+                                                    <option value="Tile">Tile Roof</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Tilt & Height structure parameters -->
+                                    <div class="control-group">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <span class="control-label">Structure Height</span>
+                                                <select class="form-select-dark" id="inputHeight" onchange="onParametersChanged()">
+                                                    <option value="0.5">0.5 m</option>
+                                                    <option value="1.0" selected>1.0 m</option>
+                                                    <option value="1.5">1.5 m</option>
+                                                    <option value="2.0">2.0 m</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6">
+                                                <span class="control-label">Tilt Angle</span>
+                                                <select class="form-select-dark" id="inputTilt" onchange="onParametersChanged()">
+                                                    <option value="5">5°</option>
+                                                    <option value="10">10°</option>
+                                                    <option value="15" selected>15°</option>
+                                                    <option value="20">20°</option>
+                                                    <option value="25">25°</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Array Rotation & Scale Adjustments -->
+                                    <div class="control-group">
+                                        <span class="control-label"><i class="fas fa-arrows-alt text-warning me-1"></i>Array Size & Rotation</span>
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <label class="text-white-50 small">Rotate Array</label>
+                                                <span class="badge bg-secondary font-weight-bold" id="rotateVal">0°</span>
+                                            </div>
+                                            <input type="range" class="form-range" id="panelRotate" min="0" max="360" value="0" oninput="onSliderAdjust()">
+                                        </div>
+                                        <div>
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <label class="text-white-50 small">Scale Panel Size</label>
+                                                <span class="badge bg-secondary font-weight-bold" id="scaleVal">1.0</span>
+                                            </div>
+                                            <input type="range" class="form-range" id="panelScale" min="0.2" max="2.0" step="0.1" value="1.0" oninput="onSliderAdjust()">
+                                        </div>
+                                    </div>
+
+                                    <!-- Row Spacing Configuration -->
+                                    <div class="control-group">
+                                        <span class="control-label">Row Spacing</span>
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-12">
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input form-check-input-dark" type="radio" name="spacingType" id="spacingAuto" value="auto" checked onchange="toggleSpacingType()">
+                                                    <label class="form-check-label text-white small" for="spacingAuto">Automatic (Optimized)</label>
+                                                </div>
+                                                <div class="form-check form-check-inline">
+                                                    <input class="form-check-input form-check-input-dark" type="radio" name="spacingType" id="spacingManual" value="manual" onchange="toggleSpacingType()">
+                                                    <label class="form-check-label text-white small" for="spacingManual">Manual</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div id="manualSpacingContainer" style="display: none;">
+                                            <label class="text-white-50 small mb-1">Clearance distance (meters)</label>
+                                            <input type="number" class="form-input-dark" id="inputRowSpacing" value="1.2" min="0.1" max="10" step="0.1" onchange="onParametersChanged()">
+                                        </div>
+                                    </div>
+
+                                    <!-- Project management save/load JSON -->
+                                    <div class="control-group">
+                                        <span class="control-label">Project Configurations</span>
+                                        <div class="d-flex flex-column gap-2">
+                                            <button class="btn btn-outline-warning btn-sm w-100" onclick="triggerImageUpload()"><i class="fas fa-image me-1"></i> Change Roof Photo</button>
+                                            <div class="d-flex gap-2">
+                                                <button class="btn btn-outline-info btn-sm w-50" onclick="exportProjectJSON()"><i class="fas fa-file-export me-1"></i> Save JSON</button>
+                                                <button class="btn btn-outline-success btn-sm w-50" onclick="triggerJSONUpload()"><i class="fas fa-file-import me-1"></i> Load JSON</button>
+                                            </div>
+                                            <input type="file" id="projectJsonUpload" accept=".json" class="d-none" onchange="loadProjectJSON(event)">
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div class="mb-3">
-                                    <label for="panelDirection" class="form-label fw-semibold text-white-50 small">Direction (Facing)</label>
-                                    <select class="form-select bg-dark text-white border-secondary" id="panelDirection" onchange="updateDirection()">
-                                        <option value="South" selected>South (Recommended)</option>
-                                        <option value="West">West</option>
-                                        <option value="East">East</option>
-                                        <option value="North">North</option>
-                                    </select>
-                                </div>
+                                <!-- TAB 2: BOUNDARIES & OBSTACLES -->
+                                <div class="tab-pane fade" id="tabObstacles" role="tabpanel">
+                                    <div class="help-box">
+                                        <i class="fas fa-info-circle me-1"></i> Use the top toolbar tools:<br>
+                                        1. <i class="fas fa-draw-polygon text-primary"></i> <strong>Roof Boundary</strong>: Click to place corners, click the first point to close. Drag corners to edit. Right-click corner to delete.<br>
+                                        2. <i class="fas fa-ban text-danger"></i> <strong>Obstacle</strong>: Click and drag on canvas to place rectangular exclusion zones (chimneys, AC units).
+                                    </div>
 
-                                <div class="row g-2 mb-3">
-                                    <div class="col-6">
-                                        <div class="d-flex justify-content-between">
-                                            <label for="panelScale" class="form-label text-white-50 small">Scale</label>
-                                            <span class="text-muted small" id="scaleVal">1.0</span>
+                                    <!-- Calibrate Scale helper -->
+                                    <div class="control-group">
+                                        <span class="control-label text-warning"><i class="fas fa-ruler-combined me-1"></i>Real-World Calibration</span>
+                                        <button class="btn btn-warning btn-sm text-dark font-weight-bold w-100 mb-2" onclick="setCanvasTool('calibrate')"><i class="fas fa-ruler me-1"></i> Draw Calibration Line</button>
+                                        <div id="calibrationValueContainer" style="display: none;">
+                                            <label class="text-white-50 small mb-1">Calibrate distance of line (meters)</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-input-dark" id="calibrationDistance" value="10.0" step="0.5">
+                                                <button class="btn btn-primary btn-sm" onclick="applyScaleCalibration()">Apply</button>
+                                            </div>
                                         </div>
-                                        <input type="range" class="form-range control-slider" id="panelScale" min="0.2" max="5.0" step="0.05" value="1.0" oninput="updateSliders()">
                                     </div>
-                                    <div class="col-6">
-                                        <div class="d-flex justify-content-between">
-                                            <label for="panelRotate" class="form-label text-white-50 small">Rotate</label>
-                                            <span class="text-muted small" id="rotateVal">0°</span>
-                                        </div>
-                                        <input type="range" class="form-range control-slider" id="panelRotate" min="-180" max="180" step="1" value="0" oninput="updateSliders()">
-                                    </div>
-                                </div>
 
-                                <div class="row g-2 mb-3">
-                                    <div class="col-6">
-                                        <div class="d-flex justify-content-between">
-                                            <label for="panelTilt" class="form-label text-white-50 small">Tilt</label>
-                                            <span class="text-muted small" id="tiltVal">0°</span>
+                                    <!-- Boundary and obstacles manager -->
+                                    <div class="control-group">
+                                        <span class="control-label">Boundary Safety Walkway</span>
+                                        <div class="input-group">
+                                            <input type="number" class="form-input-dark" id="boundaryWalkway" value="0.5" min="0" max="5" step="0.1" onchange="onParametersChanged()">
+                                            <span class="input-group-text bg-dark border-secondary text-white-50 small">meters</span>
                                         </div>
-                                        <input type="range" class="form-range control-slider" id="panelTilt" min="-45" max="45" step="1" value="0" oninput="updateSliders()">
                                     </div>
-                                    <div class="col-6">
-                                        <div class="d-flex justify-content-between">
-                                            <label for="structureHeight" class="form-label text-white-50 small">Leg Height</label>
-                                            <span class="text-muted small" id="heightVal">1.2m</span>
-                                        </div>
-                                        <input type="range" class="form-range control-slider" id="structureHeight" min="0.5" max="3.0" step="0.1" value="1.2" oninput="updateSliders()">
+
+                                    <div class="control-group">
+                                        <span class="control-label">Exclusion Zones (Obstacles)</span>
+                                        <div id="obstacleList" class="small text-muted py-2">No exclusion zones defined. Draw zones to avoid chimneys, skylights, etc.</div>
                                     </div>
                                 </div>
 
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="showStructure" checked onchange="toggleStructure()">
-                                    <label class="form-check-label text-white-50 small" for="showStructure">Show Dimension Labels</label>
+                                <!-- TAB 3: LAYERS & NORTH COMPASS -->
+                                <div class="tab-pane fade" id="tabLayers" role="tabpanel">
+                                    <div class="help-box">
+                                        <i class="fas fa-info-circle me-1"></i> Toggle the visibility of different workspace layers. Use the compass dial rotation to align the roof facing direction.
+                                    </div>
+
+                                    <div class="control-group">
+                                        <span class="control-label">Layer Controls</span>
+                                        <div class="layer-toggle-item">
+                                            <span class="small"><i class="fas fa-image text-muted me-2"></i>Roof Image</span>
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input form-check-input-dark" type="checkbox" id="layerImage" checked onchange="toggleLayer('image')">
+                                            </div>
+                                        </div>
+                                        <div class="layer-toggle-item">
+                                            <span class="small"><i class="fas fa-draw-polygon text-primary me-2"></i>Roof Boundary</span>
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input form-check-input-dark" type="checkbox" id="layerBoundary" checked onchange="toggleLayer('boundary')">
+                                            </div>
+                                        </div>
+                                        <div class="layer-toggle-item">
+                                            <span class="small"><i class="fas fa-solar-panel text-info me-2"></i>Solar Panels</span>
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input form-check-input-dark" type="checkbox" id="layerPanels" checked onchange="toggleLayer('panels')">
+                                            </div>
+                                        </div>
+                                        <div class="layer-toggle-item">
+                                            <span class="small"><i class="fas fa-cubes text-secondary me-2"></i>Mounting Structure</span>
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input form-check-input-dark" type="checkbox" id="layerStructure" checked onchange="toggleLayer('structure')">
+                                            </div>
+                                        </div>
+                                        <div class="layer-toggle-item">
+                                            <span class="small"><i class="fas fa-exclamation-triangle text-danger me-2"></i>Exclusion Zones</span>
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input form-check-input-dark" type="checkbox" id="layerObstacles" checked onchange="toggleLayer('obstacles')">
+                                            </div>
+                                        </div>
+                                        <div class="layer-toggle-item">
+                                            <span class="small"><i class="fas fa-ruler-horizontal text-success me-2"></i>Dimensions & Labels</span>
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input form-check-input-dark" type="checkbox" id="layerLabels" checked onchange="toggleLayer('labels')">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- North Direction Rotation Slider -->
+                                    <div class="control-group">
+                                        <div class="d-flex justify-content-between control-label">
+                                            <span>North Orientation</span>
+                                            <span class="text-warning fw-bold" id="compassAngleVal">0°</span>
+                                        </div>
+                                        <input type="range" class="form-range control-slider" id="inputNorthAngle" min="0" max="360" step="5" value="0" oninput="onNorthAngleSliderInput()">
+                                        <div class="row g-2 mt-2">
+                                            <div class="col-6">
+                                                <label class="text-white-50 small mb-1">Preset Facing</label>
+                                                <select class="form-select-dark" id="inputCompassFacing" onchange="onCompassPresetFacingChanged()">
+                                                    <option value="South" selected>South (Facing North)</option>
+                                                    <option value="North">North (Facing South)</option>
+                                                    <option value="East">East (Facing West)</option>
+                                                    <option value="West">West (Facing East)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- TAB 4: BILL OF MATERIALS (BOM) -->
+                                <div class="tab-pane fade" id="tabBOM" role="tabpanel">
+                                    <div class="help-box">
+                                        <i class="fas fa-info-circle me-1"></i> Auto-generated Bill of Materials calculated in real-time based on mounting standards and layout spacing.
+                                    </div>
+
+                                    <div class="control-group">
+                                        <span class="control-label">Mounting Template</span>
+                                        <select class="form-select-dark mb-2" id="inputMountType" onchange="onParametersChanged()">
+                                            <option value="RCC-Ballast" selected>RCC Ballast / Concrete Blocks</option>
+                                            <option value="RCC-Elevated">RCC Elevated / Raised Columns</option>
+                                            <option value="Metal-Shed">Metal Roof Rails (Trapezoidal)</option>
+                                            <option value="Tile-Hook">Tile Roof Hook Mounts</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="control-group">
+                                        <span class="control-label text-success"><i class="fas fa-clipboard-list me-1"></i>Material Estimates</span>
+                                        <div class="table-responsive">
+                                            <table class="bom-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Material Item</th>
+                                                        <th>Qty</th>
+                                                        <th>Unit</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="bomTableBody">
+                                                    <tr>
+                                                        <td>Solar PV Modules (550Wp)</td>
+                                                        <td class="fw-bold" id="bomPlPlaced">0</td>
+                                                        <td>Nos</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Aluminum Mounting Rails</td>
+                                                        <td class="fw-bold" id="bomRails">0</td>
+                                                        <td>mtrs</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>End Clamps (Aluminum)</td>
+                                                        <td class="fw-bold" id="bomEndClamps">0</td>
+                                                        <td>Nos</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Mid Clamps (Aluminum)</td>
+                                                        <td class="fw-bold" id="bomMidClamps">0</td>
+                                                        <td>Nos</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Structural Leg Assemblies</td>
+                                                        <td class="fw-bold" id="bomLegSets">0</td>
+                                                        <td>sets</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>Concrete Ballasts (RCC)</td>
+                                                        <td class="fw-bold" id="bomConcreteBlocks">0</td>
+                                                        <td>Nos</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-
-                            <!-- 2. Estimated Capacity Selector Cards -->
-                            <div class="card glass-card p-3 shadow-sm" id="selectorCard" style="display: none;">
-                                <h6 class="fw-bold mb-3 text-uppercase text-white-50 small"><i class="fas fa-tachometer-alt me-2 text-success"></i>System Capacity Selector</h6>
-                                <div class="row g-2">
-                                    <div class="col-4">
-                                        <div class="capacity-option-card" id="opt3kW" onclick="selectCapacityOption(3)">
-                                            <span class="fw-bold d-block text-white" style="font-size: 0.95rem;">3 kW</span>
-                                            <span class="text-white-50 d-block" style="font-size: 0.7rem;">6 Panels</span>
-                                            <span class="text-info d-block fw-bold mt-1" style="font-size: 0.65rem;">~12-15 kWh/d</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-4">
-                                        <div class="capacity-option-card active recommended" id="opt5kW" onclick="selectCapacityOption(5)">
-                                            <span class="badge-recommended d-inline-block mb-1">Rec.</span>
-                                            <span class="fw-bold d-block text-white" style="font-size: 0.95rem;">5 kW</span>
-                                            <span class="text-white-50 d-block" style="font-size: 0.7rem;">10 Panels</span>
-                                            <span class="text-warning d-block fw-bold mt-1" style="font-size: 0.65rem;">~20-25 kWh/d</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-4">
-                                        <div class="capacity-option-card" id="opt7kW" onclick="selectCapacityOption(7.5)">
-                                            <span class="fw-bold d-block text-white" style="font-size: 0.95rem;">7.5 kW</span>
-                                            <span class="text-white-50 d-block" style="font-size: 0.7rem;">14 Panels</span>
-                                            <span class="text-info d-block fw-bold mt-1" style="font-size: 0.65rem;">~30-35 kWh/d</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 3. System Overview Glass Card -->
-                            <div class="card system-overview-card p-3 shadow-sm" id="overviewCard" style="display: none;">
-                                <h6 class="fw-bold mb-3 text-uppercase text-white-50 small"><i class="fas fa-chart-pie me-2 text-primary"></i>System Overview</h6>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-white-50 small"><i class="fas fa-solar-panel me-1 text-info"></i>Recommended Size</span>
-                                    <span class="fw-bold text-white" id="viewCapacity">5.5 kW</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-white-50 small"><i class="fas fa-bolt me-1 text-warning"></i>Daily Generation</span>
-                                    <span class="fw-bold text-warning" id="viewDaily">~20-25 kWh</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-white-50 small"><i class="fas fa-calendar-alt me-1 text-success"></i>Monthly Generation</span>
-                                    <span class="fw-bold text-success" id="viewMonthly">~600-750 kWh</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span class="text-white-50 small"><i class="fas fa-home me-1 text-white-50"></i>Suitable For</span>
-                                    <span class="fw-semibold text-white" id="viewSuitable">Homes, Small Offices</span>
-                                </div>
-                            </div>
-
-                            <!-- 4. Solar Installation Summary Card -->
-                            <div class="card glass-card p-3 shadow-sm" id="summaryCard" style="display: none;">
-                                <h6 class="fw-bold mb-3 text-uppercase text-white-50 small"><i class="fas fa-info-circle me-2 text-info"></i>Installation Details</h6>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-white-50 small">Solar Style</span>
-                                    <span class="fw-semibold" id="viewStyle">Tilted Fixed Mount</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-white-50 small">Panel Placement</span>
-                                    <span class="fw-semibold" id="viewPlacement">South Facing</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-white-50 small">Tilt Angle</span>
-                                    <span class="fw-semibold text-warning" id="viewTilt">18° (Optimum)</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-white-50 small">Structure Height</span>
-                                    <span class="fw-semibold text-white" id="viewHeight">1.2 m (Front) / 2.1 m (Back)</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-white-50 small">No. of Panels</span>
-                                    <span class="fw-semibold text-info" id="viewPanels">10 Panels</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span class="text-white-50 small">Panel Capacity</span>
-                                    <span class="fw-semibold">550 Wp Each</span>
-                                </div>
-                            </div>
-
-                            <!-- 5. Shadow Analysis Card -->
-                            <div class="card glass-card p-3 shadow-sm" id="shadowCard" style="display: none;">
-                                <h6 class="fw-bold mb-2 text-uppercase text-white-50 small"><i class="fas fa-cloud-sun me-2 text-warning"></i>Shadow Analysis</h6>
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <div>
-                                        <span class="badge bg-success bg-opacity-25 text-success mb-1"><i class="fas fa-check me-1"></i>No Significant Shadow</span>
-                                        <p class="text-white-50 mb-0" style="font-size: 0.75rem;">Ideal solar radiation throughout day.</p>
-                                    </div>
-                                    <!-- Sun Path Arc -->
-                                    <svg width="80" height="40" viewBox="0 0 80 40">
-                                        <path d="M 10,35 A 30,30 0 0,1 70,35" fill="none" stroke="rgba(255,255,255,0.2)" stroke-dasharray="3,3" stroke-width="2"/>
-                                        <circle cx="40" cy="10" r="4" fill="#ffb300"/>
-                                        <path d="M 40,10 L 40,35" fill="none" stroke="rgba(255,179,0,0.3)" stroke-width="1"/>
-                                        <text x="10" y="38" fill="rgba(255,255,255,0.5)" font-size="8" text-anchor="middle">E</text>
-                                        <text x="70" y="38" fill="rgba(255,255,255,0.5)" font-size="8" text-anchor="middle">W</text>
-                                    </svg>
-                                </div>
-                            </div>
-                            
                         </div>
                     </div>
                 </div>
             </main>
-
         </div>
     </div>
 
+    <!-- Hidden standard modals -->
     <div th:replace="~{fragments/commonUI :: loader}"></div>
     <div th:replace="~{fragments/commonUI :: toaster}"></div>
     <div th:replace="~{fragments/commonUI :: confirmModal}"></div>
     <div th:replace="~{fragments/commonJquery :: commonJquery}"></div>
 
+    <!-- Designer Script -->
     <script th:src="@{/js/roofDesigner.js}"></script>
 </body>
 

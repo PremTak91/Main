@@ -1,6 +1,6 @@
 package com.web.nrs.controller;
 
-import com.web.nrs.dto.RoofDesignDto;
+import com.web.nrs.DTO.RoofDesignDto;
 import com.web.nrs.utils.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
