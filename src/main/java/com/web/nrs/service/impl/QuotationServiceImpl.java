@@ -623,11 +623,14 @@ public class QuotationServiceImpl implements QuotationService {
         float chipH = 26;
         // If multiple brands, begin rendering higher to keep beautifully centered
         float currentY = wy + ((brands.length - 1) * (chipH + 8)) / 2f;
-        float chipW = 200;
-        float chipX = rCenter - chipW / 2;
         
         for (int i = 0; i < brands.length; i++) {
             String bName = brands[i].trim().toUpperCase();
+            
+            float nameWidth = new Chunk(bName, new Font(Font.HELVETICA, 10, Font.BOLD)).getWidthPoint();
+            float chipW = Math.max(200f, nameWidth + 80f);
+            float chipX = rCenter - chipW / 2;
+            
             Color bColor = brandColors[i % brandColors.length];
             
             if (bName.contains("WAAR") || bName.contains("WAR")) bColor = brandColors[0];
@@ -906,7 +909,7 @@ public class QuotationServiceImpl implements QuotationService {
         if (q.getDiscountAmount() > 0) {
             pCards.add(new String[]{"SPECIAL DISCOUNT", "Rs." + formatAmt(q.getDiscountAmount()), "Exclusive Offer Applied", "2"});
         }
-        pCards.add(new String[]{"YOUR FINAL PAYABLE", "Rs." + formatAmt(isResidential ? q.getEffectivePrice() : q.getActualPrice()), "After all deductions", "3"});
+        pCards.add(new String[]{"YOUR ACTUAL COST", "Rs." + formatAmt(isResidential ? q.getEffectivePrice() : q.getActualPrice()), "After all deductions", "3"});
 
         float pcW = (PW - 60 - 20) / 3f, pcH = 85, pcTopY = PH - 125;
         float row2Y = pcTopY - pcH - 12;
