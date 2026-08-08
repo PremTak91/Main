@@ -1,11 +1,17 @@
 /**
  * panelPlacement.js
  * Intelligent Panel Placement Engine for Solar Rooftop Designer
- * Automatically calculates optimal solar panel layouts inside a detected roof polygon.
+ * 
+ * This module now delegates to SolarGeometryEngine for all physical calculations.
+ * It maintains backward compatibility with the existing API.
  */
 
+// Import the new geometry engine (available globally via solarGeometry.js)
+// SolarGeometryEngine is already declared in the global scope by solarGeometry.js
+// WorldPoint2D is already declared in the global scope by solarGeometry.js
+
 /**
- * Main placement function
+ * Main placement function - backward compatible API
  * @param {Object} config Placement configuration
  * @returns {Object} Placement results including array of panel items
  */
@@ -22,173 +28,113 @@ function autoPlacePanels(config) {
         tiltAngle = 15,
         rowSpacing = 'auto',
         walkwayMargin = 0.5,
-        panelDirection = 'South'
+        panelDirection = 'South',
+        structureHeight = 0.3,
+        azimuthDeg = 0,
+        footprint = null
     } = config;
 
-    // Step 1: Calculate Panel Count
-    const totalModulesNeeded = Math.ceil((capacityKw * 1000) / panelWatt);
-    const panelLM = panelLengthMm / 1000;
-    const panelWM = panelWidthMm / 1000;
-    
-    let panelW, panelH;
-    if (orientation === 'landscape') {
-        panelW = panelLM;
-        panelH = panelWM;
-    } else {
-        panelW = panelWM;
-        panelH = panelLM;
-    }
-    
-    const panelGapW = 0.02; // 20mm gap between adjacent panels
+    // Convert roof polygon to WorldPoint2D array
+    const roofBoundary = roofPolygon ? roofPolygon.map(p => new WorldPoint2D(
+        p.x / scalePixelsPerMeter,
+        p.y / scalePixelsPerMeter
+    )) : null;
 
-    // Step 2: Calculate Row Spacing
-    let actualRowSpacing;
-    if (rowSpacing === 'auto') {
-        actualRowSpacing = calculateAutoRowSpacing(panelH, tiltAngle, 20);
-    } else {
-        actualRowSpacing = parseFloat(rowSpacing);
-        const minSpacing = panelH * Math.cos(tiltAngle * Math.PI / 180);
-        if (actualRowSpacing < minSpacing) {
-            actualRowSpacing = minSpacing;
-        }
+    // Convert obstacles
+    const obstaclePolygons = obstacles.map(obs => 
+        obs.polygon.map(p => new WorldPoint2D(
+            p.x / scalePixelsPerMeter,
+            p.y / scalePixelsPerMeter
+        ))
+    );
+
+    // Convert footprint if provided
+    let footprintObj = null;
+    if (footprint && footprint.center && footprint.width > 0 && footprint.height > 0) {
+        footprintObj = {
+            center: new WorldPoint2D(footprint.center.x, footprint.center.y),
+            width: footprint.width,
+            height: footprint.height,
+            angle: footprint.angle || 0
+        };
     }
 
-    // Step 3: Get Usable Roof Area (in meters)
-    // Convert roof to meters
-    const roofMeters = roofPolygon.map(p => ({
-        x: p.x / scalePixelsPerMeter,
-        y: p.y / scalePixelsPerMeter
-    }));
-
-    // Buffer inward for walkway
-    const usableRoofMeters = bufferPolygon(roofMeters, -walkwayMargin, 1);
-    
-    // Prepare obstacles in meters and buffer them
-    const obsPolygonsMeters = obstacles.map(obs => {
-        const obsM = obs.polygon.map(p => ({
-            x: p.x / scalePixelsPerMeter,
-            y: p.y / scalePixelsPerMeter
-        }));
-        // 0.3m clearance around obstacles
-        return bufferPolygon(obsM, 0.3, 1);
+    // Use the new geometry engine
+    const engine = new SolarGeometryEngine();
+    const geometry = engine.calculateArrayGeometry({
+        capacityKw,
+        panelWattage: panelWatt,
+        panelLengthMm,
+        panelWidthMm,
+        orientation,
+        tiltAngleDeg: tiltAngle,
+        azimuthDeg,
+        structureHeightM: structureHeight,
+        panelGapMm: 20,
+        rowGapMm: rowSpacing === 'auto' ? null : parseFloat(rowSpacing) * 1000,
+        roofBoundary,
+        footprint: footprintObj,
+        maxPanels: null
     });
 
-    // We don't necessarily need to perform complex boolean operations here, 
-    // we can use point-in-polygon and obstacle overlap checks during grid placement.
-    // But we will use subtractPolygons logic for area calculation.
-    const usableAreaPolys = subtractPolygons([usableRoofMeters], obsPolygonsMeters);
-    let maxPoly = usableAreaPolys[0];
-    let maxArea = 0;
-    for (const poly of usableAreaPolys) {
-        const area = calculatePolygonArea(poly);
-        if (area > maxArea) {
-            maxArea = area;
-            maxPoly = poly;
-        }
-    }
-    
-    if (!maxPoly || maxPoly.length < 3) {
-        return createEmptyResult();
-    }
+    // Convert back to legacy format for backward compatibility
+    const items = geometry.panels.map((panel, index) => ({
+        row: panel.row,
+        col: panel.col,
+        worldX: panel.corners[0].x,
+        worldY: panel.corners[0].y,
+        worldW: panel.width,
+        worldH: panel.length,
+        corners: panel.corners.map(c => ({ x: c.x, y: c.y, z: c.z })),
+        centerPixel: {
+            x: panel.center.x * scalePixelsPerMeter,
+            y: panel.center.y * scalePixelsPerMeter
+        },
+        valid: panel.valid
+    }));
 
-    // Step 4 & 5: Determine Grid Orientation & Dimensions
-    const obr = getOrientedBoundingRect(maxPoly);
-    const gridWidth = obr.width;
-    const gridHeight = obr.height;
-    
-    // Determine how many columns and rows we can fit in the bounding box
-    const maxCols = Math.floor(gridWidth / (panelW + panelGapW));
-    let rows = Math.ceil(totalModulesNeeded / maxCols);
-    
-    // Ensure it fits vertically
-    const maxRows = Math.floor(gridHeight / (panelH + actualRowSpacing));
-    if (rows > maxRows) {
-        rows = maxRows;
-    }
-    const cols = Math.ceil(totalModulesNeeded / rows);
+    // Convert footprint back to legacy format
+    const legacyFootprint = geometry.footprint.length > 0 ? {
+        center: { x: geometry.center.x, y: geometry.center.y },
+        width: geometry.totalWidth,
+        height: geometry.totalDepth,
+        angle: geometry.orientation
+    } : { center: { x: 0, y: 0 }, width: 0, height: 0, angle: 0 };
 
-    // Grid angle
-    const angleRad = obr.angle;
-    const cosA = Math.cos(angleRad);
-    const sinA = Math.sin(angleRad);
-
-    // Step 6: Place Panels
-    let placedPanels = [];
-    let modulesPlaced = 0;
-    
-    // Start from top-left of the oriented bounding box
-    // Centering the grid inside the bounding box
-    const totalGridW = cols * (panelW + panelGapW) - panelGapW;
-    const totalGridH = rows * (panelH + actualRowSpacing) - actualRowSpacing;
-    
-    const startOffsetX = -obr.width / 2 + (obr.width - totalGridW) / 2 + panelW / 2;
-    const startOffsetY = -obr.height / 2 + (obr.height - totalGridH) / 2 + panelH / 2;
-
-    for (let r = 0; r < rows; r++) {
-        let rowPanels = [];
-        for (let c = 0; c < cols; c++) {
-            if (modulesPlaced >= totalModulesNeeded) break;
-
-            // Local coordinates relative to OBR center, aligned with OBR axes
-            const localX = startOffsetX + c * (panelW + panelGapW);
-            const localY = startOffsetY + r * (panelH + actualRowSpacing);
-
-            // Rotate back to world coordinates
-            const worldX = obr.center.x + localX * cosA - localY * sinA;
-            const worldY = obr.center.y + localX * sinA + localY * cosA;
-
-            const centerPoint = { x: worldX, y: worldY };
-
-            // Validity checks
-            let valid = isPointInPolygon(centerPoint, maxPoly);
-            
-            if (valid) {
-                // Check obstacle collisions
-                for (const obs of obsPolygonsMeters) {
-                    if (isPointInPolygon(centerPoint, obs)) {
-                        valid = false;
-                        break;
-                    }
-                }
-            }
-
-            const item = {
-                row: r,
-                col: c,
-                worldX,
-                worldY,
-                worldW: panelW,
-                worldH: panelH,
-                centerPixel: {
-                    x: worldX * scalePixelsPerMeter,
-                    y: worldY * scalePixelsPerMeter
-                },
-                valid
-            };
-            
-            rowPanels.push(item);
-            if (valid) modulesPlaced++;
-        }
-        placedPanels.push(rowPanels);
-    }
-
-    // Flatten panels
-    const items = placedPanels.flat();
-    
-    const usableAreaM2 = calculatePolygonArea(maxPoly);
-    const panelAreaM2 = (panelW * panelH) * modulesPlaced;
-    const actualCapacityKw = (modulesPlaced * panelWatt) / 1000;
+    // Convert roof footprint polygon
+    const legacyRoofFootprintPolygon = geometry.footprint.map(p => ({
+        x: p.x * scalePixelsPerMeter,
+        y: p.y * scalePixelsPerMeter
+    }));
 
     return {
         items,
-        rows,
-        cols,
-        totalModules: modulesPlaced,
-        actualCapacityKw,
-        usableAreaM2,
-        panelAreaM2,
-        coveragePercent: usableAreaM2 > 0 ? (panelAreaM2 / usableAreaM2) * 100 : 0,
-        rowSpacingM: actualRowSpacing
+        rows: Math.max(...geometry.panels.map(p => p.row), 0) + 1,
+        cols: Math.max(...geometry.panels.map(p => p.col), 0) + 1,
+        totalModules: geometry.panelCount,
+        requiredModules: Math.ceil((capacityKw * 1000) / panelWatt),
+        actualCapacityKw: geometry.capacityKw,
+        usableAreaM2: roofBoundary ? calculatePolygonArea(roofBoundary) : 0,
+        panelAreaM2: geometry.panels.reduce((sum, p) => sum + (p.width * p.length), 0),
+        coveragePercent: 0, // Will be calculated by caller if needed
+        rowSpacingM: geometry.panels.length > 0 ? 
+            (geometry.panels[0].corners[3].y - geometry.panels[0].corners[0].y) : 0,
+        footprint: legacyFootprint,
+        roofFootprintPolygon: legacyRoofFootprintPolygon,
+        insufficientSpace: geometry.insufficientSpace,
+        solarPlane: {
+            tiltAngle: geometry.tilt * 180 / Math.PI,
+            azimuthDeg: geometry.orientation * 180 / Math.PI,
+            lowSideHeight: geometry.panels.length > 0 ? geometry.panels[0].corners[0].z : structureHeight,
+            highSideHeight: geometry.panels.length > 0 ? geometry.panels[0].corners[2].z : structureHeight,
+            panelYProjected: geometry.panels.length > 0 ? 
+                geometry.panels[0].corners[3].distanceTo(geometry.panels[0].corners[0]) : 0,
+            panelZRise: geometry.panels.length > 0 ? 
+                geometry.panels[0].corners[2].z - geometry.panels[0].corners[0].z : 0
+        },
+        // New: expose full geometry for advanced features
+        _geometry: geometry,
+        _engine: engine
     };
 }
 
@@ -198,11 +144,16 @@ function createEmptyResult() {
         rows: 0,
         cols: 0,
         totalModules: 0,
+        requiredModules: 0,
         actualCapacityKw: 0,
         usableAreaM2: 0,
         panelAreaM2: 0,
         coveragePercent: 0,
-        rowSpacingM: 0
+        rowSpacingM: 0,
+        footprint: { center: { x: 0, y: 0 }, width: 0, height: 0, angle: 0 },
+        roofFootprintPolygon: [],
+        insufficientSpace: false,
+        solarPlane: { tiltAngle: 0, azimuthDeg: 0, lowSideHeight: 0, highSideHeight: 0, panelYProjected: 0, panelZRise: 0 }
     };
 }
 
@@ -398,4 +349,19 @@ function calculatePolygonArea(polygon) {
         area += (polygon[j].x + polygon[i].x) * (polygon[j].y - polygon[i].y);
     }
     return Math.abs(area / 2.0);
+}
+
+// Export for module systems
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        autoPlacePanels,
+        getUsableRoofArea,
+        isPointInPolygon,
+        getOrientedBoundingRect,
+        bufferPolygon,
+        subtractPolygons,
+        snapToGrid,
+        calculateAutoRowSpacing,
+        calculatePolygonArea
+    };
 }

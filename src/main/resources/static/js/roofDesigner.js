@@ -113,6 +113,14 @@ $(document).ready(function () {
     });
     resizeObserver.observe(document.getElementById('canvasWorkspaceWrapper'));
 
+    // Handle fullscreen transitions
+    document.addEventListener('fullscreenchange', () => {
+        // Wait a tick for ResizeObserver to update stage width/height
+        setTimeout(() => {
+            if (state.image.src) zoomFit();
+        }, 100);
+    });
+
     // Prevent right click menu on workspace so we can delete points easily
     document.getElementById('designerCanvasContainer').addEventListener('contextmenu', e => e.preventDefault());
 
@@ -200,7 +208,10 @@ function initKonva() {
         updateZoomPercentage();
     });
 
-    // Setup stage panning
+    let isDrawing = false;
+    let tempShape = null;
+    let drawStart = null;
+
     stage.on('mousedown', (e) => {
         const isBgClick = e.target === stage || e.target.hasName('bgImage');
         const isMiddleBtn = e.evt && (e.evt.button === 1 || e.evt.button === 4);
@@ -221,11 +232,101 @@ function initKonva() {
                 recalculatePanelsLayout();
                 renderKonvaWorkspace();
             }
+        } else if (state.tool === 'obstacle' || state.tool === 'calibrate') {
+            isDrawing = true;
+            const pos = stage.getPointerPosition();
+            const oldScale = stage.scaleX();
+            drawStart = {
+                x: (pos.x - stage.x()) / oldScale,
+                y: (pos.y - stage.y()) / oldScale
+            };
+            
+            if (state.tool === 'obstacle') {
+                tempShape = new Konva.Rect({
+                    x: drawStart.x, y: drawStart.y,
+                    width: 0, height: 0,
+                    fill: 'rgba(255, 0, 0, 0.3)',
+                    stroke: 'red', strokeWidth: 2 / oldScale
+                });
+                obstaclesLayer.add(tempShape);
+            } else if (state.tool === 'calibrate') {
+                tempShape = new Konva.Line({
+                    points: [drawStart.x, drawStart.y, drawStart.x, drawStart.y],
+                    stroke: 'yellow', strokeWidth: 3 / oldScale, dash: [5, 5]
+                });
+                uiLayer.add(tempShape);
+            }
         }
     });
 
     stage.on('mousemove', () => {
         updateCursorCoordinates();
+        if (!isDrawing || !tempShape || !drawStart) return;
+        
+        const pos = stage.getPointerPosition();
+        const oldScale = stage.scaleX();
+        const currX = (pos.x - stage.x()) / oldScale;
+        const currY = (pos.y - stage.y()) / oldScale;
+        
+        if (state.tool === 'obstacle') {
+            tempShape.width(currX - drawStart.x);
+            tempShape.height(currY - drawStart.y);
+            obstaclesLayer.batchDraw();
+        } else if (state.tool === 'calibrate') {
+            tempShape.points([drawStart.x, drawStart.y, currX, currY]);
+            uiLayer.batchDraw();
+        }
+    });
+
+    stage.on('mouseup', () => {
+        if (!isDrawing) return;
+        isDrawing = false;
+        
+        if (state.tool === 'obstacle' && tempShape) {
+            const w = tempShape.width();
+            const h = tempShape.height();
+            if (Math.abs(w) > 5 && Math.abs(h) > 5) {
+                const type = $('#obstacleTypeSelector').val() || 'custom';
+                const x = w < 0 ? drawStart.x + w : drawStart.x;
+                const y = h < 0 ? drawStart.y + h : drawStart.y;
+                const aw = Math.abs(w);
+                const ah = Math.abs(h);
+                
+                state.obstacles.push({
+                    id: Date.now(),
+                    type: type,
+                    label: type.toUpperCase(),
+                    polygon: [
+                        {x: x, y: y},
+                        {x: x+aw, y: y},
+                        {x: x+aw, y: y+ah},
+                        {x: x, y: y+ah}
+                    ]
+                });
+                saveHistory();
+                recalculatePanelsLayout();
+                setCanvasTool('select');
+            } else {
+                tempShape.destroy();
+            }
+        } else if (state.tool === 'calibrate' && tempShape) {
+            const pts = tempShape.points();
+            const dx = pts[2] - pts[0];
+            const dy = pts[3] - pts[1];
+            const pixelDist = Math.sqrt(dx*dx + dy*dy);
+            
+            if (pixelDist > 10) {
+                window.lastCalibrationPixels = pixelDist;
+                $('#calibrationValueContainer').show();
+            } else {
+                tempShape.destroy();
+            }
+            setCanvasTool('select');
+        }
+        
+        tempShape = null;
+        drawStart = null;
+        renderKonvaWorkspace();
     });
 
     solarArrayGroup = new Konva.Group({
@@ -279,25 +380,42 @@ function initKonva() {
         anchorSize: 10,
         keepRatio: false,
         rotateAnchorOffset: 25,
-        enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top-center', 'bottom-center', 'left-middle', 'right-middle']
+        enabledAnchors: ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'top-center', 'bottom-center', 'middle-left', 'middle-right']
     });
     uiLayer.add(transformer);
 
     solarArrayGroup.on('dragmove', () => {
         if (state.boundary.length < 3) return;
+        if (!state.panels.footprint || !state.panels.footprint.center) return;
 
-        const p0 = state.boundary[0];
-        const p1 = state.boundary[1] || p0;
-        const p3 = state.boundary[state.boundary.length-1] || p0;
-        const quadW = Math.max(10, getDistance(p0, p1));
-        const quadH = Math.max(10, getDistance(p0, p3));
+        // To handle non-linear perspective, we must evaluate the drag delta at the array's current screen position.
+        // 1. Get current screen position of the footprint center
+        const centerScreen = state.perspective.engine.projectToScreen(
+            state.panels.footprint.center.x, 
+            state.panels.footprint.center.y, 
+            0
+        );
+        
+        // 2. Add the drag pixel delta to the screen position
+        const newCenterScreen = {
+            x: centerScreen.x + solarArrayGroup.x(),
+            y: centerScreen.y + solarArrayGroup.y()
+        };
+        
+        // 3. Convert the new screen position back to true physical meters
+        const newCenterWorld = state.perspective.engine.screenToWorld(
+            newCenterScreen.x, 
+            newCenterScreen.y
+        );
 
-        const du = solarArrayGroup.x() / quadW;
-        const dv = solarArrayGroup.y() / quadH;
+        // Update footprint center in true physical coordinates
+        state.panels.footprint.center.x = newCenterWorld.x;
+        state.panels.footprint.center.y = newCenterWorld.y;
 
-        state.panels.offset.u = Math.max(-0.5, Math.min(1.5, (state.panels.offset.u || 0.5) + du));
-        state.panels.offset.v = Math.max(-0.5, Math.min(1.5, (state.panels.offset.v || 0.5) + dv));
+        // Boundary clamping: ensure all 4 footprint corners stay inside usable roof
+        clampFootprintToBoundary();
 
+        // Reset Konva group position (the geometry engine handles positioning)
         solarArrayGroup.position({ x: 0, y: 0 });
 
         recalculatePanelsLayout();
@@ -322,23 +440,32 @@ function initKonva() {
         if (e.type === 'transformend') {
             const sX = solarArrayGroup.scaleX();
             const sY = solarArrayGroup.scaleY();
-            if (sX !== 1 || sY !== 1) {
-                const newCols = Math.max(1, Math.round((state.panels.cols || 3) * sX));
-                const newRows = Math.max(1, Math.round((state.panels.rows || 2) * sY));
+            if ((sX !== 1 || sY !== 1) && state.panels.footprint) {
+                // Convert visual scale to physical footprint dimension change
+                state.panels.footprint.width = Math.max(0.5, state.panels.footprint.width * sX);
+                state.panels.footprint.height = Math.max(0.5, state.panels.footprint.height * sY);
 
-                if (newCols !== state.panels.cols || newRows !== state.panels.rows) {
-                    state.panels.cols = newCols;
-                    state.panels.rows = newRows;
-                    $('#inputCols').val(newCols);
-                    $('#inputRows').val(newRows);
+                // Boundary clamping
+                clampFootprintToBoundary();
 
-                    state.panels.capacityKw = (newCols * newRows * state.panels.watt) / 1000;
-                    $('#inputCapacity').val(state.panels.capacityKw.toFixed(2));
-                }
+                // Reset visual scale — geometry engine handles physical dimensions
                 solarArrayGroup.scale({ x: 1, y: 1 });
-                
+
+                // IMPORTANT: Do NOT change capacity, panel count, rows, or cols here.
+                // The geometry engine will fit as many panels as possible within the
+                // new footprint, capped at totalModulesNeeded (from capacity).
+
                 recalculatePanelsLayout();
                 renderKonvaWorkspace();
+
+                // Show warning if insufficient space
+                if (state.panels._lastResult && state.panels._lastResult.insufficientSpace) {
+                    showToast(
+                        `Footprint cannot accommodate ${state.panels._lastResult.requiredModules} panels. ` +
+                        `Only ${state.panels._lastResult.totalModules} fit.`,
+                        'warning'
+                    );
+                }
             }
         }
         saveHistory();
@@ -541,6 +668,16 @@ function triggerRedetect() {
 }
 
 function updateDetectionUI(result) {
+    if (!result) {
+        let areaPx = getRoofArea();
+        let areaM2 = areaPx / (state.scalePixelsPerMeter * state.scalePixelsPerMeter);
+        result = {
+            area: areaM2,
+            confidence: 0.95,
+            orientation: state.panels.direction
+        };
+    }
+
     $('#detectedRoofArea').text((result.area || 0).toFixed(1) + ' m²');
     
     const conf = (result.confidence || 0);
@@ -579,9 +716,34 @@ function initPerspective() {
 // ── Panel Placement Engine ───────────────────────────────────────────────
 function triggerAutoPlace() {
     if (typeof autoPlacePanels === 'function') {
+        // Map compass direction to azimuth degrees
+        let azimuthDeg = 0;
+        const dir = state.panels.direction;
+        if (dir === 'West') azimuthDeg = 90;
+        else if (dir === 'North') azimuthDeg = 180;
+        else if (dir === 'East') azimuthDeg = 270;
+        // 'South' = 0
+
+        // Unwarp the screen boundary into true physical meters, then scale to 'pixels'
+        // so that panelPlacement.js (which divides by scalePixelsPerMeter) gets true meters.
+        const unwarpedBoundary = state.boundary.map(p => {
+            const m = state.perspective.engine.screenToWorld(p.x, p.y);
+            return { x: m.x * state.scalePixelsPerMeter, y: m.y * state.scalePixelsPerMeter };
+        });
+        
+        const unwarpedObstacles = state.obstacles.map(obs => {
+             return {
+                 ...obs,
+                 polygon: obs.polygon.map(p => {
+                     const m = state.perspective.engine.screenToWorld(p.x, p.y);
+                     return { x: m.x * state.scalePixelsPerMeter, y: m.y * state.scalePixelsPerMeter };
+                 })
+             };
+        });
+
         const config = {
-            roofPolygon: state.boundary,
-            obstacles: state.obstacles,
+            roofPolygon: unwarpedBoundary,
+            obstacles: unwarpedObstacles,
             scalePixelsPerMeter: state.scalePixelsPerMeter,
             capacityKw: state.panels.capacityKw,
             panelWatt: state.panels.watt,
@@ -593,33 +755,55 @@ function triggerAutoPlace() {
             rowSpacing: state.panels.autoSpacing ? 'auto' : state.panels.rowSpacing,
             walkwayMargin: state.boundaryWalkway,
             panelDirection: state.panels.direction,
+            azimuthDeg: azimuthDeg,
+            footprint: state.panels.footprint || null,
             perspectiveEngine: state.perspective.engine
         };
         const result = autoPlacePanels(config);
         state.panels.items = result.items || [];
         state.panels.rows = result.rows || 0;
         state.panels.cols = result.cols || 0;
-        
+        state.panels.footprint = result.footprint || null;
+        state.panels._lastResult = result;
+
         // Update stats metrics
         $('#statUsableArea').text((result.usableAreaM2 || 0).toFixed(1) + ' m²');
         $('#statCoverage').text((result.coveragePercent || 0).toFixed(1) + '%');
+
+        // Show insufficient space warning
+        if (result.insufficientSpace) {
+            showToast(
+                `Footprint cannot accommodate ${result.requiredModules} panels. Only ${result.totalModules} fit.`,
+                'warning'
+            );
+        }
     } else {
-        // Fallback for missing placement engine
         state.panels.items = [];
         state.panels.rows = 0;
         state.panels.cols = 0;
     }
-    
+
     $('#inputCols').val(state.panels.cols);
     $('#inputRows').val(state.panels.rows);
-    state.panels.capacityKw = (state.panels.cols * state.panels.rows * state.panels.watt) / 1000;
-    $('#inputCapacity').val(state.panels.capacityKw.toFixed(2));
-    
+    // Do NOT recalculate capacityKw here — it is the source of truth from the user input
+
     renderKonvaWorkspace();
 }
 
 function recalculatePanelsLayout() {
     triggerAutoPlace();
+    updateDetectionUI();
+}
+
+/**
+ * Clamps the footprint center so its bounding rectangle stays inside the usable roof boundary.
+ * Uses hard clamp approach — structure stops at the boundary edge.
+ */
+function clampFootprintToBoundary() {
+    // Intentionally removed clamping logic. 
+    // The user explicitly requested to be able to drag the solar array outside the boundary to other positions.
+    // The geometry engine will filter out panels that fall outside the boundary during placement, 
+    // but the footprint bounding box itself should remain freely movable.
 }
 
 // ── Rendering Engine ─────────────────────────────────────────────────────
@@ -865,6 +1049,12 @@ function renderKonvaWorkspace() {
         }
     }
 
+    if (state.tool === 'select' && state.panels.items && state.panels.items.length > 0) {
+        transformer.nodes([solarArrayGroup]);
+    } else {
+        transformer.nodes([]);
+    }
+
     updateLiveMetrics();
     stage.batchDraw();
 }
@@ -965,24 +1155,67 @@ function toggleLayer(layerName) {
         renderKonvaWorkspace();
     }
 }
-
 // ── Parameters changed triggers ──────────────────────────────────────────
+window.onPanelPresetChanged = function() {
+    const select = document.getElementById('inputPanelWatt');
+    const customWatt = document.getElementById('customPanelWatt');
+    const lengthInput = document.getElementById('inputPanelLength');
+    const widthInput = document.getElementById('inputPanelWidth');
+    
+    if (select.value === 'custom') {
+        customWatt.style.display = 'block';
+    } else {
+        customWatt.style.display = 'none';
+        customWatt.value = select.value;
+        
+        // Auto-update common dimensions based on wattage
+        if (select.value === '540' || select.value === '550') {
+            lengthInput.value = 2278;
+            widthInput.value = 1134;
+        } else if (select.value === '600') {
+            lengthInput.value = 2440;
+            widthInput.value = 1134;
+        }
+        
+        if (typeof onParametersChanged === 'function') {
+            onParametersChanged();
+        }
+    }
+};
 function onParametersChanged() {
-    state.panels.capacityKw = parseFloat($('#inputCapacity').val()) || 5.0;
-    state.panels.watt = parseInt($('#inputPanelWatt').val()) || 550;
+    const newCapacity = parseFloat($('#inputCapacity').val()) || 5.0;
+    const oldCapacity = state.panels.capacityKw;
+    state.panels.capacityKw = newCapacity;
+
+    const wattVal = $('#inputPanelWatt').val() === 'custom' ? $('#customPanelWatt').val() : $('#inputPanelWatt').val();
+    state.panels.watt = parseInt(wattVal) || 550;
     state.panels.length = parseInt($('#inputPanelLength').val()) || 2278;
     state.panels.width = parseInt($('#inputPanelWidth').val()) || 1134;
-    state.panels.orientation = $('#inputOrientation').val() || 'portrait';
+
+    const newOrientation = $('#inputOrientation').val() || 'portrait';
+    const oldOrientation = state.panels.orientation;
+    state.panels.orientation = newOrientation;
+
     state.panels.height = parseFloat($('#inputHeight').val()) || 1.0;
     state.panels.tilt = parseInt($('#inputTilt').val()) || 15;
     
     state.panels.rowSpacing = parseFloat($('#inputRowSpacing').val()) || 1.2;
-    state.boundaryWalkway = parseFloat($('#boundaryWalkway').val()) || 0.5;
+    state.panels.autoSpacing = $('#spacingAuto').is(':checked');
+    
+    const newWalkway = parseFloat($('#boundaryWalkway').val()) || 0.5;
+    const oldWalkway = state.boundaryWalkway;
+    state.boundaryWalkway = newWalkway;
     
     const facing = $('#inputCompassFacing').val() || 'South';
     const oldFacing = state.panels.direction;
     state.panels.direction = facing;
+    
     state.mountType = $('#inputMountType').val() || 'RCC-Ballast';
+
+    let clearFootprint = false;
+    if (newCapacity !== oldCapacity || newOrientation !== oldOrientation || newWalkway !== oldWalkway) {
+        clearFootprint = true;
+    }
 
     if (facing !== oldFacing) {
         let rot = 0;
@@ -993,6 +1226,12 @@ function onParametersChanged() {
         state.panels.rotation = rot;
         $('#panelRotate').val(rot);
         $('#rotateVal').text(rot + '°');
+
+        clearFootprint = true;
+    }
+
+    if (clearFootprint) {
+        state.panels.footprint = null;
     }
 
     recalculatePanelsLayout();
@@ -1064,7 +1303,25 @@ function exportProjectJSON() {
     const payload = {
         boundary: state.boundary,
         obstacles: state.obstacles,
-        panels: state.panels,
+        panels: {
+            capacityKw: state.panels.capacityKw,
+            watt: state.panels.watt,
+            length: state.panels.length,
+            width: state.panels.width,
+            orientation: state.panels.orientation,
+            tilt: state.panels.tilt,
+            height: state.panels.height,
+            rowSpacing: state.panels.rowSpacing,
+            autoSpacing: state.panels.autoSpacing,
+            direction: state.panels.direction,
+            rotation: state.panels.rotation,
+            scale: state.panels.scale,
+            offset: state.panels.offset,
+            deleted: state.panels.deleted,
+            rows: state.panels.rows,
+            cols: state.panels.cols,
+            footprint: state.panels.footprint || null
+        },
         scalePixelsPerMeter: state.scalePixelsPerMeter,
         boundaryWalkway: state.boundaryWalkway,
         mountType: state.mountType
@@ -1103,7 +1360,25 @@ function saveHistory() {
     const snapshot = JSON.stringify({
         boundary: state.boundary,
         obstacles: state.obstacles,
-        panels: state.panels,
+        panels: {
+            capacityKw: state.panels.capacityKw,
+            watt: state.panels.watt,
+            length: state.panels.length,
+            width: state.panels.width,
+            orientation: state.panels.orientation,
+            tilt: state.panels.tilt,
+            height: state.panels.height,
+            rowSpacing: state.panels.rowSpacing,
+            autoSpacing: state.panels.autoSpacing,
+            direction: state.panels.direction,
+            rotation: state.panels.rotation,
+            scale: state.panels.scale,
+            offset: state.panels.offset,
+            deleted: state.panels.deleted,
+            rows: state.panels.rows,
+            cols: state.panels.cols,
+            footprint: state.panels.footprint || null
+        },
         scalePixelsPerMeter: state.scalePixelsPerMeter,
         boundaryWalkway: state.boundaryWalkway,
         mountType: state.mountType
@@ -1163,6 +1438,8 @@ function applyStateConfig(cfg) {
     if (state.panels.rotation === undefined || isNaN(state.panels.rotation)) state.panels.rotation = 0;
     if (!state.panels.offset || state.panels.offset.u === undefined) state.panels.offset = { u: 0.5, v: 0.5 };
     if (!state.panels.items) state.panels.items = [];
+    // Restore footprint if saved (backward compatible — null if absent)
+    if (state.panels.footprint === undefined) state.panels.footprint = null;
 
     $('#inputCapacity').val(state.panels.capacityKw);
     $('#inputPanelWatt').val(state.panels.watt);
@@ -1502,4 +1779,24 @@ function saveDesignToServer() {
             console.error(error);
         }
     });
+}
+
+function applyScaleCalibration() {
+    if (!window.lastCalibrationPixels) return;
+    const meters = parseFloat($('#calibrationDistance').val());
+    if (isNaN(meters) || meters <= 0) {
+        showToast('Please enter a valid positive distance in meters', 'danger');
+        return;
+    }
+    
+    // Scale = pixels / meters
+    state.scalePixelsPerMeter = window.lastCalibrationPixels / meters;
+    $('#calibrationValueContainer').hide();
+    
+    showToast(`Scale calibrated to ${state.scalePixelsPerMeter.toFixed(2)} pixels per meter.`, 'success');
+    
+    // Automatically recalculate everything based on the new scale
+    saveHistory();
+    recalculatePanelsLayout();
+    renderKonvaWorkspace();
 }

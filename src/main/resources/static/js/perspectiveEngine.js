@@ -242,14 +242,22 @@ class PerspectiveEngine {
         
         this.roofQuad = fitQuadrilateral(this.roofPolygon);
         
-        const srcNormalized = [
+        // Calculate physical dimensions based on the top and left edges of the quad
+        // This gives us a local physical coordinate system for the roof in meters
+        const topEdgePx = Math.sqrt(Math.pow(this.roofQuad[1].x - this.roofQuad[0].x, 2) + Math.pow(this.roofQuad[1].y - this.roofQuad[0].y, 2));
+        const leftEdgePx = Math.sqrt(Math.pow(this.roofQuad[3].x - this.roofQuad[0].x, 2) + Math.pow(this.roofQuad[3].y - this.roofQuad[0].y, 2));
+        
+        this.physicalWidthM = Math.max(1, topEdgePx / this.scalePixelsPerMeter);
+        this.physicalHeightM = Math.max(1, leftEdgePx / this.scalePixelsPerMeter);
+        
+        const srcPhysical = [
             {x: 0, y: 0},
-            {x: 1, y: 0},
-            {x: 1, y: 1},
-            {x: 0, y: 1}
+            {x: this.physicalWidthM, y: 0},
+            {x: this.physicalWidthM, y: this.physicalHeightM},
+            {x: 0, y: this.physicalHeightM}
         ];
         
-        this.homographyMatrix = computeHomography3x3(srcNormalized, this.roofQuad);
+        this.homographyMatrix = computeHomography3x3(srcPhysical, this.roofQuad);
         this.inverseHomographyMatrix = invertHomography3x3(this.homographyMatrix);
         
         // Detect vanishing points
@@ -304,16 +312,16 @@ class PerspectiveEngine {
     }
     
     projectToScreen(worldX, worldY, worldZ = 0) {
-        if (!this.homographyMatrix) return {x:0, y:0};
-        
-        // Base mapping to roof plane (orthographic, since panelPlacement.js generates unwarped scaled pixels)
-        let pt = {
-            x: worldX * this.scalePixelsPerMeter,
+        if (!this.homographyMatrix) return {
+            x: worldX * this.scalePixelsPerMeter, 
             y: worldY * this.scalePixelsPerMeter
         };
         
+        // Map true physical meters (worldX, worldY) to screen pixels using Homography
+        let pt = applyHomography(this.homographyMatrix, worldX, worldY);
+        
         if (worldZ !== 0) {
-            // Apply vertical displacement
+            // Apply vertical displacement in screen space
             const depthFactor = this.getDepthFactor(pt.x, pt.y);
             const verticalShift = -worldZ * this.scalePixelsPerMeter * depthFactor;
             pt.y += verticalShift;
@@ -323,10 +331,14 @@ class PerspectiveEngine {
     }
     
     screenToWorld(screenX, screenY) {
-        if (!this.inverseHomographyMatrix) return {x:0, y:0};
+        if (!this.inverseHomographyMatrix) return {
+            x: screenX / this.scalePixelsPerMeter, 
+            y: screenY / this.scalePixelsPerMeter
+        };
         
+        // Map screen pixels to true physical meters on the roof plane
         let pt = applyHomography(this.inverseHomographyMatrix, screenX, screenY);
-        return { x: pt.x, y: pt.y };
+        return pt;
     }
     
     transformQuadToRoof(worldRect, height = 0) {

@@ -123,19 +123,22 @@ class SolarRenderer {
 
         // Base plates, Legs, and Rails
         panelItems.forEach(panel => {
-            const w = panel.worldW;
-            const d = panel.worldH;
+            if (!panel.corners || panel.corners.length < 4) return;
+            const corners = panel.corners;
+
+            // Define missing variables for rail placement
             const x = panel.worldX;
             const y = panel.worldY;
-
+            const w = panel.worldW;
+            const d = panel.worldH;
             const yRear = y + d * Math.cos(tilt);
             const hRear = h + d * Math.sin(tilt);
 
             const legPoints = [
-                {x: x, y: y, zFront: 0, zTop: h}, // FL
-                {x: x + w, y: y, zFront: 0, zTop: h}, // FR
-                {x: x, y: yRear, zFront: 0, zTop: hRear}, // RL
-                {x: x + w, y: yRear, zFront: 0, zTop: hRear} // RR
+                {x: corners[0].x, y: corners[0].y, zFront: 0, zTop: corners[0].z}, // FL
+                {x: corners[1].x, y: corners[1].y, zFront: 0, zTop: corners[1].z}, // FR
+                {x: corners[3].x, y: corners[3].y, zFront: 0, zTop: corners[3].z}, // RL
+                {x: corners[2].x, y: corners[2].y, zFront: 0, zTop: corners[2].z}  // RR
             ];
 
             // Render Base Plates & Legs
@@ -200,8 +203,9 @@ class SolarRenderer {
             if (!drawnRails.has(rKeyF)) {
                 // Find all panels in this row to draw a continuous rail
                 const rowPanels = panelItems.filter(p => Math.abs(p.worldY - y) < 0.1);
-                const minX = Math.min(...rowPanels.map(p => p.worldX));
-                const maxX = Math.max(...rowPanels.map(p => p.worldX + p.worldW));
+                // Extend rail 10cm past edges for visual structure
+                const minX = Math.min(...rowPanels.map(p => p.worldX)) - 0.1;
+                const maxX = Math.max(...rowPanels.map(p => p.worldX + p.worldW)) + 0.1;
 
                 const pt1 = this.perspectiveEngine.projectToScreen(minX, y, h);
                 const pt2 = this.perspectiveEngine.projectToScreen(maxX, y, h);
@@ -218,8 +222,8 @@ class SolarRenderer {
             const rKeyR = `rear_${yRear.toFixed(2)}`;
             if (!drawnRails.has(rKeyR)) {
                 const rowPanels = panelItems.filter(p => Math.abs(p.worldY - y) < 0.1);
-                const minX = Math.min(...rowPanels.map(p => p.worldX));
-                const maxX = Math.max(...rowPanels.map(p => p.worldX + p.worldW));
+                const minX = Math.min(...rowPanels.map(p => p.worldX)) - 0.1;
+                const maxX = Math.max(...rowPanels.map(p => p.worldX + p.worldW)) + 0.1;
 
                 const pt1 = this.perspectiveEngine.projectToScreen(minX, yRear, hRear);
                 const pt2 = this.perspectiveEngine.projectToScreen(maxX, yRear, hRear);
@@ -233,17 +237,22 @@ class SolarRenderer {
                 drawnRails.add(rKeyR);
             }
 
-            // Cross rails (Purlins)
-            const ptF1 = this.perspectiveEngine.projectToScreen(x, y, h);
-            const ptR1 = this.perspectiveEngine.projectToScreen(x, yRear, hRear);
+            // Cross rails (Purlins) - Extend past panels to show slope
+            const yExtFront = 0.1 * Math.cos(tilt);
+            const hExtFront = 0.1 * Math.sin(tilt);
+            const yExtRear = 0.15 * Math.cos(tilt);
+            const hExtRear = 0.15 * Math.sin(tilt);
+
+            const ptF1 = this.perspectiveEngine.projectToScreen(x, y - yExtFront, h - hExtFront);
+            const ptR1 = this.perspectiveEngine.projectToScreen(x, yRear + yExtRear, hRear + hExtRear);
             structureLayer.add(new Konva.Line({
                 points: [ptF1.x, ptF1.y, ptR1.x, ptR1.y],
                 stroke: '#64748b',
                 strokeWidth: 4 * scale
             }));
 
-            const ptF2 = this.perspectiveEngine.projectToScreen(x + w, y, h);
-            const ptR2 = this.perspectiveEngine.projectToScreen(x + w, yRear, hRear);
+            const ptF2 = this.perspectiveEngine.projectToScreen(x + w, y - yExtFront, h - hExtFront);
+            const ptR2 = this.perspectiveEngine.projectToScreen(x + w, yRear + yExtRear, hRear + hExtRear);
             structureLayer.add(new Konva.Line({
                 points: [ptF2.x, ptF2.y, ptR2.x, ptR2.y],
                 stroke: '#64748b',
@@ -272,108 +281,98 @@ class SolarRenderer {
         const scale = this._getScaleFactor();
 
         panelItems.forEach(panel => {
-            const w = panel.worldW;
-            const d = panel.worldH;
-            const x = panel.worldX;
-            const y = panel.worldY;
-
-            const hFront = h;
-            const hRear = h + d * Math.sin(tilt);
-            const yRear = y + d * Math.cos(tilt);
-
+            if (!panel.corners || panel.corners.length < 4) return;
+            
             // Screen corners for the panel face
             const corners = [
-                this.perspectiveEngine.projectToScreen(x, y, hFront),         // FL
-                this.perspectiveEngine.projectToScreen(x + w, y, hFront),     // FR
-                this.perspectiveEngine.projectToScreen(x + w, yRear, hRear),  // RR
-                this.perspectiveEngine.projectToScreen(x, yRear, hRear)       // RL
+                this.perspectiveEngine.projectToScreen(panel.corners[0].x, panel.corners[0].y, panel.corners[0].z), // FL
+                this.perspectiveEngine.projectToScreen(panel.corners[1].x, panel.corners[1].y, panel.corners[1].z), // FR
+                this.perspectiveEngine.projectToScreen(panel.corners[2].x, panel.corners[2].y, panel.corners[2].z), // RR
+                this.perspectiveEngine.projectToScreen(panel.corners[3].x, panel.corners[3].y, panel.corners[3].z)  // RL
             ];
 
             const depthFactor = this.perspectiveEngine.getDepthFactor(corners[0].x, corners[0].y);
             const group = new Konva.Group();
 
-            // Panel Body
-            const panelShape = new Konva.Shape({
-                sceneFunc: (ctx, shape) => {
-                    ctx.beginPath();
-                    ctx.moveTo(corners[0].x, corners[0].y);
-                    ctx.lineTo(corners[1].x, corners[1].y);
-                    ctx.lineTo(corners[2].x, corners[2].y);
-                    ctx.lineTo(corners[3].x, corners[3].y);
-                    ctx.closePath();
-                    
-                    // Base panel color (gradient)
-                    const grad = ctx.createLinearGradient(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
-                    grad.addColorStop(0, '#0f1d3a');
-                    grad.addColorStop(0.5, '#13284f');
-                    grad.addColorStop(1, '#081023');
-                    ctx.fillStyle = grad;
-                    ctx.fill();
+            // 3D Frame Edge (Thickness) to prevent flat billboard look
+            const th = 8 * scale; // Pixel thickness
+            
+            // Bottom Lip
+            group.add(new Konva.Line({
+                points: [corners[0].x, corners[0].y, corners[0].x, corners[0].y + th, corners[1].x, corners[1].y + th, corners[1].x, corners[1].y],
+                fill: '#1e293b',
+                closed: true
+            }));
+            
+            // Left Lip
+            group.add(new Konva.Line({
+                points: [corners[0].x, corners[0].y, corners[0].x, corners[0].y + th, corners[3].x, corners[3].y + th, corners[3].x, corners[3].y],
+                fill: '#0f172a',
+                closed: true
+            }));
 
-                    // Grid lines (Cell layout)
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-                    ctx.lineWidth = 1 * scale;
-                    const cols = 6;
-                    const rows = 12;
+            // Panel Body using standard Konva.Line (guarantees hit detection and rendering)
+            const panelPoly = new Konva.Line({
+                points: [corners[0].x, corners[0].y, corners[1].x, corners[1].y, corners[2].x, corners[2].y, corners[3].x, corners[3].y],
+                fillLinearGradientStartPoint: { x: corners[0].x, y: corners[0].y },
+                fillLinearGradientEndPoint: { x: corners[2].x, y: corners[2].y },
+                fillLinearGradientColorStops: [0, '#0f1d3a', 0.5, '#13284f', 1, '#081023'],
+                closed: true
+            });
+            group.add(panelPoly);
 
-                    for (let i = 1; i < cols; i++) {
-                        const pt1 = this._interpolateOnPanel(corners, i/cols, 0);
-                        const pt2 = this._interpolateOnPanel(corners, i/cols, 1);
-                        ctx.beginPath();
-                        ctx.moveTo(pt1.x, pt1.y);
-                        ctx.lineTo(pt2.x, pt2.y);
-                        ctx.stroke();
-                    }
+            // Grid lines (Cell layout)
+            const cols = 6;
+            const rows = 12;
 
-                    for (let j = 1; j < rows; j++) {
-                        const pt1 = this._interpolateOnPanel(corners, 0, j/rows);
-                        const pt2 = this._interpolateOnPanel(corners, 1, j/rows);
-                        ctx.beginPath();
-                        ctx.moveTo(pt1.x, pt1.y);
-                        ctx.lineTo(pt2.x, pt2.y);
-                        ctx.stroke();
-                    }
+            for (let i = 1; i < cols; i++) {
+                const pt1 = this._interpolateOnPanel(corners, i/cols, 0);
+                const pt2 = this._interpolateOnPanel(corners, i/cols, 1);
+                group.add(new Konva.Line({
+                    points: [pt1.x, pt1.y, pt2.x, pt2.y],
+                    stroke: 'rgba(255, 255, 255, 0.12)',
+                    strokeWidth: 1 * scale
+                }));
+            }
 
-                    // Busbars
-                    ctx.strokeStyle = 'rgba(192, 192, 192, 0.15)';
-                    ctx.lineWidth = 2 * scale;
-                    [0.25, 0.5, 0.75].forEach(v => {
-                        const pt1 = this._interpolateOnPanel(corners, 0, v);
-                        const pt2 = this._interpolateOnPanel(corners, 1, v);
-                        ctx.beginPath();
-                        ctx.moveTo(pt1.x, pt1.y);
-                        ctx.lineTo(pt2.x, pt2.y);
-                        ctx.stroke();
-                    });
+            for (let j = 1; j < rows; j++) {
+                const pt1 = this._interpolateOnPanel(corners, 0, j/rows);
+                const pt2 = this._interpolateOnPanel(corners, 1, j/rows);
+                group.add(new Konva.Line({
+                    points: [pt1.x, pt1.y, pt2.x, pt2.y],
+                    stroke: 'rgba(255, 255, 255, 0.12)',
+                    strokeWidth: 1 * scale
+                }));
+            }
 
-                    // Anti-reflective coating / shimmer
-                    const shimmerGrad = ctx.createLinearGradient(corners[1].x, corners[1].y, corners[3].x, corners[3].y);
-                    shimmerGrad.addColorStop(0, 'rgba(128, 0, 128, 0.05)');
-                    shimmerGrad.addColorStop(0.5, 'transparent');
-                    shimmerGrad.addColorStop(1, 'rgba(0, 255, 255, 0.05)');
-                    ctx.fillStyle = shimmerGrad;
-                    ctx.fill();
-
-                    // Glass reflection
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-                    ctx.beginPath();
-                    ctx.moveTo(corners[0].x, corners[0].y);
-                    ctx.lineTo(corners[1].x, corners[1].y);
-                    ctx.lineTo(corners[2].x, corners[2].y);
-                    ctx.fill();
-                    
-                    // Depth Shading Overlay
-                    ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(depthFactor * 0.15, 0.5)})`;
-                    ctx.beginPath();
-                    ctx.moveTo(corners[0].x, corners[0].y);
-                    ctx.lineTo(corners[1].x, corners[1].y);
-                    ctx.lineTo(corners[2].x, corners[2].y);
-                    ctx.lineTo(corners[3].x, corners[3].y);
-                    ctx.fill();
-                }
+            // Busbars
+            [0.25, 0.5, 0.75].forEach(v => {
+                const pt1 = this._interpolateOnPanel(corners, 0, v);
+                const pt2 = this._interpolateOnPanel(corners, 1, v);
+                group.add(new Konva.Line({
+                    points: [pt1.x, pt1.y, pt2.x, pt2.y],
+                    stroke: 'rgba(192, 192, 192, 0.15)',
+                    strokeWidth: 2 * scale
+                }));
             });
 
-            group.add(panelShape);
+            // Anti-reflective coating / shimmer
+            group.add(new Konva.Line({
+                points: [corners[0].x, corners[0].y, corners[1].x, corners[1].y, corners[2].x, corners[2].y, corners[3].x, corners[3].y],
+                fillLinearGradientStartPoint: { x: corners[1].x, y: corners[1].y },
+                fillLinearGradientEndPoint: { x: corners[3].x, y: corners[3].y },
+                fillLinearGradientColorStops: [0, 'rgba(128, 0, 128, 0.05)', 0.5, 'transparent', 1, 'rgba(0, 255, 255, 0.05)'],
+                closed: true
+            }));
+
+            // Depth Shading Overlay
+            group.add(new Konva.Line({
+                points: [corners[0].x, corners[0].y, corners[1].x, corners[1].y, corners[2].x, corners[2].y, corners[3].x, corners[3].y],
+                fill: `rgba(0, 0, 0, ${Math.min(depthFactor * 0.15, 0.5)})`,
+                closed: true
+            }));
+
+            // No need to manually add panelShape as we've built the group using native Konva objects
 
             // Frame lines
             const frameThickness = 2 * scale;
