@@ -160,6 +160,41 @@ $(document).on("keyup", "#discount", function () {
               panelWatt:            $("#panelWatt").val(),
               noOfPanels:           $("#noOfPanels").val(),
               inverter:             $("#inverter").val(),
+              
+              includeAdditionalInfo: $("#includeAdditionalInfo").is(":checked"),
+              specSolarPanel:       $("#specSolarPanel").val(),
+              specInverter:         $("#specInverter").val(),
+              specAcdbDcdb:         $("#specAcdbDcdb").val(),
+              specDcCable:          $("#specDcCable").val(),
+              specAcCable:          $("#specAcCable").val(),
+              specEarthingLa:       $("#specEarthingLa").val(),
+              specMountingStructure:$("#specMountingStructure").val(),
+              specBasePlate:        $("#specBasePlate").val(),
+              specJHook:            $("#specJHook").val(),
+              specEarthing:         $("#specEarthing").val(),
+              specIsolationMcb:     $("#specIsolationMcb").val(),
+              specPvcPipe:          $("#specPvcPipe").val(),
+              specFastner:          $("#specFastner").val(),
+              specOAndM:            $("#specOAndM").val(),
+              
+              uomSolarPanel:        $("#uomSolarPanel").val(),
+              uomInverter:          $("#uomInverter").val(),
+              uomAcdbDcdb:          $("#uomAcdbDcdb").val(),
+              uomDcCable:           $("#uomDcCable").val(),
+              uomAcCable:           $("#uomAcCable").val(),
+              uomEarthingLa:        $("#uomEarthingLa").val(),
+              uomMountingStructure: $("#uomMountingStructure").val(),
+              uomBasePlate:         $("#uomBasePlate").val(),
+              uomJHook:             $("#uomJHook").val(),
+              uomEarthing:          $("#uomEarthing").val(),
+              uomIsolationMcb:      $("#uomIsolationMcb").val(),
+              uomPvcPipe:           $("#uomPvcPipe").val(),
+              uomFastner:           $("#uomFastner").val(),
+              uomOAndM:             $("#uomOAndM").val(),
+              
+              warrSpvDefect:        $("#warrSpvDefect").val(),
+              warrSpvPerformance:   $("#warrSpvPerformance").val(),
+              warrInverterDefect:   $("#warrInverterDefect").val()
           };
 
           // Show loader for the entire duration of PDF generation
