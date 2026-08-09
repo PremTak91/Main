@@ -183,9 +183,9 @@
                                 </select>
                             </div>
 						</div>
-                        <div class="mt-4">
+                        <div class="mt-4 d-flex flex-column flex-md-row gap-2">
                             <button type="submit" class="btn btn-primary"><i class="fas fa-file-export me-2"></i>Export</button>
-                            <button type="button" class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#additionalInfoModal"><i class="fas fa-plus-circle me-2"></i>Additional Information</button>
+                            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#additionalInfoModal"><i class="fas fa-plus-circle me-2"></i>Additional Information</button>
                         </div>
                     </form>
                 </div>
@@ -208,66 +208,153 @@
                     </div>
                     
                     <h6 class="bg-warning p-2 text-dark">MATERIAL & SPECIFICATION</h6>
-                    <div class="row g-2 mb-4">
+                    <div class="d-none d-md-flex row g-2 mb-2">
                         <div class="col-md-4 fw-bold text-center">PRODUCT</div>
                         <div class="col-md-4 fw-bold text-center">SPECIFICATION & MAKE</div>
                         <div class="col-md-4 fw-bold text-center">UOM</div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">SOLAR PANEL</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specSolarPanel" value="615 Watt WAAREE TOPCON"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomSolarPanel" value="7 NOS"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">INVERTER</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specInverter" value="SOLARYAAN"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomInverter" value="4.2 KW"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">ACDB - DCDB</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specAcdbDcdb" value="HAVELLS / SCHNEIDER /POLYCAB"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomAcdbDcdb" value="AS PER SYSTEM"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">DC CABLE</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specDcCable" value="POLYCAB - 4 SQ MM"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomDcCable" value="AS PER SYSTEM"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">AC CABLE</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specAcCable" value="POLYCAB - 4 SQ MM"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomAcCable" value="AS PER SYSTEM"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">EARTHING & LA</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specEarthingLa" value="EARTHING JOHNSON - 4 SQ mm LA-16 SQ mm"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomEarthingLa" value="AS PER SYSTEM"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">MOUNTING STRUCTURE</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specMountingStructure" value="JINDAL MAKE GI PIPE"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomMountingStructure" value="60*40*2 40*40*2 MM"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">BASE PLATE</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specBasePlate" value="200*200*10 mm"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomBasePlate" value="AS PER SYSTEM"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">J HOOK</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specJHook" value="15 mm"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomJHook" value="AS PER SYSTEM"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">EARTHING</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specEarthing" value="Government Approved"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomEarthing" value="AS PER SYSTEM"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">ISOLATION MCB</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specIsolationMcb" value="32 AMP 2 POLE - HAVELLS / Polycab"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomIsolationMcb" value="AS PER SYSTEM"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">PVC PIPE & ELBOW</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specPvcPipe" value="POLYCAB 25 MM / MARUTI 25 MM"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomPvcPipe" value="AS PER SYSTEM"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">FASTNER</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specFastner" value="10X100"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomFastner" value="WEDGE TYPE"></div>
-                        
-                        <div class="col-md-4 d-flex align-items-center"><label class="small text-muted w-100 mb-0">OPERATION & MAINTANANCE</label></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="specOAndM" value="BY NRS SOLAR SOLUTION & (CLEANING HAS TO DONE BY CONSUMER)"></div>
-                        <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="uomOAndM" value="5 YEARS"></div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">SOLAR PANEL</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specSolarPanel" value="615 Watt WAAREE TOPCON">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomSolarPanel" value="7 NOS">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">INVERTER</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specInverter" value="SOLARYAAN">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomInverter" value="4.2 KW">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">ACDB - DCDB</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specAcdbDcdb" value="HAVELLS / SCHNEIDER /POLYCAB">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomAcdbDcdb" value="AS PER SYSTEM">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">DC CABLE</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specDcCable" value="POLYCAB - 4 SQ MM">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomDcCable" value="AS PER SYSTEM">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">AC CABLE</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specAcCable" value="POLYCAB - 4 SQ MM">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomAcCable" value="AS PER SYSTEM">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">EARTHING & LA</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specEarthingLa" value="EARTHING JOHNSON - 4 SQ mm LA-16 SQ mm">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomEarthingLa" value="AS PER SYSTEM">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">MOUNTING STRUCTURE</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specMountingStructure" value="HINDUSTAR MAKE GI PIPE">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomMountingStructure" value="60*40*2 40*40*2 MM">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">J HOOK</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specJHook" value="15 mm">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomJHook" value="AS PER SYSTEM">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">EARTHING</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specEarthing" value="Government Approved">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomEarthing" value="AS PER SYSTEM">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">ISOLATION MCB</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specIsolationMcb" value="32 AMP 2 POLE - HAVELLS / Polycab">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomIsolationMcb" value="AS PER SYSTEM">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">PVC PIPE & ELBOW</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specPvcPipe" value="POLYCAB 25 MM / MARUTI 25 MM">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomPvcPipe" value="AS PER SYSTEM">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">FASTNER</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specFastner" value="10X100">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomFastner" value="WEDGE TYPE">
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2 border-bottom pb-2">
+                        <div class="col-12 col-md-4 d-flex align-items-center"><label class="small text-muted fw-bold w-100 mb-0">OPERATION & MAINTANANCE</label></div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">Specification</label>
+                            <input type="text" class="form-control form-control-sm" id="specOAndM" value="BY NRS SOLAR SOLUTION & (CLEANING HAS TO DONE BY CONSUMER)">
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <label class="d-md-none small text-muted">UOM</label>
+                            <input type="text" class="form-control form-control-sm" id="uomOAndM" value="5 YEARS">
+                        </div>
                     </div>
                     
                     <h6 class="bg-warning p-2 text-dark">WARRANTY</h6>

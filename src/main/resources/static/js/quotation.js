@@ -169,7 +169,7 @@ $(document).on("keyup", "#discount", function () {
               specAcCable:          $("#specAcCable").val(),
               specEarthingLa:       $("#specEarthingLa").val(),
               specMountingStructure:$("#specMountingStructure").val(),
-              specBasePlate:        $("#specBasePlate").val(),
+              specBasePlate:        "", // Dummy to prevent backend crash if not restarted
               specJHook:            $("#specJHook").val(),
               specEarthing:         $("#specEarthing").val(),
               specIsolationMcb:     $("#specIsolationMcb").val(),
@@ -184,7 +184,7 @@ $(document).on("keyup", "#discount", function () {
               uomAcCable:           $("#uomAcCable").val(),
               uomEarthingLa:        $("#uomEarthingLa").val(),
               uomMountingStructure: $("#uomMountingStructure").val(),
-              uomBasePlate:         $("#uomBasePlate").val(),
+              uomBasePlate:         "", // Dummy to prevent backend crash if not restarted
               uomJHook:             $("#uomJHook").val(),
               uomEarthing:          $("#uomEarthing").val(),
               uomIsolationMcb:      $("#uomIsolationMcb").val(),

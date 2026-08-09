@@ -48,7 +48,6 @@ public class SolarQuotation {
     private String specAcCable;
     private String specEarthingLa;
     private String specMountingStructure;
-    private String specBasePlate;
     private String specJHook;
     private String specEarthing;
     private String specIsolationMcb;
@@ -64,7 +63,6 @@ public class SolarQuotation {
     private String uomAcCable;
     private String uomEarthingLa;
     private String uomMountingStructure;
-    private String uomBasePlate;
     private String uomJHook;
     private String uomEarthing;
     private String uomIsolationMcb;
