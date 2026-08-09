@@ -1377,7 +1377,6 @@ public class QuotationServiceImpl implements QuotationService {
         addMatRow(mat, r++, "AC CABLE", q.getSpecAcCable(), q.getUomAcCable());
         addMatRow(mat, r++, "EARTHING & LA", q.getSpecEarthingLa(), q.getUomEarthingLa());
         addMatRow(mat, r++, "MOUNTING STRUCTURE", q.getSpecMountingStructure(), q.getUomMountingStructure());
-        addMatRow(mat, r++, "BASE PLATE", q.getSpecBasePlate(), q.getUomBasePlate());
         addMatRow(mat, r++, "J HOOK", q.getSpecJHook(), q.getUomJHook());
         addMatRow(mat, r++, "EARTHING", q.getSpecEarthing(), q.getUomEarthing());
         addMatRow(mat, r++, "ISOLATION MCB", q.getSpecIsolationMcb(), q.getUomIsolationMcb());
@@ -1438,7 +1437,7 @@ public class QuotationServiceImpl implements QuotationService {
         table.addCell(getMatCell(String.valueOf(sr), Element.ALIGN_CENTER));
         table.addCell(getMatCell(prod, Element.ALIGN_CENTER));
         table.addCell(getMatCell(spec != null ? spec : "", Element.ALIGN_CENTER));
-        table.addCell(getMatCell(uom, Element.ALIGN_CENTER));
+        table.addCell(getMatCell(uom != null ? uom : "", Element.ALIGN_CENTER));
     }
     
     private static void addWarrRow(PdfPTable table, int sr, String prod, String duration) {
