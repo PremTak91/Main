@@ -42,6 +42,7 @@ public interface EmployeeService {
     EmployeeEntity getEmployeeDetailsById(Long id);
     boolean updateEmployeeById(Long id, EmployeeRegistrationRequest request);
     boolean softDeleteEmployee(Long id);
+    boolean hardDeleteEmployee(Long id);
 
     // Timesheet
     Page<TimesheetDTO> getTimesheetRecords(Long employeeId, String employeeName, LocalDate startDate, LocalDate endDate, Pageable pageable);
@@ -60,4 +61,6 @@ public interface EmployeeService {
     void deleteManualTimesheetRequest(Long requestId);
     List<java.util.Map<String, Object>> getAllManualRequests();
     List<java.util.Map<String, Object>> getEmployeeIdAndNames();
+    org.springframework.data.domain.Page<com.web.nrs.DTO.MissingTimesheetDTO> getMissingTimesheets(
+            Long employeeId, String employeeName, LocalDate startDate, LocalDate endDate, org.springframework.data.domain.Pageable pageable);
 }

@@ -586,6 +586,7 @@ CREATE TABLE IF NOT EXISTS `quotation_logs` (
   `rate_kw` double DEFAULT NULL,
   `discom_meter` varchar(255) DEFAULT NULL,
   `pq_hs_cost` double DEFAULT NULL,
+  `geda_register_charge` double DEFAULT NULL,
   `subsidy` double DEFAULT NULL,
   `panel_watt` int DEFAULT NULL,
   `no_of_panels` int DEFAULT NULL,
@@ -599,6 +600,7 @@ ALTER TABLE `site_details` ADD COLUMN IF NOT EXISTS `team_members` varchar(500) 
 ALTER TABLE `site_details` ADD COLUMN IF NOT EXISTS `site_owner` varchar(255) DEFAULT NULL;
 ALTER TABLE site_details ADD COLUMN IF NOT EXISTS sr_no VARCHAR(255);
 ALTER TABLE `quotation_logs` ADD COLUMN IF NOT EXISTS `inverter` varchar(255) DEFAULT NULL;
+ALTER TABLE `quotation_logs` ADD COLUMN IF NOT EXISTS `geda_register_charge` double DEFAULT NULL;
 
 CREATE TABLE `manual_timesheet_requests` (
   `id` bigint NOT NULL AUTO_INCREMENT,

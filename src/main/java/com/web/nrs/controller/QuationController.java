@@ -40,6 +40,14 @@ public class QuationController {
         return "quotation";
     }
 
+    @GetMapping("/sequence")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> getNextSequence() {
+        Map<String, String> response = new HashMap<>();
+        response.put("sequence", quotationService.getDocumentSequence());
+        return ResponseEntity.ok(response);
+    }
+
     // ── Desktop path ─────────────────────────────────────────────────────────
     // POST /quts  →  binary PDF blob with Content-Disposition: attachment
     // Used by desktop browsers that can handle blob downloads natively.

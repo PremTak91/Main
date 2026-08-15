@@ -26,6 +26,7 @@ public class SolarQuotation {
     private String pdfType; // New parameter to determine 'Standardized' vs 'Single Page'
     private String noOfPanels;
     private String inverter;
+    private double gedaRegisterCharge;
     // --- Brochure display fields (not persisted, populated at PDF generation time) ---
     /** Display date e.g. "04 April 2026" */
     private String quotationDate;
@@ -35,4 +36,42 @@ public class SolarQuotation {
     private String annualSaving;
     /** EMI option display text e.g. "From ₹3,500 / month" */
     private String emiOption;
+    
+    // --- Additional Information (Material & Specification + Warranty) ---
+    private boolean includeAdditionalInfo;
+    
+    // Material Specs
+    private String specSolarPanel;
+    private String specInverter;
+    private String specAcdbDcdb;
+    private String specDcCable;
+    private String specAcCable;
+    private String specEarthingLa;
+    private String specMountingStructure;
+    private String specJHook;
+    private String specEarthing;
+    private String specIsolationMcb;
+    private String specPvcPipe;
+    private String specFastner;
+    private String specOAndM;
+    
+    // Material UOMs
+    private String uomSolarPanel;
+    private String uomInverter;
+    private String uomAcdbDcdb;
+    private String uomDcCable;
+    private String uomAcCable;
+    private String uomEarthingLa;
+    private String uomMountingStructure;
+    private String uomJHook;
+    private String uomEarthing;
+    private String uomIsolationMcb;
+    private String uomPvcPipe;
+    private String uomFastner;
+    private String uomOAndM;
+    
+    // Warranty
+    private String warrSpvDefect;
+    private String warrSpvPerformance;
+    private String warrInverterDefect;
 }

@@ -13,6 +13,7 @@ import com.web.nrs.repository.QuotationLogRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
@@ -65,7 +66,16 @@ public class QuotationServiceImpl implements QuotationService {
     }
 
     @Override
+    @Transactional
     public byte[] generateQuotationPdf(SolarQuotation q) throws Exception {
+        if (q.getQuationNumber() == null || q.getQuationNumber().trim().isEmpty()) {
+            throw new IllegalArgumentException("Quotation number cannot be empty.");
+        }
+        String qNum = q.getQuationNumber().trim();
+        if (quotationLogRepository.existsByQuotationNo(qNum)) {
+            throw new IllegalArgumentException("Quotation number " + qNum + " has already been generated!");
+        }
+
         if (q.getQuotationDate() == null)
             q.setQuotationDate(LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")));
         if (q.getPaybackPeriod() == null) q.setPaybackPeriod("3-4 Years");
@@ -77,24 +87,38 @@ public class QuotationServiceImpl implements QuotationService {
         
         // Critical Fix: Margins MUST be injected BEFORE doc.open() to take effect on the first page!
         if ("Single Page".equalsIgnoreCase(q.getPdfType())) {
-            doc.setMargins(40, 40, 50, 30);
+            doc.setMargins(40, 40, 50, 15);
         }
         
         PdfWriter writer = PdfWriter.getInstance(doc, out);
         doc.open();
 
         if ("Single Page".equalsIgnoreCase(q.getPdfType())) {
-            addQuotationPage(doc, q);
+            addQuotationPage(doc, writer, q);
+            if (q.isIncludeAdditionalInfo()) {
+                doc.newPage();
+                pageAdditionalInfo(doc, writer, q, false, 2);
+            }
         } else {
             page1(doc, writer, q);
             doc.newPage();
             page2(doc, writer, q.getSubmittedNumber());
             doc.newPage();
             page3(doc, writer, q);
+            
+            int currentPage = 4;
+            
+            if (q.isIncludeAdditionalInfo()) {
+                doc.setMargins(40, 40, 100, 60);
+                doc.newPage();
+                pageAdditionalInfo(doc, writer, q, true, currentPage++);
+                doc.setMargins(0, 0, 0, 0); // reset margins for next full-bleed pages
+            }
+            
             doc.newPage();
-            page4(doc, writer, q);
+            page4(doc, writer, q, currentPage++);
             doc.newPage();
-            page5(doc, writer, q);
+            page5(doc, writer, q, currentPage);
             doc.setMargins(40, 40, 50, 30);
             doc.newPage();
         }
@@ -145,11 +169,13 @@ public class QuotationServiceImpl implements QuotationService {
                     .rateKw(q.getRateKw())
                     .discomMeter(q.getDiscomMeter())
                     .pqHsCost(q.getPqHsCost())
+                    .gedaRegisterCharge(q.getGedaRegisterCharge())
                     .subsidy(q.getSubsidy())
                     .panelWatt(q.getPanelWatt())
                     .noOfPanels(noOfPanelsInt)
                     .inverter(q.getInverter())
                     .build();
+
             quotationLogRepository.save(logEntity);
         } catch (Exception e) {
             e.printStackTrace();
@@ -548,12 +574,9 @@ public class QuotationServiceImpl implements QuotationService {
         float rx = imgX + imgW + 30; // 235
         float rCenter = rx + (PW - 35 - rx) / 2f; 
         
-        // Yellow Label
-        fillRound(cb, new Color(255, 215, 0), rx, bTop - 110, 195, 36, 6);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("#1 Solar Panel!", new Font(Font.HELVETICA, 18, Font.BOLD, DARK)), rx + 15, bTop - 100);
 
         // Bullets
-        float by = bTop - 138;
+        float by = bTop - 110;
         String[] bullets = {"▶ High Output.", "▶ High Durability,", "▶ Zero Compromise."};
         for(String b : bullets) {
             txt(cb, Element.ALIGN_LEFT, new Phrase(b, fWhiteBold(10)), rx + 5, by);
@@ -562,7 +585,7 @@ public class QuotationServiceImpl implements QuotationService {
 
         // White Vector Shield Graphic (Instead of basic circle)
         float scx = rx + 185;
-        float scy = bTop - 155;
+        float scy = bTop - 122;
         
         // Draw Shield Base
         cb.setColorFill(Color.WHITE);
@@ -591,7 +614,7 @@ public class QuotationServiceImpl implements QuotationService {
         cb.setLineDash(0);
 
         // Banner Bottom Text
-        txt(cb, Element.ALIGN_LEFT, new Phrase( q.getPanelWatt() + " + Wp | BIFACIAL", fWhiteBold(12)), rx, bBot + 30);
+        txt(cb, Element.ALIGN_LEFT, new Phrase( q.getPanelWatt() + " + Wp", fWhiteBold(12)), rx, bBot + 30);
         txt(cb, Element.ALIGN_LEFT, new Phrase("Number of nodes = " + q.getNoOfPanels() + " PANELS | Module", fLight(11)), rx, bBot + 12);
 
         // 6. Right Side White Space (Dynamic Luxury Panel Chips)
@@ -614,11 +637,14 @@ public class QuotationServiceImpl implements QuotationService {
         float chipH = 26;
         // If multiple brands, begin rendering higher to keep beautifully centered
         float currentY = wy + ((brands.length - 1) * (chipH + 8)) / 2f;
-        float chipW = 200;
-        float chipX = rCenter - chipW / 2;
         
         for (int i = 0; i < brands.length; i++) {
             String bName = brands[i].trim().toUpperCase();
+            
+            float nameWidth = new Chunk(bName, new Font(Font.HELVETICA, 10, Font.BOLD)).getWidthPoint();
+            float chipW = Math.max(200f, nameWidth + 80f);
+            float chipX = rCenter - chipW / 2;
+            
             Color bColor = brandColors[i % brandColors.length];
             
             if (bName.contains("WAAR") || bName.contains("WAR")) bColor = brandColors[0];
@@ -731,13 +757,13 @@ public class QuotationServiceImpl implements QuotationService {
     }
 
     // ======================================================
-    // PAGE 4 – NET METERING INFOGRAPHIC + DOCUMENTS
+    // PAGE - NET METERING INFOGRAPHIC + DOCUMENTS
     // ======================================================
-    private void page4(Document doc, PdfWriter writer, SolarQuotation q) throws Exception {
+    private void page4(Document doc, PdfWriter writer, SolarQuotation q, int pageNum) throws Exception {
         PdfContentByte cb = writer.getDirectContent();
         fillRect(cb, LIGHT_BG, 0, 0, PW, PH);
         pageHeader(cb, "Net Metering Process",
-                "How your solar system connects with the power grid", 4);
+                "How your solar system connects with the power grid", pageNum);
 
         // Step flow
         float stepW = (PW - 60) / 4f, stepH = 130, stepTopY = PH - 125;
@@ -869,36 +895,35 @@ public class QuotationServiceImpl implements QuotationService {
     // ======================================================
     // PAGE 5 – FINANCIAL SUMMARY
     // ======================================================
-    private void page5(Document doc, PdfWriter writer, SolarQuotation q) throws Exception {
+    private void page5(Document doc, PdfWriter writer, SolarQuotation q, int pageNum) throws Exception {
 
         boolean isResidential = q.getSolarType().equals(ConstantUtils.SOLAR_TYPE_RESIDENTIAL);
         PdfContentByte cb = writer.getDirectContent();
         fillRect(cb, LIGHT_BG, 0, 0, PW, PH);
         pageHeader(cb, "Your Solar Investment Summary",
-                "Transparent pricing  |  Maximum subsidy  |  Best value", 5);
+                "Transparent pricing  |  Maximum subsidy  |  Best value", pageNum);
+
+
+
 
         // Dynamic Pricing Cards Layout
         java.util.List<String[]> pCards = new java.util.ArrayList<>();
         pCards.add(new String[]{"TOTAL SYSTEM COST", "Rs." + formatAmt(q.getActualPrice()), "Before deductions", "1"});
-        
         if (isResidential) {
             pCards.add(new String[]{"GOVT. SUBSIDY", "Rs." + formatAmt(q.getSubsidy()), "PM Surya Ghar benefit", "2"});
         }
-        
         String discomMeter = isResidential ?  "Rs."+ q.getDiscomMeter() : "At Actual";
-
         pCards.add(new String[]{"DISCOM METER Charge",  discomMeter, "Net Metering Charges", "1"});
-
-        
+        if (q.getGedaRegisterCharge() > 0) {
+            pCards.add(new String[]{"GEDA REG. CHARGE", "Rs." + formatAmt(q.getGedaRegisterCharge()), "Registration Charge", "1"});
+        }
         if (q.getPqHsCost() > 0) {
             pCards.add(new String[]{"PREMIUM STRUCTURE", "Rs." + formatAmt(q.getPqHsCost()), "Quality & Heighted Cost", "1"});
         }
-        
         if (q.getDiscountAmount() > 0) {
             pCards.add(new String[]{"SPECIAL DISCOUNT", "Rs." + formatAmt(q.getDiscountAmount()), "Exclusive Offer Applied", "2"});
         }
-        
-        pCards.add(new String[]{"YOUR FINAL PAYABLE", "Rs." + formatAmt(isResidential ? q.getEffectivePrice() : q.getActualPrice()), "After all deductions", "3"});
+        pCards.add(new String[]{"YOUR ACTUAL COST", "Rs." + formatAmt(isResidential ? q.getEffectivePrice() : q.getActualPrice()), "After all deductions", "3"});
 
         float pcW = (PW - 60 - 20) / 3f, pcH = 85, pcTopY = PH - 125;
         float row2Y = pcTopY - pcH - 12;
@@ -1104,7 +1129,7 @@ public class QuotationServiceImpl implements QuotationService {
     // ======================================================
     // QUOTATION DATA PAGE  (original – UNCHANGED)
     // ======================================================
-    private static void addQuotationPage(Document document, SolarQuotation quotation) throws Exception {
+    private static void addQuotationPage(Document document, PdfWriter writer, SolarQuotation quotation) throws Exception {
         ClassPathResource header = new ClassPathResource("static/images/NRS_pdf_header.jpg");
         Image logo = Image.getInstance(header.getInputStream().readAllBytes());
         logo.scaleToFit(480, 90); logo.setAlignment(Image.ALIGN_CENTER);
@@ -1115,29 +1140,35 @@ public class QuotationServiceImpl implements QuotationService {
         boolean hasNumber = quotation.getCustomerMobileNumber() != null && !quotation.getCustomerMobileNumber().trim().isEmpty();
         boolean hasCustomerDetails = hasName || hasNumber;
 
-        if (hasCustomerDetails) {
-            PdfPTable customerSection = new PdfPTable(1);
-            customerSection.setWidthPercentage(100);
-            customerSection.addCell(getCell("Customer Details", PdfPCell.ALIGN_CENTER, new Color(50, 100, 200), Color.WHITE, true));
-            document.add(customerSection);
+        PdfPTable customerSection = new PdfPTable(1);
+        customerSection.setWidthPercentage(100);
+        customerSection.addCell(getCell("Quotation & Customer Details", PdfPCell.ALIGN_CENTER, new Color(50, 100, 200), Color.WHITE, true));
+        document.add(customerSection);
 
-            PdfPTable customerDetailsTable = new PdfPTable(2);
-            customerDetailsTable.setWidthPercentage(100);
-            customerDetailsTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
-            if (hasName) {
-                customerDetailsTable.addCell(getCell("Customer Name",    PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
-                customerDetailsTable.addCell(getCell(quotation.getCustomerName().trim(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
-            }
-            if (hasNumber) {
-                customerDetailsTable.addCell(getCell("Customer Number",  PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
-                customerDetailsTable.addCell(getCell(quotation.getCustomerMobileNumber().trim(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
-            }
-            document.add(customerDetailsTable);
-            document.add(createHalfLineSpace());
+        PdfPTable customerDetailsTable = new PdfPTable(2);
+        customerDetailsTable.setWidthPercentage(100);
+        customerDetailsTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        
+        // Quotation Number & Date details (Always visible on quotation)
+        customerDetailsTable.addCell(getCell("Quotation No.", PdfPCell.ALIGN_LEFT, new Color(230, 240, 250), Color.BLACK, true));
+        customerDetailsTable.addCell(getCell(quotation.getQuationNumber() != null ? quotation.getQuationNumber().trim() : "", PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
+        
+        customerDetailsTable.addCell(getCell("Quotation Date", PdfPCell.ALIGN_LEFT, new Color(230, 240, 250), Color.BLACK, true));
+        customerDetailsTable.addCell(getCell(quotation.getQuotationDate() != null ? quotation.getQuotationDate().trim() : "", PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
+
+        if (hasName) {
+            customerDetailsTable.addCell(getCell("Customer Name",    PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
+            customerDetailsTable.addCell(getCell(quotation.getCustomerName().trim(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
         }
+        if (hasNumber) {
+            customerDetailsTable.addCell(getCell("Customer Number",  PdfPCell.ALIGN_LEFT,  new Color(230, 240, 250), Color.BLACK, true));
+            customerDetailsTable.addCell(getCell(quotation.getCustomerMobileNumber().trim(), PdfPCell.ALIGN_RIGHT, new Color(230, 240, 250), Color.BLACK, true));
+        }
+        document.add(customerDetailsTable);
+        document.add(createHalfLineSpace());
 
         PdfPTable descTable = new PdfPTable(new float[]{4f, 6f});
-        descTable.setWidthPercentage(100); descTable.setSpacingAfter(7f);
+        descTable.setWidthPercentage(100); descTable.setSpacingAfter(4f);
         descTable.addCell(getHeaderCell("Description of Supply Item", new Color(230, 240, 250)));
         descTable.addCell(getHeaderCell("Make and Remarks",           new Color(230, 240, 250)));
         descTable.addCell(getCellColumn("Solar PV Modules",                       new Color(245, 245, 245)));
@@ -1154,7 +1185,7 @@ public class QuotationServiceImpl implements QuotationService {
         document.add(createHalfLineSpace());
 
         PdfPTable systemTable = new PdfPTable(new float[]{5f, 2f, 3f});
-        systemTable.setWidthPercentage(100); systemTable.setSpacingAfter(7f);
+        systemTable.setWidthPercentage(100); systemTable.setSpacingAfter(4f);
         systemTable.addCell(getHeaderCell("Description",             new Color(230, 240, 250)));
         systemTable.addCell(getHeaderCell("Offered System (KW)",     new Color(230, 240, 250)));
         systemTable.addCell(getHeaderCell("Rate/KW (INR, incl GST)", new Color(230, 240, 250)));
@@ -1167,6 +1198,9 @@ public class QuotationServiceImpl implements QuotationService {
         systemTable.addCell(getCellColumn("Premium Quality and Heighted Structure Cost", new Color(245, 245, 245)));
         systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
         systemTable.addCell(getCellColumn("Rs." + quotation.getPqHsCost(),  new Color(245, 245, 245)));
+        systemTable.addCell(getCellColumn("Geda Registration Charge",       new Color(245, 245, 245)));
+        systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
+        systemTable.addCell(getCellColumn("Rs." + quotation.getGedaRegisterCharge(), new Color(245, 245, 245)));
         document.add(systemTable);
 
         PdfPTable priceTable = new PdfPTable(2);
@@ -1185,7 +1219,7 @@ public class QuotationServiceImpl implements QuotationService {
 
         // Bank + Documents side-by-side
         PdfPTable mainBankDocTable = new PdfPTable(new float[]{0.48f, 0.04f, 0.48f});
-        mainBankDocTable.setWidthPercentage(100); mainBankDocTable.setSpacingBefore(18f);
+        mainBankDocTable.setWidthPercentage(100); mainBankDocTable.setSpacingBefore(10f);
 
         PdfPTable bankTable = new PdfPTable(1);
         bankTable.setWidthPercentage(100); bankTable.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
@@ -1225,7 +1259,6 @@ public class QuotationServiceImpl implements QuotationService {
                 FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.BLACK));
         footer.setAlignment(Element.ALIGN_CENTER);
         document.add(footer);
-        document.add(createHalfLineSpace());
 
         PdfPTable ppTable = new PdfPTable(1);
         ppTable.setWidthPercentage(100); ppTable.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
@@ -1237,14 +1270,22 @@ public class QuotationServiceImpl implements QuotationService {
         ppBody.addElement(new Paragraph("20% as an advance on confirmation of the order.",  FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         ppBody.addElement(new Paragraph("75% against Proforma Invoice (PI) before dispatch of solar panels, inverters and other BoS items.", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         ppBody.addElement(new Paragraph("5% after installation and commissioning of the RTS system", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
+        
+        // Dynamic, professional validity clause
+        Paragraph validityNote = new Paragraph("Validity: This quotation is valid for 10 days from the date of issue.", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 9.5f, new Color(0, 51, 102)));
+        validityNote.setSpacingBefore(6f);
+        ppBody.addElement(validityNote);
+        
         ppTable.addCell(ppBody);
         document.add(ppTable);
-        document.add(createHalfLineSpace());
 
+        // Draw footer absolutely via DirectContent so it NEVER triggers a page break
         ClassPathResource footer2 = new ClassPathResource("static/images/NRS_quts_footer.jpg");
         Image footerImg = Image.getInstance(footer2.getInputStream().readAllBytes());
-        footerImg.scaleAbsolute(490f, 9f); footerImg.setAlignment(Image.ALIGN_CENTER);
-        document.add(footerImg);
+        footerImg.scaleAbsolute(490f, 9f);
+        footerImg.setAbsolutePosition((PW - 490f) / 2, 10f); // Draw 10f from bottom
+        PdfContentByte cb = writer.getDirectContent();
+        cb.addImage(footerImg);
     }
 
     // ======================================================
@@ -1287,6 +1328,130 @@ public class QuotationServiceImpl implements QuotationService {
         java.text.NumberFormat format = java.text.NumberFormat.getNumberInstance(new java.util.Locale("en", "IN"));
         format.setMaximumFractionDigits(0);
         return format.format(amount);
+    }
+
+    // ======================================================
+    // PAGE - ADDITIONAL INFO (Material & Warranty)
+    // ======================================================
+    private static void pageAdditionalInfo(Document doc, PdfWriter writer, SolarQuotation q, boolean isStandardized, int pageNum) throws Exception {
+        PdfContentByte cb = writer.getDirectContent();
+        
+        if (isStandardized) {
+            fillRect(cb, LIGHT_BG, 0, 0, PW, PH);
+            pageHeader(cb, "Material & Specification", "Detailed breakdown of system components", pageNum);
+        } else {
+            ClassPathResource header = new ClassPathResource("static/images/NRS_pdf_header.jpg");
+            Image logo = Image.getInstance(header.getInputStream().readAllBytes());
+            logo.scaleToFit(480, 90); logo.setAlignment(Image.ALIGN_CENTER);
+            doc.add(logo);
+            doc.add(createHalfLineSpace());
+        }
+
+        PdfPTable t1 = new PdfPTable(1);
+        t1.setWidthPercentage(100);
+        PdfPCell cTitle1 = new PdfPCell(new Phrase("MATERIAL & SPECIFICATION", fWhiteBold(12)));
+        cTitle1.setBackgroundColor(ORANGE);
+        cTitle1.setHorizontalAlignment(Element.ALIGN_CENTER);
+        cTitle1.setPadding(8);
+        cTitle1.setBorder(PdfPCell.NO_BORDER);
+        t1.addCell(cTitle1);
+        doc.add(t1);
+        
+        doc.add(createHalfLineSpace());
+        
+        PdfPTable mat = new PdfPTable(4);
+        mat.setWidthPercentage(100);
+        mat.setWidths(new float[]{10f, 30f, 40f, 20f});
+        Color headBg = new Color(173, 203, 237); // Light blue
+        
+        mat.addCell(getMatHeader("SR.NO", headBg));
+        mat.addCell(getMatHeader("PRODUCT", headBg));
+        mat.addCell(getMatHeader("SPECIFCATION & MAKE", headBg));
+        mat.addCell(getMatHeader("UOM", headBg));
+        
+        int r = 1;
+        addMatRow(mat, r++, "SOLAR PANEL", q.getSpecSolarPanel(), q.getUomSolarPanel());
+        addMatRow(mat, r++, "INVERTER", q.getSpecInverter(), q.getUomInverter());
+        addMatRow(mat, r++, "ACDB - DCDB", q.getSpecAcdbDcdb(), q.getUomAcdbDcdb());
+        addMatRow(mat, r++, "DC CABLE", q.getSpecDcCable(), q.getUomDcCable());
+        addMatRow(mat, r++, "AC CABLE", q.getSpecAcCable(), q.getUomAcCable());
+        addMatRow(mat, r++, "EARTHING & LA", q.getSpecEarthingLa(), q.getUomEarthingLa());
+        addMatRow(mat, r++, "MOUNTING STRUCTURE", q.getSpecMountingStructure(), q.getUomMountingStructure());
+        addMatRow(mat, r++, "J HOOK", q.getSpecJHook(), q.getUomJHook());
+        addMatRow(mat, r++, "EARTHING", q.getSpecEarthing(), q.getUomEarthing());
+        addMatRow(mat, r++, "ISOLATION MCB", q.getSpecIsolationMcb(), q.getUomIsolationMcb());
+        addMatRow(mat, r++, "PVC PIPE & ELBOW", q.getSpecPvcPipe(), q.getUomPvcPipe());
+        addMatRow(mat, r++, "FASTNER", q.getSpecFastner(), q.getUomFastner());
+        addMatRow(mat, r++, "OPERATION & MAINTANANCE", q.getSpecOAndM(), q.getUomOAndM());
+        
+        doc.add(mat);
+        doc.add(createHalfLineSpace());
+        doc.add(createHalfLineSpace());
+        
+        PdfPTable t2 = new PdfPTable(1);
+        t2.setWidthPercentage(100);
+        PdfPCell cTitle2 = new PdfPCell(new Phrase("WARRANTY", fWhiteBold(12)));
+        cTitle2.setBackgroundColor(ORANGE);
+        cTitle2.setHorizontalAlignment(Element.ALIGN_CENTER);
+        cTitle2.setPadding(8);
+        cTitle2.setBorder(PdfPCell.NO_BORDER);
+        t2.addCell(cTitle2);
+        doc.add(t2);
+        
+        doc.add(createHalfLineSpace());
+        
+        PdfPTable wMat = new PdfPTable(3);
+        wMat.setWidthPercentage(100);
+        wMat.setWidths(new float[]{10f, 60f, 30f});
+        
+        addWarrRow(wMat, 1, "SPV MODULE ( FOR MANUFACTURING DEFECT )", q.getWarrSpvDefect());
+        addWarrRow(wMat, 2, "SPV MODULE ( FOR PERFORMANCE )", q.getWarrSpvPerformance());
+        addWarrRow(wMat, 3, "INVERTER - ( FOR MANUFACTURING DEFECT )", q.getWarrInverterDefect());
+        
+        doc.add(wMat);
+        
+        if (isStandardized) {
+            bottomStrip(cb, "WAAREE Premium Panels  |  Official Partner  |  Top Tier Equipment", "Backed by 30-Year Performance Guarantee from Manufacturer");
+        } else {
+            ClassPathResource footer2 = new ClassPathResource("static/images/NRS_quts_footer.jpg");
+            Image footerImg = Image.getInstance(footer2.getInputStream().readAllBytes());
+            footerImg.scaleAbsolute(490f, 9f); footerImg.setAlignment(Image.ALIGN_CENTER);
+            
+            // To ensure it appears at the bottom like addQuotationPage, we can position it absolutely
+            // or just add it to doc with appropriate spacing, but absolute is safer for footer
+            footerImg.setAbsolutePosition((PW - 490f) / 2, 20f); 
+            doc.add(footerImg);
+        }
+    }
+    
+    private static PdfPCell getMatHeader(String text, Color bg) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.BLACK)));
+        cell.setBackgroundColor(bg);
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setPadding(6);
+        return cell;
+    }
+
+    private static void addMatRow(PdfPTable table, int sr, String prod, String spec, String uom) {
+        table.addCell(getMatCell(String.valueOf(sr), Element.ALIGN_CENTER));
+        table.addCell(getMatCell(prod, Element.ALIGN_CENTER));
+        table.addCell(getMatCell(spec != null ? spec : "", Element.ALIGN_CENTER));
+        table.addCell(getMatCell(uom != null ? uom : "", Element.ALIGN_CENTER));
+    }
+    
+    private static void addWarrRow(PdfPTable table, int sr, String prod, String duration) {
+        table.addCell(getMatCell(String.valueOf(sr), Element.ALIGN_CENTER));
+        table.addCell(getMatCell(prod, Element.ALIGN_LEFT));
+        table.addCell(getMatCell(duration != null ? duration : "", Element.ALIGN_LEFT));
+    }
+    
+    private static PdfPCell getMatCell(String text, int align) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, FontFactory.getFont(FontFactory.HELVETICA, 9, Color.BLACK)));
+        cell.setHorizontalAlignment(align);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setPadding(6);
+        return cell;
     }
 }
 

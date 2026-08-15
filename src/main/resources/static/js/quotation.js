@@ -27,6 +27,7 @@ function calculateKw() {
       var discomInputVal = $("#discomMeter").val();
       var discomMeterCharge = parseFloat(discomInputVal); // Default to 0 if NaN
       var pqHsCost = parseFloat($("#pqHsCost").val() || 0); // Default to 0 if NaN
+      var gedaRegisterCharge = parseFloat($("#gedaRegisterCharge").val() || 0); // Default to 0 if NaN
       var subsidy = parseFloat($("#subsidy").val() || 0); // Default to 0 if NaN
 
       // Calculate total price
@@ -36,9 +37,9 @@ function calculateKw() {
       // Calculate actual price
       var actualPrice = 0;
       if(!isNaN(discomMeterCharge)) {
-          actualPrice = Math.round(totalPrice + pqHsCost + discomMeterCharge);
+          actualPrice = Math.round(totalPrice + pqHsCost + gedaRegisterCharge + discomMeterCharge);
       }else{
-            actualPrice = Math.round(totalPrice + pqHsCost + 0);
+            actualPrice = Math.round(totalPrice + pqHsCost + gedaRegisterCharge + 0);
       }
 
       $("#actualPrice").val(actualPrice);
@@ -74,6 +75,7 @@ $(document).on("keyup", "#discount", function () {
           $("#rateKw").val(urlParams.get('rateKw') || '');
           $("#discomMeter").val(urlParams.get('discomMeter') || '0');
           $("#pqHsCost").val(urlParams.get('pqHsCost') || '0');
+          $("#gedaRegisterCharge").val(urlParams.get('gedaRegisterCharge') || '0');
           $("#subsidy").val(urlParams.get('subsidy') || '78000');
           
           const subByVal = urlParams.get('submittedBy');
@@ -93,11 +95,15 @@ $(document).on("keyup", "#discount", function () {
                       $("#submittedByName").val(subByVal);
                   }
               } else {
-                  $("#submittedByName").val(subByVal);
+                  if (!$("#submittedByName").is(":disabled")) {
+                      $("#submittedByName").val(subByVal);
+                  }
               }
           }
           if (urlParams.get('submittedNumber')) {
-              $("#submittedNumber").val(urlParams.get('submittedNumber'));
+              if (!$("#submittedNumber").is(":disabled")) {
+                  $("#submittedNumber").val(urlParams.get('submittedNumber'));
+              }
           }
           if (urlParams.get('discount')) {
               $("#discount").val(urlParams.get('discount'));
@@ -142,6 +148,7 @@ $(document).on("keyup", "#discount", function () {
               value:                parseFloat($("#value").val()),
               discomMeter:          $("#discomMeter").val(),
               pqHsCost:             parseFloat($("#pqHsCost").val()),
+              gedaRegisterCharge:   parseFloat($("#gedaRegisterCharge").val() || 0),
               actualPrice:          parseFloat($("#actualPrice").val()),
               subsidy:              parseFloat($("#subsidy").val()),
               effectivePrice:       parseFloat($("#effectivePrice").val()),
@@ -153,6 +160,41 @@ $(document).on("keyup", "#discount", function () {
               panelWatt:            $("#panelWatt").val(),
               noOfPanels:           $("#noOfPanels").val(),
               inverter:             $("#inverter").val(),
+              
+              includeAdditionalInfo: $("#includeAdditionalInfo").is(":checked"),
+              specSolarPanel:       $("#specSolarPanel").val(),
+              specInverter:         $("#specInverter").val(),
+              specAcdbDcdb:         $("#specAcdbDcdb").val(),
+              specDcCable:          $("#specDcCable").val(),
+              specAcCable:          $("#specAcCable").val(),
+              specEarthingLa:       $("#specEarthingLa").val(),
+              specMountingStructure:$("#specMountingStructure").val(),
+              specBasePlate:        "", // Dummy to prevent backend crash if not restarted
+              specJHook:            $("#specJHook").val(),
+              specEarthing:         $("#specEarthing").val(),
+              specIsolationMcb:     $("#specIsolationMcb").val(),
+              specPvcPipe:          $("#specPvcPipe").val(),
+              specFastner:          $("#specFastner").val(),
+              specOAndM:            $("#specOAndM").val(),
+              
+              uomSolarPanel:        $("#uomSolarPanel").val(),
+              uomInverter:          $("#uomInverter").val(),
+              uomAcdbDcdb:          $("#uomAcdbDcdb").val(),
+              uomDcCable:           $("#uomDcCable").val(),
+              uomAcCable:           $("#uomAcCable").val(),
+              uomEarthingLa:        $("#uomEarthingLa").val(),
+              uomMountingStructure: $("#uomMountingStructure").val(),
+              uomBasePlate:         "", // Dummy to prevent backend crash if not restarted
+              uomJHook:             $("#uomJHook").val(),
+              uomEarthing:          $("#uomEarthing").val(),
+              uomIsolationMcb:      $("#uomIsolationMcb").val(),
+              uomPvcPipe:           $("#uomPvcPipe").val(),
+              uomFastner:           $("#uomFastner").val(),
+              uomOAndM:             $("#uomOAndM").val(),
+              
+              warrSpvDefect:        $("#warrSpvDefect").val(),
+              warrSpvPerformance:   $("#warrSpvPerformance").val(),
+              warrInverterDefect:   $("#warrInverterDefect").val()
           };
 
           // Show loader for the entire duration of PDF generation
@@ -170,11 +212,20 @@ $(document).on("keyup", "#discount", function () {
           //   1. POSTs to /quts/token (with the JWT cookie)
           //   2. Navigates the WebView to /quts/view/{token}
           //   3. Downloads the PDF bytes and opens them in the system PDF viewer
-          // This requires ZERO storage permissions and works on all Android versions.
+           // This requires ZERO storage permissions and works on all Android versions.
           if (window.Android && typeof window.Android.downloadPdf === "function") {
               try {
                   safeHideLoader();
                   window.Android.downloadPdf(JSON.stringify(formData), pdfFilename);
+                  
+                  // Refresh sequence number on screen after short delay
+                  setTimeout(function() {
+                      $.get("/NRS/quts/sequence", function(res) {
+                          if (res && res.sequence) {
+                              $("#quationNumber").val(res.sequence);
+                          }
+                      });
+                  }, 2000);
               } catch (e) {
                   safeHideLoader();
                   showToast("Mobile PDF error: " + e.message, "error");
@@ -202,10 +253,27 @@ $(document).on("keyup", "#discount", function () {
                   setTimeout(function() {
                       window.URL.revokeObjectURL(blobUrl);
                   }, 1000);
+
+                  // Dynamically fetch and update the next quotation number on the screen
+                  $.get("/NRS/quts/sequence", function(res) {
+                      if (res && res.sequence) {
+                          $("#quationNumber").val(res.sequence);
+                      }
+                  });
               },
               error: function(xhr, status, error) {
                   safeHideLoader();
-                  showToast("Error generating PDF: " + (error || "Unknown error"), "error");
+                  // Parse error message from Blob response if available
+                  if (xhr.response) {
+                      var reader = new FileReader();
+                      reader.onload = function() {
+                          var msg = reader.result || "Unknown error generating PDF";
+                          showToast(msg, "error");
+                      };
+                      reader.readAsText(xhr.response);
+                  } else {
+                      showToast("Error generating PDF: " + (error || "Unknown error"), "error");
+                  }
               }
           });
       });
