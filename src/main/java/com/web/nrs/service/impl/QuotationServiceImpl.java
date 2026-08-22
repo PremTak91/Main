@@ -54,7 +54,7 @@ public class QuotationServiceImpl implements QuotationService {
     private static Font fOrange(float size)     { return new Font(Font.HELVETICA, size, Font.BOLD, ORANGE); }
     private static Font fPrimary(float size)    { return new Font(Font.HELVETICA, size, Font.BOLD, PRIMARY); }
     private static Font fDark(float size)       { return new Font(Font.HELVETICA, size, Font.NORMAL, DARK); }
-    private static Font fLight(float size)      { return new Font(Font.HELVETICA, size, Font.NORMAL, new Color(200, 220, 255)); }
+    private static Font fLight(float size)      { return new Font(Font.HELVETICA, size, Font.BOLD, Color.WHITE); }
 
     @Override
     public String getDocumentSequence() {
@@ -65,67 +65,23 @@ public class QuotationServiceImpl implements QuotationService {
         documentSequenceService.incrementSequence(ConstantUtils.DOC_TYPE_QUOTATION, seq);
     }
 
-    @Override
-    @Transactional
-    public byte[] generateQuotationPdf(SolarQuotation q) throws Exception {
-        if (q.getQuationNumber() == null || q.getQuationNumber().trim().isEmpty()) {
-            throw new IllegalArgumentException("Quotation number cannot be empty.");
-        }
-        String qNum = q.getQuationNumber().trim();
-        if (quotationLogRepository.existsByQuotationNo(qNum)) {
-            throw new IllegalArgumentException("Quotation number " + qNum + " has already been generated!");
+    private void reserveAndLogQuotation(SolarQuotation q) {
+        String qNum = q.getQuationNumber();
+        if (qNum != null) {
+            qNum = qNum.trim();
         }
 
-        if (q.getQuotationDate() == null)
-            q.setQuotationDate(LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")));
-        if (q.getPaybackPeriod() == null) q.setPaybackPeriod("3-4 Years");
-        if (q.getAnnualSaving()  == null) q.setAnnualSaving("Rs.18,000 / year");
-        if (q.getEmiOption()     == null) q.setEmiOption("From Rs.3,500 / month");
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        Document doc = new Document(PageSize.A4, 0, 0, 0, 0);
-        
-        // Critical Fix: Margins MUST be injected BEFORE doc.open() to take effect on the first page!
-        if ("Single Page".equalsIgnoreCase(q.getPdfType())) {
-            doc.setMargins(40, 40, 50, 15);
-        }
-        
-        PdfWriter writer = PdfWriter.getInstance(doc, out);
-        doc.open();
-
-        if ("Single Page".equalsIgnoreCase(q.getPdfType())) {
-            addQuotationPage(doc, writer, q);
-            if (q.isIncludeAdditionalInfo()) {
-                doc.newPage();
-                pageAdditionalInfo(doc, writer, q, false, 2);
-            }
+        if (qNum == null || qNum.isEmpty() || quotationLogRepository.existsByQuotationNo(qNum)) {
+            qNum = documentSequenceService.getAndIncrementSequence(ConstantUtils.DOC_TYPE_QUOTATION);
         } else {
-            page1(doc, writer, q);
-            doc.newPage();
-            page2(doc, writer, q.getSubmittedNumber());
-            doc.newPage();
-            page3(doc, writer, q);
-            
-            int currentPage = 4;
-            
-            if (q.isIncludeAdditionalInfo()) {
-                doc.setMargins(40, 40, 100, 60);
-                doc.newPage();
-                pageAdditionalInfo(doc, writer, q, true, currentPage++);
-                doc.setMargins(0, 0, 0, 0); // reset margins for next full-bleed pages
-            }
-            
-            doc.newPage();
-            page4(doc, writer, q, currentPage++);
-            doc.newPage();
-            page5(doc, writer, q, currentPage);
-            doc.setMargins(40, 40, 50, 30);
-            doc.newPage();
+            // The provided quotation number is available, so we consume it
+            String seqStr = qNum.contains("/") ? qNum.split("/")[2] : "01";
+            documentSequenceService.incrementSequence(ConstantUtils.DOC_TYPE_QUOTATION, seqStr);
         }
+        
+        q.setQuationNumber(qNum);
 
-        doc.close();
-
-        // Log the quotation to DB
+        // Log the quotation to DB atomically
         try {
             Integer noOfPanelsInt = null;
             if (q.getNoOfPanels() != null && !q.getNoOfPanels().trim().isEmpty()) {
@@ -180,8 +136,62 @@ public class QuotationServiceImpl implements QuotationService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
 
-        updateDocumentSequence(q.getQuationNumber() != null ? q.getQuationNumber().split("/")[2] : "01");
+    @Override
+    @Transactional
+    public byte[] generateQuotationPdf(SolarQuotation q) throws Exception {
+        reserveAndLogQuotation(q);
+
+        if (q.getQuotationDate() == null)
+            q.setQuotationDate(LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy")));
+        if (q.getPaybackPeriod() == null) q.setPaybackPeriod("3-4 Years");
+        if (q.getAnnualSaving()  == null) q.setAnnualSaving("Rs.18,000 / year");
+        if (q.getEmiOption()     == null) q.setEmiOption("From Rs.3,500 / month");
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        Document doc = new Document(PageSize.A4, 0, 0, 0, 0);
+        
+        // Critical Fix: Margins MUST be injected BEFORE doc.open() to take effect on the first page!
+        if ("Single Page".equalsIgnoreCase(q.getPdfType())) {
+            doc.setMargins(40, 40, 50, 15);
+        }
+        
+        PdfWriter writer = PdfWriter.getInstance(doc, out);
+        doc.open();
+
+        if ("Single Page".equalsIgnoreCase(q.getPdfType())) {
+            addQuotationPage(doc, writer, q);
+            if (q.isIncludeAdditionalInfo()) {
+                doc.newPage();
+                pageAdditionalInfo(doc, writer, q, false, 2);
+            }
+        } else {
+            page1(doc, writer, q);
+            doc.newPage();
+            page2(doc, writer, q.getSubmittedNumber());
+            doc.newPage();
+            page3(doc, writer, q);
+            
+            int currentPage = 4;
+            
+            if (q.isIncludeAdditionalInfo()) {
+                doc.setMargins(40, 40, 100, 60);
+                doc.newPage();
+                pageAdditionalInfo(doc, writer, q, true, currentPage++);
+                doc.setMargins(0, 0, 0, 0); // reset margins for next full-bleed pages
+            }
+            
+            doc.newPage();
+            page4(doc, writer, q, currentPage++);
+            doc.newPage();
+            page5(doc, writer, q, currentPage);
+            doc.setMargins(40, 40, 50, 30);
+            doc.newPage();
+        }
+
+        doc.close();
+
         return out.toByteArray();
     }
 
@@ -341,7 +351,7 @@ public class QuotationServiceImpl implements QuotationService {
         ColumnText ct = new ColumnText(cb);
         ct.setSimpleColumn(pmX + 22, qY + 15, pmX + qW - 22, qY + qH - 20);
         String quoteTxt = "\"In order to further sustainable development and people's well-being, we are launching the PM Surya Ghar: Muft Bijli Yojana. This project, with an investment of over Rs. 75,000 crores, aims to light up 1 crore households by providing up to 300 units of free electricity every month.\"";
-        Paragraph pQuote = new Paragraph(quoteTxt, new Font(Font.HELVETICA, 9.5f, Font.ITALIC, Color.WHITE));
+        Paragraph pQuote = new Paragraph(quoteTxt, new Font(Font.HELVETICA, 9.5f, Font.BOLDITALIC, Color.WHITE));
         pQuote.setAlignment(Element.ALIGN_CENTER);
         ct.addElement(pQuote);
         ct.go();
@@ -908,22 +918,29 @@ public class QuotationServiceImpl implements QuotationService {
 
         // Dynamic Pricing Cards Layout
         java.util.List<String[]> pCards = new java.util.ArrayList<>();
-        pCards.add(new String[]{"TOTAL SYSTEM COST", "Rs." + formatAmt(q.getActualPrice()), "Before deductions", "1"});
+        pCards.add(new String[]{"TOTAL SYSTEM COST", "Rs." + formatAmt(q.getActualPrice()), "Before deductions", "1", null});
         if (isResidential) {
-            pCards.add(new String[]{"GOVT. SUBSIDY", "Rs." + formatAmt(q.getSubsidy()), "PM Surya Ghar benefit", "2"});
+            pCards.add(new String[]{"GOVT. SUBSIDY", "Rs." + formatAmt(q.getSubsidy()), "PM Surya Ghar benefit", "2", null});
         }
         String discomMeter = isResidential ?  "Rs."+ q.getDiscomMeter() : "At Actual";
-        pCards.add(new String[]{"DISCOM METER Charge",  discomMeter, "Net Metering Charges", "1"});
+        pCards.add(new String[]{"DISCOM METER Charge",  discomMeter, "Net Metering Charges", "1", null});
         if (q.getGedaRegisterCharge() > 0) {
-            pCards.add(new String[]{"GEDA REG. CHARGE", "Rs." + formatAmt(q.getGedaRegisterCharge()), "Registration Charge", "1"});
+            pCards.add(new String[]{"GEDA REG. CHARGE", "Rs." + formatAmt(q.getGedaRegisterCharge()), "Registration Charge", "1", null});
         }
         if (q.getPqHsCost() > 0) {
-            pCards.add(new String[]{"PREMIUM STRUCTURE", "Rs." + formatAmt(q.getPqHsCost()), "Quality & Heighted Cost", "1"});
+            pCards.add(new String[]{"PREMIUM STRUCTURE", "Rs." + formatAmt(q.getPqHsCost()), "Quality & Heighted Cost", "1", null});
         }
         if (q.getDiscountAmount() > 0) {
-            pCards.add(new String[]{"SPECIAL DISCOUNT", "Rs." + formatAmt(q.getDiscountAmount()), "Exclusive Offer Applied", "2"});
+            pCards.add(new String[]{"SPECIAL DISCOUNT", "Rs." + formatAmt(q.getDiscountAmount()), "Exclusive Offer Applied", "2", null});
         }
-        pCards.add(new String[]{"YOUR ACTUAL COST", "Rs." + formatAmt(isResidential ? q.getEffectivePrice() : q.getActualPrice()), "After all deductions", "3"});
+        
+        String extraNote = null;
+        if ("Commercial".equalsIgnoreCase(q.getSolarType())) {
+            double gst = q.getActualPrice() * 0.089;
+            extraNote = "(Includes 8.9% GST : Rs." + formatAmt(gst) + ")";
+        }
+        
+        pCards.add(new String[]{"YOUR ACTUAL COST", "Rs." + formatAmt(isResidential ? q.getEffectivePrice() : q.getActualPrice()), "After all deductions", "3", extraNote});
 
         float pcW = (PW - 60 - 20) / 3f, pcH = 85, pcTopY = PH - 125;
         float row2Y = pcTopY - pcH - 12;
@@ -934,7 +951,7 @@ public class QuotationServiceImpl implements QuotationService {
             String[] c = pCards.get(i);
             Color bg = c[3].equals("1") ? PRIMARY : (c[3].equals("2") ? GREEN : ORANGE);
             Color acc = c[3].equals("1") ? ORANGE : Color.WHITE;
-            drawPriceCard(cb, 30 + i * (pcW + 10), pcTopY - pcH, pcW, pcH, c[0], c[1], c[2], bg, acc);
+            drawPriceCard(cb, 30 + i * (pcW + 10), pcTopY - pcH, pcW, pcH, c[0], c[1], c[2], c[4], bg, acc);
         }
 
         // Draw Row 2 (remaining cards)
@@ -945,7 +962,7 @@ public class QuotationServiceImpl implements QuotationService {
                 String[] c = pCards.get(3 + i);
                 Color bg = c[3].equals("1") ? PRIMARY : (c[3].equals("2") ? GREEN : ORANGE);
                 Color acc = c[3].equals("1") ? ORANGE : Color.WHITE;
-                drawPriceCard(cb, 30 + i * (row2W + 10), row2Y - pcH, row2W, pcH, c[0], c[1], c[2], bg, acc);
+                drawPriceCard(cb, 30 + i * (row2W + 10), row2Y - pcH, row2W, pcH, c[0], c[1], c[2], c[4], bg, acc);
             }
         }
 
@@ -992,7 +1009,7 @@ public class QuotationServiceImpl implements QuotationService {
             fillRound(cb, ptC[i], bx, by, boxW, boxH, 6);
             txt(cb, Element.ALIGN_CENTER, new Phrase(ptP[i], fWhiteBold(14)), bx + boxW / 2, by + boxH - 14);
             txt(cb, Element.ALIGN_CENTER,
-                    new Phrase(ptL[i], new Font(Font.HELVETICA, 7, Font.NORMAL, new Color(220, 230, 255))),
+                    new Phrase(ptL[i], new Font(Font.HELVETICA, 7, Font.BOLD, Color.WHITE)),
                     bx + boxW / 2, by + 8);
         }
 
@@ -1067,13 +1084,13 @@ public class QuotationServiceImpl implements QuotationService {
     }
 
     private static void drawPriceCard(PdfContentByte cb, float x, float y, float w, float h,
-                                      String title, String value, String note, Color bg, Color accent) {
+                                      String title, String value, String note, String extraNote, Color bg, Color accent) {
         cb.setColorFill(bg); cb.setColorStroke(new Color(180, 200, 225));
         cb.setLineWidth(1f); cb.roundRectangle(x, y, w, h, 10); cb.fillStroke();
         fillRect(cb, accent, x, y + h - 5, w, 5);
-        Color sub = new Color(200, 220, 255);
+        Color textColor = Color.WHITE;
         if (title != null && !title.isEmpty()) {
-            txt(cb, Element.ALIGN_CENTER, new Phrase(title, new Font(Font.HELVETICA, 7, Font.BOLD, sub)), x + w / 2, y + h - 20);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(title, new Font(Font.HELVETICA, 7, Font.BOLD, textColor)), x + w / 2, y + h - 20);
         }
         
         if (value.length() > 18) {
@@ -1081,14 +1098,18 @@ public class QuotationServiceImpl implements QuotationService {
             if (mid == -1) mid = value.length() / 2;
             String line1 = value.substring(0, mid).trim();
             String line2 = value.substring(mid).trim();
-            txt(cb, Element.ALIGN_CENTER, new Phrase(line1, new Font(Font.HELVETICA, 13, Font.BOLD, accent)), x + w / 2, y + h / 2 + 12);
-            txt(cb, Element.ALIGN_CENTER, new Phrase(line2, new Font(Font.HELVETICA, 13, Font.BOLD, accent)), x + w / 2, y + h / 2 - 6);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(line1, new Font(Font.HELVETICA, 13, Font.BOLD, textColor)), x + w / 2, y + h / 2 + 12);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(line2, new Font(Font.HELVETICA, 13, Font.BOLD, textColor)), x + w / 2, y + h / 2 - 6);
         } else {
-            txt(cb, Element.ALIGN_CENTER, new Phrase(value, new Font(Font.HELVETICA, 17, Font.BOLD, accent)), x + w / 2, y + h / 2 + 6);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(value, new Font(Font.HELVETICA, 17, Font.BOLD, textColor)), x + w / 2, y + h / 2 + 6);
+        }
+
+        if (extraNote != null && !extraNote.isEmpty()) {
+            txt(cb, Element.ALIGN_CENTER, new Phrase(extraNote, new Font(Font.HELVETICA, 8, Font.BOLD, textColor)), x + w / 2, y + h / 2 - 10);
         }
 
         if (note != null && !note.isEmpty()) {
-            txt(cb, Element.ALIGN_CENTER, new Phrase(note,  new Font(Font.HELVETICA, 7, Font.NORMAL, sub)), x + w / 2, y + 10);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(note,  new Font(Font.HELVETICA, 7, Font.BOLD, textColor)), x + w / 2, y + 10);
         }
     }
 

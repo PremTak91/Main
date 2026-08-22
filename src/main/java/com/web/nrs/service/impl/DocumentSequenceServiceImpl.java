@@ -36,8 +36,30 @@ public class DocumentSequenceServiceImpl  implements DocumentSequenceService {
         return "NRS/" + financialYear + "/" + String.format("%03d", nextNumber);
     }
 
+    @Transactional(jakarta.transaction.Transactional.TxType.REQUIRES_NEW)
+    public String getAndIncrementSequence(String docType) {
+        String financialYear = NrsUtils.getFinancialYear();
+        DocumentSequenceEntity sequence = documentSequenceRepository.getSequenceForUpdate(docType, financialYear);
+        int nextNumber;
+
+        if (sequence == null) {
+            nextNumber = 1;
+            sequence = new DocumentSequenceEntity();
+            sequence.setDocType(ConstantUtils.DOC_TYPE_QUOTATION);
+            sequence.setFinancialYear(financialYear);
+            sequence.setLastNumber(nextNumber);
+            documentSequenceRepository.save(sequence);
+        } else {
+            nextNumber = sequence.getLastNumber() + 1;
+            sequence.setLastNumber(nextNumber);
+            documentSequenceRepository.save(sequence);
+        }
+
+        return "NRS/" + financialYear + "/" + String.format("%03d", nextNumber);
+    }
+
     @Override
-    @Transactional
+    @Transactional(jakarta.transaction.Transactional.TxType.REQUIRES_NEW)
     public void incrementSequence(String docType, String sequence) {
         String financialYear = NrsUtils.getFinancialYear();
         documentSequenceRepository.incrementSequence(docType, financialYear, sequence);
