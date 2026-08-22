@@ -312,19 +312,49 @@ class PerspectiveEngine {
     }
     
     projectToScreen(worldX, worldY, worldZ = 0) {
-        if (!this.homographyMatrix) return {
-            x: worldX * this.scalePixelsPerMeter, 
-            y: worldY * this.scalePixelsPerMeter
-        };
+        if (!this.homographyMatrix) {
+            let pt = {
+                x: worldX * this.scalePixelsPerMeter, 
+                y: worldY * this.scalePixelsPerMeter
+            };
+            if (worldZ !== 0) {
+                const cx = this.imageWidth / 2;
+                const cy = this.imageHeight / 2;
+                // Add radial parallax scale (5% expansion per meter of height)
+                const zScale = 1 + (worldZ * 0.05);
+                pt.x = cx + (pt.x - cx) * zScale;
+                pt.y = cy + (pt.y - cy) * zScale;
+            }
+            return pt;
+        }
         
         // Map true physical meters (worldX, worldY) to screen pixels using Homography
         let pt = applyHomography(this.homographyMatrix, worldX, worldY);
         
         if (worldZ !== 0) {
-            // Apply vertical displacement in screen space
             const depthFactor = this.getDepthFactor(pt.x, pt.y);
-            const verticalShift = -worldZ * this.scalePixelsPerMeter * depthFactor;
-            pt.y += verticalShift;
+            
+            // We enforce a minimum of 0.3 so that even on perfectly top-down satellite images,
+            // 3D structures (supports, tilted panels) still have a visible isometric extrusion.
+            const ny = Math.max(0.3, (this.roofNormal && this.roofNormal.ny !== undefined) ? this.roofNormal.ny : Math.sin(Math.PI / 4));
+            
+            // Apply radial parallax (perspective expansion for objects closer to camera)
+            const cx = this.imageWidth / 2;
+            const cy = this.imageHeight / 2;
+            const zScale = 1 + (worldZ * 0.05); // 5% expansion per meter
+            
+            pt.x = cx + (pt.x - cx) * zScale;
+            pt.y = cy + (pt.y - cy) * zScale;
+
+            // Still apply isometric extrusion if the camera is oblique (ny > 0)
+            if (ny > 0.05) {
+                const horizonRad = (this.horizonAngle || 0) * Math.PI / 180;
+                const extrusionLength = worldZ * this.scalePixelsPerMeter * depthFactor * ny;
+                
+                // Shift along the viewing vector
+                pt.x += -Math.sin(horizonRad) * extrusionLength;
+                pt.y += -Math.cos(horizonRad) * extrusionLength;
+            }
         }
         
         return pt;

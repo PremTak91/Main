@@ -19,12 +19,23 @@ class SolarRenderer {
      * @param {Object} config - Array configuration
      * @param {Object} layers - Konva layers/groups {shadowsLayer, structureLayer, solarArrayGroup}
      */
-    renderFullArray(panelItems, config, layers) {
+    renderFullArray(panelsData, config, layers) {
         const { shadowsLayer, structureLayer, solarArrayGroup } = layers;
 
         if (shadowsLayer) shadowsLayer.destroyChildren();
         if (structureLayer) structureLayer.destroyChildren();
         if (solarArrayGroup) solarArrayGroup.destroyChildren();
+
+        // Check if panelsData has the full geometry attached
+        let panelItems = [];
+        let geometry = null;
+        if (panelsData.items && panelsData._geometry) {
+            panelItems = panelsData.items;
+            geometry = panelsData._geometry;
+        } else {
+            // Fallback for older interface
+            panelItems = Array.isArray(panelsData) ? panelsData : (panelsData.items || []);
+        }
 
         const activePanels = panelItems.filter(p => !p.deleted && p.valid !== false);
         if (activePanels.length === 0) return;
@@ -34,7 +45,7 @@ class SolarRenderer {
         }
 
         if (config.showStructure !== false && structureLayer) {
-            this.renderStructure(activePanels, config, structureLayer);
+            this.renderStructure(geometry, config, structureLayer);
         }
 
         if (solarArrayGroup) {
@@ -46,30 +57,13 @@ class SolarRenderer {
      * Projects shadow of panels onto the roof
      */
     renderShadows(panelItems, config, shadowsLayer) {
-        const h = config.structureHeight || 0.3;
-        const tilt = (config.tiltAngle || 10) * Math.PI / 180;
         const sunAzimuth = config.sunAzimuth !== undefined ? config.sunAzimuth : 220;
         const sunElevation = config.sunElevation !== undefined ? config.sunElevation : 45;
 
         panelItems.forEach(panel => {
-            const w = panel.worldW;
-            const d = panel.worldH;
-            const x = panel.worldX;
-            const y = panel.worldY;
-
-            // Calculate corner heights
-            const hFront = h;
-            const hRear = h + d * Math.sin(tilt);
-            const yRear = y + d * Math.cos(tilt);
-
-            const corners = [
-                { x: x, y: y, z: hFront },           // Front-Left
-                { x: x + w, y: y, z: hFront },       // Front-Right
-                { x: x + w, y: yRear, z: hRear },    // Rear-Right
-                { x: x, y: yRear, z: hRear }         // Rear-Left
-            ];
-
-            const shadowPoints = corners.map(pt => 
+            if (!panel.corners || panel.corners.length < 4) return;
+            
+            const shadowPoints = panel.corners.map(pt => 
                 this.perspectiveEngine.projectShadow(pt, pt.z, sunAzimuth, sunElevation)
             );
 
@@ -91,12 +85,7 @@ class SolarRenderer {
             shadowsLayer.add(shadowPoly);
 
             // Ambient occlusion dots at leg bases (approximate leg positions)
-            const legPositions = [
-                {x: x, y: y}, {x: x + w, y: y},
-                {x: x, y: yRear}, {x: x + w, y: yRear}
-            ];
-
-            legPositions.forEach(pos => {
+            panel.corners.forEach(pos => {
                 const screenPt = this.perspectiveEngine.projectToScreen(pos.x, pos.y, 0);
                 const ao = new Konva.Ellipse({
                     x: screenPt.x,
@@ -111,164 +100,83 @@ class SolarRenderer {
     }
 
     /**
-     * Renders mounting structure
+     * Renders mounting structure using exact geometry
      */
-    renderStructure(panelItems, config, structureLayer) {
-        const h = config.structureHeight || 0.3;
-        const tilt = (config.tiltAngle || 10) * Math.PI / 180;
+    renderStructure(geometry, config, structureLayer) {
+        if (!geometry || !geometry.supports || !geometry.rails) return;
         const scale = this._getScaleFactor();
 
-        const drawnBasePlates = new Set();
-        const drawnRails = new Set();
+        // 1. Render Supports (Posts)
+        geometry.supports.forEach((support, i) => {
+            const pt = {
+                x: support.position.x, 
+                y: support.position.y, 
+                zTop: support.topHeight
+            };
 
-        // Base plates, Legs, and Rails
-        panelItems.forEach(panel => {
-            if (!panel.corners || panel.corners.length < 4) return;
-            const corners = panel.corners;
+            const legBaseZ = support.baseHeight || 0;
 
-            // Define missing variables for rail placement
-            const x = panel.worldX;
-            const y = panel.worldY;
-            const w = panel.worldW;
-            const d = panel.worldH;
-            const yRear = y + d * Math.cos(tilt);
-            const hRear = h + d * Math.sin(tilt);
-
-            const legPoints = [
-                {x: corners[0].x, y: corners[0].y, zFront: 0, zTop: corners[0].z}, // FL
-                {x: corners[1].x, y: corners[1].y, zFront: 0, zTop: corners[1].z}, // FR
-                {x: corners[3].x, y: corners[3].y, zFront: 0, zTop: corners[3].z}, // RL
-                {x: corners[2].x, y: corners[2].y, zFront: 0, zTop: corners[2].z}  // RR
-            ];
-
-            // Render Base Plates & Legs
-            legPoints.forEach((pt, i) => {
-                const key = `${pt.x.toFixed(2)}_${pt.y.toFixed(2)}`;
-                if (!drawnBasePlates.has(key)) {
-                    drawnBasePlates.add(key);
-
-                    // Base plate Z=0
-                    const bSize = 0.15;
-                    const bRect = { x: pt.x - bSize/2, y: pt.y - bSize/2, w: bSize, h: bSize };
-                    const bQuad = this.perspectiveEngine.transformQuadToRoof(bRect, 0);
-                    
-                    const flatBQuad = bQuad.reduce((acc, q) => { acc.push(q.x, q.y); return acc; }, []);
-                    
-                    if (config.mountType === 'RCC-Ballast') {
-                        // Draw concrete block top face
-                        const bQuadTop = this.perspectiveEngine.transformQuadToRoof(bRect, 0.15);
-                        const flatBQuadTop = bQuadTop.reduce((acc, q) => { acc.push(q.x, q.y); return acc; }, []);
-                        
-                        structureLayer.add(new Konva.Line({
-                            points: flatBQuadTop,
-                            fill: '#d1d5db',
-                            closed: true,
-                            stroke: '#94a3b8',
-                            strokeWidth: 1 * scale
-                        }));
-                        
-                        // Draw block front face
-                        const frontFace = [bQuad[2].x, bQuad[2].y, bQuad[3].x, bQuad[3].y, bQuadTop[3].x, bQuadTop[3].y, bQuadTop[2].x, bQuadTop[2].y];
-                        structureLayer.add(new Konva.Line({
-                            points: frontFace,
-                            fill: '#94a3b8',
-                            closed: true
-                        }));
-                    } else {
-                        // Standard base plate
-                        structureLayer.add(new Konva.Line({
-                            points: flatBQuad,
-                            fill: '#94a3b8',
-                            closed: true,
-                            stroke: '#475569',
-                            strokeWidth: 1 * scale
-                        }));
-                    }
-
-                    // Leg
-                    const bot = this.perspectiveEngine.projectToScreen(pt.x, pt.y, 0);
-                    const top = this.perspectiveEngine.projectToScreen(pt.x, pt.y, pt.zTop);
-                    
-                    structureLayer.add(new Konva.Line({
-                        points: [bot.x, bot.y, top.x, top.y],
-                        stroke: i < 2 ? '#94a3b8' : '#78879e', // Front lighter, Rear darker
-                        strokeWidth: 3.5 * scale,
-                        lineCap: 'round'
-                    }));
-                }
-            });
-
-            // Rails
-            const rKeyF = `front_${y.toFixed(2)}`;
-            if (!drawnRails.has(rKeyF)) {
-                // Find all panels in this row to draw a continuous rail
-                const rowPanels = panelItems.filter(p => Math.abs(p.worldY - y) < 0.1);
-                // Extend rail 10cm past edges for visual structure
-                const minX = Math.min(...rowPanels.map(p => p.worldX)) - 0.1;
-                const maxX = Math.max(...rowPanels.map(p => p.worldX + p.worldW)) + 0.1;
-
-                const pt1 = this.perspectiveEngine.projectToScreen(minX, y, h);
-                const pt2 = this.perspectiveEngine.projectToScreen(maxX, y, h);
-
-                structureLayer.add(new Konva.Line({
-                    points: [pt1.x, pt1.y, pt2.x, pt2.y],
-                    stroke: '#64748b',
-                    strokeWidth: 5 * scale,
-                    lineCap: 'round'
-                }));
-                drawnRails.add(rKeyF);
-            }
-
-            const rKeyR = `rear_${yRear.toFixed(2)}`;
-            if (!drawnRails.has(rKeyR)) {
-                const rowPanels = panelItems.filter(p => Math.abs(p.worldY - y) < 0.1);
-                const minX = Math.min(...rowPanels.map(p => p.worldX)) - 0.1;
-                const maxX = Math.max(...rowPanels.map(p => p.worldX + p.worldW)) + 0.1;
-
-                const pt1 = this.perspectiveEngine.projectToScreen(minX, yRear, hRear);
-                const pt2 = this.perspectiveEngine.projectToScreen(maxX, yRear, hRear);
-
-                structureLayer.add(new Konva.Line({
-                    points: [pt1.x, pt1.y, pt2.x, pt2.y],
-                    stroke: '#64748b',
-                    strokeWidth: 5 * scale,
-                    lineCap: 'round'
-                }));
-                drawnRails.add(rKeyR);
-            }
-
-            // Cross rails (Purlins) - Extend past panels to show slope
-            const yExtFront = 0.1 * Math.cos(tilt);
-            const hExtFront = 0.1 * Math.sin(tilt);
-            const yExtRear = 0.15 * Math.cos(tilt);
-            const hExtRear = 0.15 * Math.sin(tilt);
-
-            const ptF1 = this.perspectiveEngine.projectToScreen(x, y - yExtFront, h - hExtFront);
-            const ptR1 = this.perspectiveEngine.projectToScreen(x, yRear + yExtRear, hRear + hExtRear);
-            structureLayer.add(new Konva.Line({
-                points: [ptF1.x, ptF1.y, ptR1.x, ptR1.y],
-                stroke: '#64748b',
-                strokeWidth: 4 * scale
-            }));
-
-            const ptF2 = this.perspectiveEngine.projectToScreen(x + w, y - yExtFront, h - hExtFront);
-            const ptR2 = this.perspectiveEngine.projectToScreen(x + w, yRear + yExtRear, hRear + hExtRear);
-            structureLayer.add(new Konva.Line({
-                points: [ptF2.x, ptF2.y, ptR2.x, ptR2.y],
-                stroke: '#64748b',
-                strokeWidth: 4 * scale
-            }));
+            // Base plate at the bottom of the leg
+            const bSize = 0.15;
+            const bRect = { x: pt.x - bSize/2, y: pt.y - bSize/2, w: bSize, h: bSize };
+            const bQuad = this.perspectiveEngine.transformQuadToRoof(bRect, legBaseZ);
             
-            // Diagonal bracing (simplified)
-            if (panel.col % 2 === 0) {
-                const pBot = this.perspectiveEngine.projectToScreen(x, y, 0);
+            const flatBQuad = bQuad.reduce((acc, q) => { acc.push(q.x, q.y); return acc; }, []);
+            
+            if (config.mountType === 'RCC-Ballast') {
+                // Draw concrete block top face
+                const bQuadTop = this.perspectiveEngine.transformQuadToRoof(bRect, legBaseZ + 0.15);
+                const flatBQuadTop = bQuadTop.reduce((acc, q) => { acc.push(q.x, q.y); return acc; }, []);
+                
                 structureLayer.add(new Konva.Line({
-                    points: [pBot.x, pBot.y, ptR2.x, ptR2.y],
+                    points: flatBQuadTop,
+                    fill: '#d1d5db',
+                    closed: true,
+                    stroke: '#94a3b8',
+                    strokeWidth: 1 * scale
+                }));
+                
+                // Draw block front face
+                const frontFace = [bQuad[2].x, bQuad[2].y, bQuad[3].x, bQuad[3].y, bQuadTop[3].x, bQuadTop[3].y, bQuadTop[2].x, bQuadTop[2].y];
+                structureLayer.add(new Konva.Line({
+                    points: frontFace,
+                    fill: '#94a3b8',
+                    closed: true
+                }));
+            } else {
+                // Standard base plate
+                structureLayer.add(new Konva.Line({
+                    points: flatBQuad,
+                    fill: '#94a3b8',
+                    closed: true,
                     stroke: '#475569',
-                    strokeWidth: 2.5 * scale,
-                    dash: [5 * scale, 5 * scale]
+                    strokeWidth: 1 * scale
                 }));
             }
+
+            // Leg - from base (bottom) to panel corner (top)
+            const bot = this.perspectiveEngine.projectToScreen(pt.x, pt.y, legBaseZ);
+            const top = this.perspectiveEngine.projectToScreen(pt.x, pt.y, support.topHeight);
+            
+            structureLayer.add(new Konva.Line({
+                points: [bot.x, bot.y, top.x, top.y],
+                stroke: support.type === 'front' ? '#94a3b8' : '#78879e',
+                strokeWidth: 3.5 * scale,
+                lineCap: 'round'
+            }));
+        });
+
+        // 2. Render Rails
+        geometry.rails.forEach(rail => {
+            const pt1 = this.perspectiveEngine.projectToScreen(rail.start.x, rail.start.y, rail.start.z);
+            const pt2 = this.perspectiveEngine.projectToScreen(rail.end.x, rail.end.y, rail.end.z);
+
+            structureLayer.add(new Konva.Line({
+                points: [pt1.x, pt1.y, pt2.x, pt2.y],
+                stroke: '#64748b',
+                strokeWidth: rail.type === 'main' ? (5 * scale) : (4 * scale),
+                lineCap: 'round'
+            }));
         });
     }
 
@@ -276,8 +184,6 @@ class SolarRenderer {
      * Renders photorealistic PV panels
      */
     renderPanels(panelItems, config, solarArrayGroup) {
-        const h = config.structureHeight || 0.3;
-        const tilt = (config.tiltAngle || 10) * Math.PI / 180;
         const scale = this._getScaleFactor();
 
         panelItems.forEach(panel => {
@@ -291,7 +197,7 @@ class SolarRenderer {
                 this.perspectiveEngine.projectToScreen(panel.corners[3].x, panel.corners[3].y, panel.corners[3].z)  // RL
             ];
 
-            const depthFactor = this.perspectiveEngine.getDepthFactor(corners[0].x, corners[0].y);
+            const depthFactor = this.perspectiveEngine.getDepthFactor(panel.corners[0].x, panel.corners[0].y);
             const group = new Konva.Group();
 
             // 3D Frame Edge (Thickness) to prevent flat billboard look
@@ -372,8 +278,6 @@ class SolarRenderer {
                 closed: true
             }));
 
-            // No need to manually add panelShape as we've built the group using native Konva objects
-
             // Frame lines
             const frameThickness = 2 * scale;
             group.add(new Konva.Line({
@@ -400,67 +304,6 @@ class SolarRenderer {
                 strokeWidth: frameThickness,
                 lineCap: 'square'
             }));
-
-            // Corner Bevel Details
-            corners.forEach((pt, idx) => {
-                const nextPt = corners[(idx + 1) % 4];
-                const dx = (nextPt.x - pt.x) * 0.05;
-                const dy = (nextPt.y - pt.y) * 0.05;
-                group.add(new Konva.Line({
-                    points: [pt.x, pt.y, pt.x + dx, pt.y + dy],
-                    stroke: '#000000',
-                    strokeWidth: 1 * scale,
-                    opacity: 0.5
-                }));
-            });
-
-            // Mid Clamps (visual detail)
-            if (panel.col > 0) { // left side clamp
-                const midL1 = this._interpolateOnPanel(corners, 0, 0.2);
-                const midL2 = this._interpolateOnPanel(corners, 0, 0.8);
-                [midL1, midL2].forEach(mpt => {
-                    group.add(new Konva.Rect({
-                        x: mpt.x - 4*scale,
-                        y: mpt.y - 2*scale,
-                        width: 8*scale,
-                        height: 4*scale,
-                        fill: '#c0c9d4',
-                        rotation: Math.atan2(corners[3].y - corners[0].y, corners[3].x - corners[0].x) * 180 / Math.PI
-                    }));
-                });
-            }
-
-            // End Clamps (if it's an end panel, approximated here as col 0 or last, but we just draw them if they are edges visually)
-            // Can be extended based on row data.
-
-            // Double click to delete handler
-            group.on('dblclick dbltap', () => {
-                panel.deleted = true;
-                // Redraw logic should be triggered outside, so we could fire an event or let parent handle it.
-                // Assuming standard Konva events bubble up or handled by parent.
-                group.fire('panel-deleted', { panel }, true);
-            });
-
-            // Make it interactive
-            group.on('mouseenter', () => {
-                document.body.style.cursor = 'pointer';
-                const hl = new Konva.Line({
-                    points: [corners[0].x, corners[0].y, corners[1].x, corners[1].y, corners[2].x, corners[2].y, corners[3].x, corners[3].y],
-                    closed: true,
-                    stroke: '#38bdf8',
-                    strokeWidth: 3 * scale,
-                    name: 'hoverHighlight'
-                });
-                group.add(hl);
-                group.getLayer().batchDraw();
-            });
-
-            group.on('mouseleave', () => {
-                document.body.style.cursor = 'default';
-                const hl = group.findOne('.hoverHighlight');
-                if (hl) hl.destroy();
-                group.getLayer().batchDraw();
-            });
 
             solarArrayGroup.add(group);
         });

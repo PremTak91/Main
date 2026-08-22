@@ -674,16 +674,28 @@
                                     <!-- Tilt & Height structure parameters -->
                                     <div class="control-group">
                                         <div class="row g-2">
-                                            <div class="col-6">
+                                            <div class="col-3">
                                                 <span class="control-label">Structure Height</span>
                                                 <select class="form-select-dark" id="inputHeight" onchange="onParametersChanged()">
+                                                    <option value="0.3" selected>0.3 m</option>
                                                     <option value="0.5">0.5 m</option>
-                                                    <option value="1.0" selected>1.0 m</option>
+                                                    <option value="1.0">1.0 m</option>
                                                     <option value="1.5">1.5 m</option>
                                                     <option value="2.0">2.0 m</option>
                                                 </select>
                                             </div>
-                                            <div class="col-6">
+                                            <div class="col-3">
+                                                <span class="control-label">Leg Extension</span>
+                                                <select class="form-select-dark" id="inputLegExtension" onchange="onParametersChanged()">
+                                                    <option value="0" selected>0 m</option>
+                                                    <option value="0.5">0.5 m</option>
+                                                    <option value="1.0">1.0 m</option>
+                                                    <option value="1.5">1.5 m</option>
+                                                    <option value="2.0">2.0 m</option>
+                                                    <option value="3.0">3.0 m</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-4">
                                                 <span class="control-label">Tilt Angle</span>
                                                 <select class="form-select-dark" id="inputTilt" onchange="onParametersChanged()">
                                                     <option value="5">5°</option>
@@ -691,6 +703,25 @@
                                                     <option value="15" selected>15°</option>
                                                     <option value="20">20°</option>
                                                     <option value="25">25°</option>
+                                                    <option value="30">30°</option>
+                                                    <option value="45">45°</option>
+                                                    <option value="50">50°</option>
+                                                    <option value="55">55°</option>
+                                                    <option value="60">60°</option>
+                                                    <option value="90">90°</option>
+                                                    <option value="100">100°</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-4">
+                                                <span class="control-label">Roll Angle</span>
+                                                <select class="form-select-dark" id="inputRoll" onchange="onParametersChanged()">
+                                                    <option value="-15">-15°</option>
+                                                    <option value="-10">-10°</option>
+                                                    <option value="-5">-5°</option>
+                                                    <option value="0" selected>0°</option>
+                                                    <option value="5">5°</option>
+                                                    <option value="10">10°</option>
+                                                    <option value="15">15°</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -952,17 +983,17 @@
     <div th:replace="~{fragments/commonJquery :: commonJquery}"></div>
 
     <!-- Solar Designer Modules -->
-    <script th:src="@{/js/roofDetection.js}"></script>
-    <script th:src="@{/js/perspectiveEngine.js}"></script>
-    <script th:src="@{/js/solarRenderer.js}"></script>
-    <script th:src="@{/js/solarGeometry.js}"></script>
-    <script th:src="@{/js/panelPlacement.js}"></script>
+    <script th:src="@{/js/roofDetection.js(v=3)}"></script>
+    <script th:src="@{/js/perspectiveEngine.js(v=3)}"></script>
+    <script th:src="@{/js/solarRenderer.js(v=3)}"></script>
+    <script th:src="@{/js/solarGeometry.js(v=3)}"></script>
+    <script th:src="@{/js/panelPlacement.js(v=3)}"></script>
 
     <!-- Utils -->
-    <script th:src="@{/js/utils/imageUtils.js}"></script>
+    <script th:src="@{/js/utils/imageUtils.js(v=3)}"></script>
 
     <!-- Main Designer Engine -->
-    <script th:src="@{/js/roofDesigner.js}"></script>
+    <script th:src="@{/js/roofDesigner.js(v=3)}"></script>
 </body>
 
 </html>

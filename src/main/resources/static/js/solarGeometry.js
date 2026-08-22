@@ -38,7 +38,7 @@ const SOLAR_CONSTANTS = {
     
     // Validation
     MIN_TILT_DEG: 0,
-    MAX_TILT_DEG: 60,
+    MAX_TILT_DEG: 100,
     MIN_STRUCTURE_HEIGHT_M: 0.1,
     MAX_STRUCTURE_HEIGHT_M: 3.0
 };
@@ -69,15 +69,33 @@ class WorldPoint3D {
     }
     
     add(other) {
-        return new WorldPoint3D(this.x + other.x, this.y + other.z);
+        return new WorldPoint3D(this.x + other.x, this.y + other.y, this.z + (other.z || 0));
     }
     
     subtract(other) {
-        return new WorldPoint3D(this.x - other.x, this.y - other.y, this.z - other.z);
+        return new WorldPoint3D(this.x - other.x, this.y - other.y, this.z - (other.z || 0));
     }
     
     multiply(scalar) {
         return new WorldPoint3D(this.x * scalar, this.y * scalar, this.z * scalar);
+    }
+    
+    cross(other) {
+        return new WorldPoint3D(
+            this.y * other.z - this.z * other.y,
+            this.z * other.x - this.x * other.z,
+            this.x * other.y - this.y * other.x
+        );
+    }
+    
+    dot(other) {
+        return this.x * other.x + this.y * other.y + this.z * (other.z || 0);
+    }
+    
+    normalize() {
+        const len = Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+        if (len === 0) return new WorldPoint3D(0, 0, 0);
+        return new WorldPoint3D(this.x / len, this.y / len, this.z / len);
     }
     
     rotateZ(angleRad, center = new WorldPoint3D(0, 0, 0)) {
@@ -94,6 +112,103 @@ class WorldPoint3D {
     
     toArray() {
         return [this.x, this.y, this.z];
+    }
+    /**
+     * DEBUG: Mathematical validation of panel geometry
+     */
+    debugSolarGeometry(config) {
+        console.log("=== DEBUG: SOLAR GEOMETRY VALIDATION ===");
+        const result = this.calculateArrayGeometry(config);
+        
+        console.log("Configuration:");
+        console.log(`- Panel: ${config.panelWidthMm}x${config.panelLengthMm} mm`);
+        console.log(`- Structure Height: ${config.structureHeightM} m`);
+        console.log(`- Tilt: ${config.tiltAngleDeg}°`);
+        console.log(`- Azimuth: ${config.azimuthDeg}°`);
+        console.log(`- Roll: ${config.rollAngleDeg || 0}°`);
+        
+        if (result.panels.length > 0) {
+            const panel = result.panels[0];
+            const [FL, FR, RR, RL] = panel.corners;
+            
+            console.log("\nFirst Panel Corners (World Space):");
+            console.log(`FL: (x: ${FL.x.toFixed(4)}, y: ${FL.y.toFixed(4)}, z: ${FL.z.toFixed(4)})`);
+            console.log(`FR: (x: ${FR.x.toFixed(4)}, y: ${FR.y.toFixed(4)}, z: ${FR.z.toFixed(4)})`);
+            console.log(`RR: (x: ${RR.x.toFixed(4)}, y: ${RR.y.toFixed(4)}, z: ${RR.z.toFixed(4)})`);
+            console.log(`RL: (x: ${RL.x.toFixed(4)}, y: ${RL.y.toFixed(4)}, z: ${RL.z.toFixed(4)})`);
+            
+            const measuredWidth = FL.distanceTo(FR);
+            const measuredDepth = FL.distanceTo(RL);
+            console.log(`\nMeasured Physical Width: ${measuredWidth.toFixed(4)} m`);
+            console.log(`Measured Physical Depth: ${measuredDepth.toFixed(4)} m`);
+            
+            const v1 = FR.subtract(FL);
+            const v2 = RL.subtract(FL);
+            const normal = v1.cross(v2).normalize();
+            console.log(`\nPlane Normal: (x: ${normal.x.toFixed(4)}, y: ${normal.y.toFixed(4)}, z: ${normal.z.toFixed(4)})`);
+            
+            const roofNormal = new WorldPoint3D(0, 0, 1);
+            const dot = normal.dot(roofNormal);
+            const angleRad = Math.acos(Math.max(-1, Math.min(1, dot)));
+            console.log(`Angle to Roof Normal: ${(angleRad * 180 / Math.PI).toFixed(2)}°`);
+            
+            console.log("\nSupports for this panel:");
+            result.supports.forEach(sup => {
+                // If support is at one of these corners
+                if (Math.abs(sup.position.x - FL.x) < 0.01 || Math.abs(sup.position.x - RR.x) < 0.01 || Math.abs(sup.position.x - FR.x) < 0.01 || Math.abs(sup.position.x - RL.x) < 0.01) {
+                    console.log(`- Post at (x: ${sup.position.x.toFixed(4)}, y: ${sup.position.y.toFixed(4)}): baseZ=0, topZ=${sup.topHeight.toFixed(4)}, type=${sup.type}`);
+                }
+            });
+        }
+        console.log("========================================");
+        return result;
+    }
+}
+
+/**
+ * 3D Transformation Utilities (Intrinsic Euler Rotations)
+ */
+class Transform3D {
+    // Rotation around LOCAL X axis (Tilt/Pitch)
+    static rotateX(pt, angleRad) {
+        const cosA = Math.cos(angleRad);
+        const sinA = Math.sin(angleRad);
+        return new WorldPoint3D(
+            pt.x,
+            pt.y * cosA - pt.z * sinA,
+            pt.y * sinA + pt.z * cosA
+        );
+    }
+
+    // Rotation around LOCAL Y axis (Roll)
+    static rotateY(pt, angleRad) {
+        const cosA = Math.cos(angleRad);
+        const sinA = Math.sin(angleRad);
+        return new WorldPoint3D(
+            pt.x * cosA + pt.z * sinA,
+            pt.y,
+            -pt.x * sinA + pt.z * cosA
+        );
+    }
+
+    // Rotation around GLOBAL Z axis (Azimuth/Yaw)
+    static rotateZ(pt, angleRad) {
+        const cosA = Math.cos(angleRad);
+        const sinA = Math.sin(angleRad);
+        return new WorldPoint3D(
+            pt.x * cosA - pt.y * sinA,
+            pt.x * sinA + pt.y * cosA,
+            pt.z
+        );
+    }
+
+    // Apply strict sequence: Roll(Y) -> Tilt(X) -> Azimuth(Z)
+    // Pivot is assumed to be the origin (0,0,0) of the point passed in.
+    static applyOrientation(pt, rollRad, tiltRad, azimuthRad) {
+        let p = Transform3D.rotateY(pt, rollRad); // Roll around Local Y
+        p = Transform3D.rotateX(p, tiltRad);      // Tilt around Local X
+        p = Transform3D.rotateZ(p, azimuthRad);   // Yaw around Global Z
+        return p;
     }
 }
 
@@ -239,8 +354,9 @@ class SolarArrayGeometry {
         this.footprint = [];           // WorldPoint2D[] - 4 corners of array footprint on roof
         this.boundingBox = null;       // { minX, maxX, minY, maxY } in world meters
         this.center = new WorldPoint2D(0, 0);
-        this.orientation = 0;          // Radians
+        this.orientation = 0;          // Azimuth (Radians)
         this.tilt = 0;                 // Radians
+        this.roll = 0;                 // Radians
         this.totalWidth = 0;           // Meters
         this.totalDepth = 0;           // Meters
         this.totalHeight = 0;          // Meters (max Z)
@@ -283,6 +399,7 @@ class SolarGeometryEngine {
             orientation,        // 'portrait' | 'landscape'
             tiltAngleDeg,
             azimuthDeg,
+            rollAngleDeg,
             structureHeightM,
             panelGapMm,
             rowGapMm,
@@ -308,12 +425,19 @@ class SolarGeometryEngine {
             panelDepth = panelL;
         }
         
-        // Step 3: Tilt geometry
+        // Step 3: Angles
         const tiltRad = tiltAngleDeg * Math.PI / 180;
-        const panelYProjected = panelDepth * Math.cos(tiltRad);  // Depth on roof plane
-        const panelZRise = panelDepth * Math.sin(tiltRad);       // Height gain rear vs front
+        const azimuthRad = azimuthDeg * Math.PI / 180;
+        const rollRad = (rollAngleDeg || 0) * Math.PI / 180;
         
-        // Step 4: Spacing
+        // Step 4: Determine the projected dimensions for array planning
+        // To plan the footprint, we use the panel's bounding size in the XY plane after roll and tilt
+        const pFR_local = Transform3D.rotateX(Transform3D.rotateY(new WorldPoint3D(panelWidth, 0, 0), rollRad), tiltRad);
+        const pRL_local = Transform3D.rotateX(Transform3D.rotateY(new WorldPoint3D(0, panelDepth, 0), rollRad), tiltRad);
+        
+        const projectedWidth = Math.abs(pFR_local.x);
+        const projectedDepth = Math.abs(pRL_local.y);
+        
         const gapW = (panelGapMm || this.constants.PANEL_GAP_MM) / 1000;
         const gapH = (rowGapMm || this._calculateAutoRowSpacing(panelDepth, tiltAngleDeg)) / 1000;
         
@@ -322,19 +446,19 @@ class SolarGeometryEngine {
         if (footprint && footprint.width > 0 && footprint.height > 0) {
             arrayFootprint = footprint;
         } else if (roofBoundary && roofBoundary.length >= 3) {
-            arrayFootprint = this._calculateOptimalFootprint(roofBoundary, panelCount, panelWidth, panelYProjected, gapW, gapH, azimuthDeg);
+            arrayFootprint = this._calculateOptimalFootprint(roofBoundary, panelCount, panelWidth, projectedDepth, gapW, gapH, azimuthDeg);
         } else {
             // Fallback: create a default footprint
-            arrayFootprint = this._createDefaultFootprint(panelCount, panelWidth, panelYProjected, gapW, gapH);
+            arrayFootprint = this._createDefaultFootprint(panelCount, panelWidth, projectedDepth, gapW, gapH);
         }
         
         // Step 6: Calculate grid dimensions
         const gridWidth = arrayFootprint.width;
         const gridHeight = arrayFootprint.height;
-        const arrayAngle = arrayFootprint.angle + (azimuthDeg * Math.PI / 180);
+        const arrayAngle = arrayFootprint.angle + azimuthRad;
         
-        const maxCols = Math.max(1, Math.floor(gridWidth / (panelWidth + gapW)));
-        const maxRows = Math.max(1, Math.floor(gridHeight / (panelYProjected + gapH)));
+        const maxCols = Math.max(1, Math.floor(gridWidth / (projectedWidth + gapW)));
+        const maxRows = Math.max(1, Math.floor(gridHeight / (projectedDepth + gapH)));
         
         // Panel count driven by capacity
         let rows = Math.ceil(panelCount / maxCols);
@@ -348,62 +472,81 @@ class SolarGeometryEngine {
         result.panelCount = actualPanelCount;
         result.capacityKw = (actualPanelCount * panelWattage) / 1000;
         result.tilt = tiltRad;
+        result.roll = rollRad;
         result.orientation = arrayAngle;
         
         // Step 7: Place panels with full 3D geometry
-        const cosA = Math.cos(arrayAngle);
-        const sinA = Math.sin(arrayAngle);
         const baseH = structureHeightM;
         
-        const totalGridW = cols * (panelWidth + gapW) - gapW;
-        const totalGridH = rows * (panelYProjected + gapH) - gapH;
+        const totalGridW = cols * (projectedWidth + gapW) - gapW;
+        const totalGridH = rows * (projectedDepth + gapH) - gapH;
         
-        // Center the grid within the footprint
+        // Center the grid within the original footprint anchor
         const startOffsetX = (gridWidth - totalGridW) / 2 - gridWidth / 2;
         const startOffsetY = (gridHeight - totalGridH) / 2 - gridHeight / 2;
         
         let modulesPlaced = 0;
         const allCorners = [];
         
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
+        // Let the grid search infinitely downward until we place the requested panelCount
+        // or we have searched far outside the roof bounds. 
+        const searchRows = 200; // sufficiently large to reflow any normal array
+        const searchCols = cols; // keep width bounded by footprint width so we don't bleed sideways
+        
+        for (let r = 0; r < searchRows; r++) {
+            let placedInRow = 0;
+            for (let c = 0; c < searchCols; c++) {
                 if (modulesPlaced >= panelCount) break;
                 
-                // Local panel origin (top-left in local grid space)
-                const localX = startOffsetX + c * (panelWidth + gapW);
-                const localY = startOffsetY + r * (panelYProjected + gapH);
+                // Local panel origin (top-left in local grid space, Z=0)
+                const localX = startOffsetX + c * (projectedWidth + gapW);
+                const localY = startOffsetY + r * (projectedDepth + gapH);
                 
-                // 3D corners in LOCAL space (before azimuth rotation)
-                // FL = Front-Left, FR = Front-Right, RR = Rear-Right, RL = Rear-Left
-                const localCorners = [
-                    new WorldPoint3D(localX, localY, baseH),                                    // FL
-                    new WorldPoint3D(localX + panelWidth, localY, baseH),                        // FR
-                    new WorldPoint3D(localX + panelWidth, localY + panelYProjected, baseH + panelZRise), // RR
-                    new WorldPoint3D(localX, localY + panelYProjected, baseH + panelZRise)       // RL
-                ];
+                // 1. Build flat local panel (Origin at FL corner)
+                const pFL = new WorldPoint3D(0, 0, 0);
+                const pFR = new WorldPoint3D(panelWidth, 0, 0);
+                const pRR = new WorldPoint3D(panelWidth, panelDepth, 0);
+                const pRL = new WorldPoint3D(0, panelDepth, 0);
                 
-                // Rotate by combined angle and translate to world
-                const worldCorners = localCorners.map(pt => {
-                    const rotated = pt.rotateZ(arrayAngle);
-                    return new WorldPoint3D(
-                        arrayFootprint.center.x + rotated.x,
-                        arrayFootprint.center.y + rotated.y,
-                        rotated.z
-                    );
+                const corners = [pFL, pFR, pRR, pRL];
+                
+                // Apply transformations to each corner
+                const worldCorners = corners.map(corner => {
+                    // 2. Apply intrinsic rotations (Roll -> Tilt)
+                    let p = Transform3D.rotateY(corner, rollRad);
+                    p = Transform3D.rotateX(p, tiltRad);
+                    
+                    // 3. Translate to grid position and structure height (Z = baseH)
+                    // The pivot point for tilt is the local (0,0,0) which becomes (localX, localY, baseH)
+                    p = p.add(new WorldPoint3D(localX, localY, baseH));
+                    
+                    // 4. Apply array Azimuth (rotates the entire array footprint around its center 0,0)
+                    p = Transform3D.rotateZ(p, arrayAngle);
+                    
+                    // 5. Translate to World Footprint Center
+                    return p.add(new WorldPoint3D(arrayFootprint.center.x, arrayFootprint.center.y, 0));
                 });
                 
-                // Center point for boundary validation
-                const pCx = localX + panelWidth / 2;
-                const pCy = localY + panelYProjected / 2;
-                const worldCenter = new WorldPoint2D(
-                    arrayFootprint.center.x + pCx * cosA - pCy * sinA,
-                    arrayFootprint.center.y + pCx * sinA + pCy * cosA
-                );
+                // Calculate center point for validation
+                const centerLocal = new WorldPoint3D(panelWidth / 2, panelDepth / 2, 0);
+                let centerWorld = Transform3D.rotateY(centerLocal, rollRad);
+                centerWorld = Transform3D.rotateX(centerWorld, tiltRad);
+                centerWorld = centerWorld.add(new WorldPoint3D(localX, localY, baseH));
+                centerWorld = Transform3D.rotateZ(centerWorld, arrayAngle);
+                centerWorld = centerWorld.add(new WorldPoint3D(arrayFootprint.center.x, arrayFootprint.center.y, 0));
                 
-                // Validate against roof boundary
+                const center2D = new WorldPoint2D(centerWorld.x, centerWorld.y);
+                
+                // Validate against roof boundary: ALL 4 corners must be inside
                 let valid = true;
                 if (roofBoundary && roofBoundary.length >= 3) {
-                    valid = this._pointInPolygon(worldCenter, roofBoundary);
+                    for (const pt of worldCorners) {
+                        const pt2D = new WorldPoint2D(pt.x, pt.y);
+                        if (!this._pointInPolygon(pt2D, roofBoundary)) {
+                            valid = false;
+                            break;
+                        }
+                    }
                 }
                 
                 const panel = new SolarPanel({
@@ -416,32 +559,60 @@ class SolarGeometryEngine {
                     localX,
                     localY,
                     corners: worldCorners,
-                    center: worldCenter,
+                    center: center2D,
                     valid
                 });
                 
                 result.panels.push(panel);
-                allCorners.push(...worldCorners.map(c => new WorldPoint2D(c.x, c.y)));
                 
-                if (valid) modulesPlaced++;
+                if (valid) {
+                    modulesPlaced++;
+                    placedInRow++;
+                    allCorners.push(...worldCorners.map(corner => new WorldPoint2D(corner.x, corner.y)));
+                }
+            }
+            
+            if (modulesPlaced >= panelCount) break;
+            
+            // Early exit: if we are far past the original footprint AND we placed 0 panels this row,
+            // we are entirely off the roof boundary and can stop searching downward.
+            if (r >= maxRows + 2 && placedInRow === 0) {
+                break;
             }
         }
         
-        // Step 8: Calculate support structure
-        result.supports = this._calculateSupports(result.panels, baseH, panelYProjected, panelZRise, arrayAngle, arrayFootprint.center);
+        // Update capacity to match actually placed valid panels
+        result.panelCount = modulesPlaced;
+        result.capacityKw = (modulesPlaced * panelWattage) / 1000;
+        result.insufficientSpace = modulesPlaced < panelCount;
+        
+        // Step 8: Calculate support posts
+        result.supports = this._calculateSupports(result.panels, baseH, config.legExtension || 0);
         
         // Step 9: Calculate rails
-        result.rails = this._calculateRails(result.panels, baseH, panelYProjected, panelZRise, arrayAngle, arrayFootprint.center, panelWidth, gapW);
+        result.rails = this._calculateRails(result.panels, baseH, panelWidth, gapW);
         
         // Step 10: Calculate footprint polygon (2D projection on roof)
-        result.footprint = this._calculateFootprintPolygon(result.panels);
+        const footprintPoly = this._calculateFootprintPolygon(result.panels);
+        const footprintObr = this._getOrientedBoundingRect(footprintPoly);
+        result.footprint = footprintPoly;
+        
+        // IMPORTANT: Preserve the original grid dimensions to prevent the array from collapsing
+        // into a narrow strip if it's dragged near an edge.
+        result.totalWidth = Math.max(gridWidth, footprintObr.width);
+        result.totalDepth = Math.max(gridHeight, footprintObr.height);
+        
+        // Preserve the drag anchor as the center so the array doesn't "slip" when panels are chopped off
+        result.center = arrayFootprint.center;
         
         // Step 11: Calculate bounding box
         result.boundingBox = this._calculateBoundingBox(allCorners);
-        result.center = arrayFootprint.center;
-        result.totalWidth = gridWidth;
-        result.totalDepth = gridHeight;
-        result.totalHeight = baseH + panelZRise;
+        
+        let maxZ = 0;
+        result.panels.forEach(p => p.corners.forEach(c => {
+            if (c.z > maxZ) maxZ = c.z;
+        }));
+        result.totalHeight = maxZ;
         
         return result;
     }
@@ -459,12 +630,14 @@ class SolarGeometryEngine {
             orientation: 'portrait',
             tiltAngleDeg: 15,
             azimuthDeg: 0,
+            rollAngleDeg: 0,
             structureHeightM: 0.3,
             panelGapMm: 20,
             rowGapMm: null,  // auto
             roofBoundary: null,
             footprint: null,
-            maxPanels: null
+            maxPanels: null,
+            legExtension: 0
         };
         
         const validated = { ...defaults, ...config };
@@ -511,13 +684,20 @@ class SolarGeometryEngine {
         const usableWidth = Math.max(0, obr.width - 2 * margin);
         const usableHeight = Math.max(0, obr.height - 2 * margin);
         
-        // Calculate required grid size
-        const maxCols = Math.max(1, Math.floor(usableWidth / (panelWidth + gapW)));
+        // Calculate required grid size based on physical roof limits
+        let maxCols = Math.max(1, Math.floor(usableWidth / (panelWidth + gapW)));
         const maxRows = Math.max(1, Math.floor(usableHeight / (panelDepth + gapH)));
+        
+        // For realistic installations, we don't want a single row of 50 panels. 
+        // We balance the layout into a block that is roughly 1.5x to 2x wider than it is deep.
+        const idealCols = Math.ceil(Math.sqrt(panelCount));
+        const balancedCols = Math.ceil(idealCols * 1.5);
+        maxCols = Math.min(maxCols, balancedCols);
         
         let rows = Math.ceil(panelCount / maxCols);
         if (rows > maxRows) rows = maxRows;
         if (rows < 1) rows = 1;
+        
         let cols = Math.ceil(panelCount / rows);
         if (cols > maxCols) cols = maxCols;
         
@@ -604,10 +784,7 @@ class SolarGeometryEngine {
         };
     }
     
-    /**
-     * Calculate support posts for the array
-     */
-    _calculateSupports(panels, baseH, panelYProjected, panelZRise, arrayAngle, arrayCenter) {
+    _calculateSupports(panels, baseH, legExtension = 0) {
         const supports = [];
         const postPositions = new Map();  // Key: "x_y" -> SupportPost
         
@@ -618,13 +795,13 @@ class SolarGeometryEngine {
             panel.corners.forEach((corner, cornerIndex) => {
                 const key = `${corner.x.toFixed(3)}_${corner.y.toFixed(3)}`;
                 if (!postPositions.has(key)) {
-                    const isFront = cornerIndex === 0 || cornerIndex === 1;  // FL, FR
-                    const topHeight = isFront ? baseH : baseH + panelZRise;
+                    // Front edge (FL, FR) vs Rear edge (RR, RL)
+                    const isFront = cornerIndex === 0 || cornerIndex === 1; 
                     
                     postPositions.set(key, new SupportPost({
                         position: new WorldPoint2D(corner.x, corner.y),
-                        baseHeight: 0,  // Roof level
-                        topHeight: topHeight,
+                        baseHeight: -legExtension,  // Roof level + extension downwards!
+                        topHeight: corner.z, // Directly from exact 3D geometry!
                         type: isFront ? 'front' : 'rear'
                     }));
                 }
@@ -637,56 +814,52 @@ class SolarGeometryEngine {
     /**
      * Calculate mounting rails
      */
-    _calculateRails(panels, baseH, panelYProjected, panelZRise, arrayAngle, arrayCenter, panelWidth, gapW) {
+    _calculateRails(panels, baseH, panelWidth, gapW) {
         const rails = [];
-        const railMap = new Map();  // Key: "type_y" -> { minX, maxX, y, z }
         
-        // Group panels by row (similar Y coordinate)
+        // Group panels by row (similar Y coordinate before rotation)
         const rowGroups = new Map();
         panels.forEach(panel => {
             if (panel.deleted) return;
-            const key = panel.localY.toFixed(3);  // Using local Y before rotation for reliable row grouping
+            // Use panel.localY for row grouping since it's the un-rotated local grid coordinate
+            const key = panel.localY.toFixed(3);  
             if (!rowGroups.has(key)) rowGroups.set(key, []);
             rowGroups.get(key).push(panel);
         });
         
         // Front and rear rails for each row
         rowGroups.forEach((rowPanels, rowKey) => {
-            const minX = Math.min(...rowPanels.map(p => p.corners[0].x));
-            const maxX = Math.max(...rowPanels.map(p => p.corners[1].x));
-            const y = rowPanels[0].corners[0].y;
-            const yRear = rowPanels[0].corners[3].y;
-            const hFront = baseH;
-            const hRear = baseH + panelZRise;
+            // Sort panels in the row by localX to find the extremities
+            rowPanels.sort((a, b) => a.localX - b.localX);
+            const firstPanel = rowPanels[0];
+            const lastPanel = rowPanels[rowPanels.length - 1];
             
-            // Front rail
+            // Front rail connects FL of first panel to FR of last panel
             rails.push(new MountingRail({
-                start: new WorldPoint3D(minX, y, hFront),
-                end: new WorldPoint3D(maxX, y, hFront),
+                start: firstPanel.corners[0], // FL
+                end: lastPanel.corners[1],    // FR
                 type: 'main'
             }));
             
-            // Rear rail
+            // Rear rail connects RL of first panel to RR of last panel
             rails.push(new MountingRail({
-                start: new WorldPoint3D(minX, yRear, hRear),
-                end: new WorldPoint3D(maxX, yRear, hRear),
+                start: firstPanel.corners[3], // RL
+                end: lastPanel.corners[2],    // RR
                 type: 'main'
             }));
             
             // Cross rails (purlins) at each panel edge
             rowPanels.forEach(panel => {
-                const x1 = panel.corners[0].x;
-                const x2 = panel.corners[1].x;
-                
+                // Left edge (FL to RL)
                 rails.push(new MountingRail({
-                    start: new WorldPoint3D(x1, y, hFront),
-                    end: new WorldPoint3D(x1, yRear, hRear),
+                    start: panel.corners[0],
+                    end: panel.corners[3],
                     type: 'cross'
                 }));
-                
+                // Right edge (FR to RR)
                 rails.push(new MountingRail({
-                    start: new WorldPoint3D(x2, y, hFront),
-                    end: new WorldPoint3D(x2, yRear, hRear),
+                    start: panel.corners[1],
+                    end: panel.corners[2],
                     type: 'cross'
                 }));
             });

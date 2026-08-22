@@ -31,6 +31,7 @@ function autoPlacePanels(config) {
         panelDirection = 'South',
         structureHeight = 0.3,
         azimuthDeg = 0,
+        rollAngleDeg = 0,
         footprint = null
     } = config;
 
@@ -69,12 +70,14 @@ function autoPlacePanels(config) {
         orientation,
         tiltAngleDeg: tiltAngle,
         azimuthDeg,
+        rollAngleDeg,
         structureHeightM: structureHeight,
         panelGapMm: 20,
         rowGapMm: rowSpacing === 'auto' ? null : parseFloat(rowSpacing) * 1000,
         roofBoundary,
         footprint: footprintObj,
-        maxPanels: null
+        maxPanels: null,
+        legExtension: config.legExtension || 0
     });
 
     // Convert back to legacy format for backward compatibility
@@ -99,7 +102,12 @@ function autoPlacePanels(config) {
         width: geometry.totalWidth,
         height: geometry.totalDepth,
         angle: geometry.orientation
-    } : { center: { x: 0, y: 0 }, width: 0, height: 0, angle: 0 };
+    } : { 
+        center: config.footprint ? { x: config.footprint.center.x, y: config.footprint.center.y } : { x: 0, y: 0 }, 
+        width: config.footprint ? config.footprint.width : 0, 
+        height: config.footprint ? config.footprint.height : 0, 
+        angle: config.footprint ? config.footprint.angle : 0 
+    };
 
     // Convert roof footprint polygon
     const legacyRoofFootprintPolygon = geometry.footprint.map(p => ({
