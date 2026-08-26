@@ -1045,7 +1045,7 @@ public class QuotationServiceImpl implements QuotationService {
         txt(cb, Element.ALIGN_LEFT, new Phrase("01920102458", fPrimary(9.5f)), lCol + 80, detailY);
         
         txt(cb, Element.ALIGN_LEFT, new Phrase("IFSC Code:", fDark(9.5f)), rCol, detailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("KKCBOISP019", fPrimary(9.5f)), rCol + 65, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("KCCBOISP019", fPrimary(9.5f)), rCol + 65, detailY);
         
         detailY -= 16;
         
@@ -1251,7 +1251,7 @@ public class QuotationServiceImpl implements QuotationService {
         bkBody.addElement(new Paragraph("BANK : KALUPUR COMMERCIAL CO-OP BANK LTD", FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         bkBody.addElement(new Paragraph("NAME : NRS SOLAR SOLUTION",                FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         bkBody.addElement(new Paragraph("ACCOUNT NO: 01920102458",                  FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
-        bkBody.addElement(new Paragraph("IFSC CODE: KKCBOISP019",                   FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
+        bkBody.addElement(new Paragraph("IFSC CODE: KCCBOISP019",                   FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         bkBody.addElement(new Paragraph("BRANCH : ISANPUR AHMEDABAD",               FontFactory.getFont(FontFactory.HELVETICA, 10, Color.BLACK)));
         bankTable.addCell(bkBody);
 
