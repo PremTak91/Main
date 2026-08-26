@@ -790,7 +790,7 @@ class SolarGeometryEngine {
         
         // Collect unique post positions from panel corners
         panels.forEach(panel => {
-            if (panel.deleted) return;
+            if (panel.deleted || panel.valid === false) return;
             
             panel.corners.forEach((corner, cornerIndex) => {
                 const key = `${corner.x.toFixed(3)}_${corner.y.toFixed(3)}`;
@@ -820,7 +820,7 @@ class SolarGeometryEngine {
         // Group panels by row (similar Y coordinate before rotation)
         const rowGroups = new Map();
         panels.forEach(panel => {
-            if (panel.deleted) return;
+            if (panel.deleted || panel.valid === false) return;
             // Use panel.localY for row grouping since it's the un-rotated local grid coordinate
             const key = panel.localY.toFixed(3);  
             if (!rowGroups.has(key)) rowGroups.set(key, []);
@@ -877,7 +877,7 @@ class SolarGeometryEngine {
         // Get all corner points projected to Z=0
         const points = [];
         panels.forEach(panel => {
-            if (panel.deleted) return;
+            if (panel.deleted || panel.valid === false) return;
             panel.corners.forEach(corner => {
                 points.push(new WorldPoint2D(corner.x, corner.y));
             });

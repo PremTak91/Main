@@ -336,7 +336,7 @@ function initKonva() {
     solarArrayLayer.add(solarArrayGroup);
 
     solarArrayGroup.getClientRect = function () {
-        const activePanels = (state.panels.items || []).filter(item => !state.panels.deleted[`${item.row}_${item.col}`]);
+        const activePanels = (state.panels.items || []).filter(item => !state.panels.deleted[`${item.row}_${item.col}`] && item.valid !== false);
         if (activePanels.length === 0) {
             return { x: 0, y: 0, width: 0, height: 0 };
         }
@@ -760,8 +760,8 @@ function triggerAutoPlace() {
             scalePixelsPerMeter: state.scalePixelsPerMeter,
             capacityKw: state.panels.capacityKw,
             panelWatt: state.panels.watt,
-            panelLengthMm: state.panels.length,
-            panelWidthMm: state.panels.width,
+            panelLengthMm: state.panels.length * state.panels.scale,
+            panelWidthMm: state.panels.width * state.panels.scale,
             orientation: state.panels.orientation,
             tiltAngle: state.panels.tilt,
             structureHeight: state.panels.height,
@@ -769,7 +769,7 @@ function triggerAutoPlace() {
             rowSpacing: state.panels.autoSpacing ? 'auto' : state.panels.rowSpacing,
             walkwayMargin: state.boundaryWalkway,
             panelDirection: state.panels.direction,
-            azimuthDeg: azimuthDeg,
+            azimuthDeg: (azimuthDeg + (state.panels.rotation || 0)) % 360,
             rollAngleDeg: state.panels.roll || 0,
             footprint: state.panels.footprint || null,
             perspectiveEngine: state.perspective.engine
