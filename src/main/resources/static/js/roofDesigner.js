@@ -801,7 +801,14 @@ function triggerAutoPlace() {
 
     $('#inputCols').val(state.panels.cols);
     $('#inputRows').val(state.panels.rows);
-    // Do NOT recalculate capacityKw here — it is the source of truth from the user input
+    
+    // Sync the input capacity with what was actually placed ONLY if space was insufficient
+    if (state.panels._lastResult && state.panels._lastResult.insufficientSpace) {
+        if (state.panels._lastResult.actualCapacityKw !== undefined && state.panels._lastResult.actualCapacityKw !== state.panels.capacityKw) {
+            $('#inputCapacity').val(state.panels._lastResult.actualCapacityKw.toFixed(2));
+            state.panels.capacityKw = state.panels._lastResult.actualCapacityKw;
+        }
+    }
 
     renderKonvaWorkspace();
 }
@@ -1319,6 +1326,21 @@ function updateLiveMetrics() {
     $('#bomConcreteBlocks').text(state.mountType === 'RCC-Ballast' ? Math.ceil(panelCount / 2) * 2 : 0);
 }
 
+// ── BOM Table Functions ────────────────────────────────────────────────
+function addBomRow() {
+    const tbody = document.getElementById('bomTableBody');
+    if (tbody) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td contenteditable="true">New Item</td>
+            <td contenteditable="true" class="fw-bold">0</td>
+            <td contenteditable="true">Nos</td>
+            <td><button class="btn btn-sm text-danger border-0 bg-transparent py-0 px-1" onclick="this.closest('tr').remove()" title="Remove Item"><i class="fas fa-times"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+    }
+}
+
 // ── Configurations Export & Import JSON ──────────────────────────────────
 function exportProjectJSON() {
     const payload = {
@@ -1632,7 +1654,8 @@ function exportProposalPdf() {
             });
 
             stage.batchDraw();
-
+            
+            const activePanels = (state.panels.items || []).filter(item => !state.panels.deleted[`${item.row}_${item.col}`] && item.valid !== false);
             const panelCount = activePanels.length;
             const capacityKw = (panelCount * state.panels.watt) / 1000;
             const dateStr = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -1647,6 +1670,11 @@ function exportProposalPdf() {
             }
 
             const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                hideLoader();
+                showToast('Please allow popups for this site to generate the PDF report.', 'warning');
+                return;
+            }
             printWindow.document.write(`
                 <html>
                 <head>
@@ -1708,32 +1736,17 @@ function exportProposalPdf() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>Solar PV Modules (${state.panels.watt}Wp)</td>
-                                <td style="font-weight: bold;">${panelCount}</td>
-                                <td>Nos</td>
-                            </tr>
-                            <tr>
-                                <td>End Clamps (Aluminum Alloy)</td>
-                                <td style="font-weight: bold;">${Math.max(4, Math.ceil(panelCount / 10) * 4)}</td>
-                                <td>Nos</td>
-                            </tr>
-                            <tr>
-                                <td>Mid Clamps (Aluminum Alloy)</td>
-                                <td style="font-weight: bold;">${Math.max(0, (panelCount - 2) * 2)}</td>
-                                <td>Nos</td>
-                            </tr>
-                            <tr>
-                                <td>Galvanized Steel Leg structure sets</td>
-                                <td style="font-weight: bold;">${Math.ceil(panelCount / 2)}</td>
-                                <td>sets</td>
-                            </tr>
-                            ${state.mountType === 'RCC-Ballast' ? `
-                            <tr>
-                                <td>Precast Concrete Blocks</td>
-                                <td style="font-weight: bold;">${Math.ceil(panelCount / 2) * 2}</td>
-                                <td>Nos</td>
-                            </tr>` : ''}
+                            ${Array.from(document.querySelectorAll('#bomTableBody tr')).map(row => {
+                                const cells = row.querySelectorAll('td');
+                                if (cells.length >= 3) {
+                                    return `<tr>
+                                        <td>${cells[0].innerText.trim()}</td>
+                                        <td style="font-weight: bold;">${cells[1].innerText.trim()}</td>
+                                        <td>${cells[2].innerText.trim()}</td>
+                                    </tr>`;
+                                }
+                                return '';
+                            }).join('')}
                         </tbody>
                     </table>
                     <div class="footer">
@@ -1815,3 +1828,30 @@ function applyScaleCalibration() {
     recalculatePanelsLayout();
     renderKonvaWorkspace();
 }
+
+
+// Add arrow key nudging for precise placement
+document.addEventListener('keydown', (e) => {
+    if (state.tool !== 'select' || !transformer || transformer.nodes().length === 0) return;
+    
+    const node = transformer.nodes()[0];
+    if (node.name() === 'solarArrayGroup') {
+        const step = e.shiftKey ? 0.5 : 0.05; // 50cm or 5cm per nudge
+        let dx = 0, dy = 0;
+        if (e.key === 'ArrowUp') dy = -step;
+        else if (e.key === 'ArrowDown') dy = step;
+        else if (e.key === 'ArrowLeft') dx = -step;
+        else if (e.key === 'ArrowRight') dx = step;
+        
+        if (dx !== 0 || dy !== 0) {
+            e.preventDefault();
+            if (state.panels.footprint && state.panels.footprint.center) {
+                state.panels.footprint.center.x += dx;
+                state.panels.footprint.center.y += dy;
+                clampFootprintToBoundary();
+                recalculatePanelsLayout();
+                renderKonvaWorkspace();
+            }
+        }
+    }
+});

@@ -924,47 +924,55 @@
                                     <div class="control-group">
                                         <span class="control-label text-success"><i class="fas fa-clipboard-list me-1"></i>Material Estimates</span>
                                         <div class="table-responsive">
-                                            <table class="bom-table">
+                                            <table class="bom-table" id="bomTable">
                                                 <thead>
                                                     <tr>
                                                         <th>Material Item</th>
                                                         <th>Qty</th>
                                                         <th>Unit</th>
+                                                        <th></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="bomTableBody">
                                                     <tr>
-                                                        <td>Solar PV Modules (550Wp)</td>
-                                                        <td class="fw-bold" id="bomPlPlaced">0</td>
-                                                        <td>Nos</td>
+                                                        <td contenteditable="true">Solar PV Modules (550Wp)</td>
+                                                        <td contenteditable="true" class="fw-bold" id="bomPlPlaced">0</td>
+                                                        <td contenteditable="true">Nos</td>
+                                                        <td><button class="btn btn-sm text-danger border-0 bg-transparent py-0 px-1" onclick="this.closest('tr').remove()" title="Remove Item"><i class="fas fa-times"></i></button></td>
                                                     </tr>
                                                     <tr>
-                                                        <td>Aluminum Mounting Rails</td>
-                                                        <td class="fw-bold" id="bomRails">0</td>
-                                                        <td>mtrs</td>
+                                                        <td contenteditable="true">Aluminum Mounting Rails</td>
+                                                        <td contenteditable="true" class="fw-bold" id="bomRails">0</td>
+                                                        <td contenteditable="true">mtrs</td>
+                                                        <td><button class="btn btn-sm text-danger border-0 bg-transparent py-0 px-1" onclick="this.closest('tr').remove()" title="Remove Item"><i class="fas fa-times"></i></button></td>
                                                     </tr>
                                                     <tr>
-                                                        <td>End Clamps (Aluminum)</td>
-                                                        <td class="fw-bold" id="bomEndClamps">0</td>
-                                                        <td>Nos</td>
+                                                        <td contenteditable="true">End Clamps (Aluminum)</td>
+                                                        <td contenteditable="true" class="fw-bold" id="bomEndClamps">0</td>
+                                                        <td contenteditable="true">Nos</td>
+                                                        <td><button class="btn btn-sm text-danger border-0 bg-transparent py-0 px-1" onclick="this.closest('tr').remove()" title="Remove Item"><i class="fas fa-times"></i></button></td>
                                                     </tr>
                                                     <tr>
-                                                        <td>Mid Clamps (Aluminum)</td>
-                                                        <td class="fw-bold" id="bomMidClamps">0</td>
-                                                        <td>Nos</td>
+                                                        <td contenteditable="true">Mid Clamps (Aluminum)</td>
+                                                        <td contenteditable="true" class="fw-bold" id="bomMidClamps">0</td>
+                                                        <td contenteditable="true">Nos</td>
+                                                        <td><button class="btn btn-sm text-danger border-0 bg-transparent py-0 px-1" onclick="this.closest('tr').remove()" title="Remove Item"><i class="fas fa-times"></i></button></td>
                                                     </tr>
                                                     <tr>
-                                                        <td>Structural Leg Assemblies</td>
-                                                        <td class="fw-bold" id="bomLegSets">0</td>
-                                                        <td>sets</td>
+                                                        <td contenteditable="true">Structural Leg Assemblies</td>
+                                                        <td contenteditable="true" class="fw-bold" id="bomLegSets">0</td>
+                                                        <td contenteditable="true">sets</td>
+                                                        <td><button class="btn btn-sm text-danger border-0 bg-transparent py-0 px-1" onclick="this.closest('tr').remove()" title="Remove Item"><i class="fas fa-times"></i></button></td>
                                                     </tr>
                                                     <tr>
-                                                        <td>Concrete Ballasts (RCC)</td>
-                                                        <td class="fw-bold" id="bomConcreteBlocks">0</td>
-                                                        <td>Nos</td>
+                                                        <td contenteditable="true">Concrete Ballasts (RCC)</td>
+                                                        <td contenteditable="true" class="fw-bold" id="bomConcreteBlocks">0</td>
+                                                        <td contenteditable="true">Nos</td>
+                                                        <td><button class="btn btn-sm text-danger border-0 bg-transparent py-0 px-1" onclick="this.closest('tr').remove()" title="Remove Item"><i class="fas fa-times"></i></button></td>
                                                     </tr>
                                                 </tbody>
                                             </table>
+                                            <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addBomRow()"><i class="fas fa-plus"></i> Add Custom Material</button>
                                         </div>
                                     </div>
                                 </div>
