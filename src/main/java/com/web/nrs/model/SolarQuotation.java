@@ -27,6 +27,7 @@ public class SolarQuotation {
     private String noOfPanels;
     private String inverter;
     private double gedaRegisterCharge;
+    private double extraCabling;
     // --- Brochure display fields (not persisted, populated at PDF generation time) ---
     /** Display date e.g. "04 April 2026" */
     private String quotationDate;

@@ -75,4 +75,7 @@ public class QuotationLogEntity {
 
     @Column(name = "geda_register_charge")
     private Double gedaRegisterCharge;
+
+    @Column(name = "extra_cabling")
+    private Double extraCabling;
 }
