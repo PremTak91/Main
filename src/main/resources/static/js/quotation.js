@@ -28,6 +28,7 @@ function calculateKw() {
       var discomMeterCharge = parseFloat(discomInputVal); // Default to 0 if NaN
       var pqHsCost = parseFloat($("#pqHsCost").val() || 0); // Default to 0 if NaN
       var gedaRegisterCharge = parseFloat($("#gedaRegisterCharge").val() || 0); // Default to 0 if NaN
+      var extraCabling = parseFloat($("#extraCabling").val() || 0); // Default to 0 if NaN
       var subsidy = parseFloat($("#subsidy").val() || 0); // Default to 0 if NaN
 
       // Calculate total price
@@ -37,9 +38,9 @@ function calculateKw() {
       // Calculate actual price
       var actualPrice = 0;
       if(!isNaN(discomMeterCharge)) {
-          actualPrice = Math.round(totalPrice + pqHsCost + gedaRegisterCharge + discomMeterCharge);
+          actualPrice = Math.round(totalPrice + pqHsCost + gedaRegisterCharge + extraCabling + discomMeterCharge);
       }else{
-            actualPrice = Math.round(totalPrice + pqHsCost + gedaRegisterCharge + 0);
+            actualPrice = Math.round(totalPrice + pqHsCost + gedaRegisterCharge + extraCabling + 0);
       }
 
       $("#actualPrice").val(actualPrice);
@@ -76,6 +77,7 @@ $(document).on("keyup", "#discount", function () {
           $("#discomMeter").val(urlParams.get('discomMeter') || '0');
           $("#pqHsCost").val(urlParams.get('pqHsCost') || '0');
           $("#gedaRegisterCharge").val(urlParams.get('gedaRegisterCharge') || '0');
+          $("#extraCabling").val(urlParams.get('extraCabling') || '0');
           $("#subsidy").val(urlParams.get('subsidy') || '78000');
           
           const subByVal = urlParams.get('submittedBy');
@@ -149,6 +151,7 @@ $(document).on("keyup", "#discount", function () {
               discomMeter:          $("#discomMeter").val(),
               pqHsCost:             parseFloat($("#pqHsCost").val()),
               gedaRegisterCharge:   parseFloat($("#gedaRegisterCharge").val() || 0),
+              extraCabling:         parseFloat($("#extraCabling").val() || 0),
               actualPrice:          parseFloat($("#actualPrice").val()),
               subsidy:              parseFloat($("#subsidy").val()),
               effectivePrice:       parseFloat($("#effectivePrice").val()),
@@ -304,5 +307,5 @@ $("#solarType").on("change", function(){
     }else{
         $("#subsidy").val(0);
     }
-
+    CalculateActualPrice();
 });

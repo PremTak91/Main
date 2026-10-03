@@ -126,6 +126,7 @@ public class QuotationServiceImpl implements QuotationService {
                     .discomMeter(q.getDiscomMeter())
                     .pqHsCost(q.getPqHsCost())
                     .gedaRegisterCharge(q.getGedaRegisterCharge())
+                    .extraCabling(q.getExtraCabling())
                     .subsidy(q.getSubsidy())
                     .panelWatt(q.getPanelWatt())
                     .noOfPanels(noOfPanelsInt)
@@ -918,14 +919,27 @@ public class QuotationServiceImpl implements QuotationService {
 
         // Dynamic Pricing Cards Layout
         java.util.List<String[]> pCards = new java.util.ArrayList<>();
-        pCards.add(new String[]{"TOTAL SYSTEM COST", "Rs." + formatAmt(q.getActualPrice()), "Before deductions", "1", null});
-        if (isResidential) {
+        if (q.getActualPrice() > 0) {
+            pCards.add(new String[]{"TOTAL SYSTEM COST", "Rs." + formatAmt(q.getActualPrice()), "Before deductions", "1", null});
+        }
+        if (isResidential && q.getSubsidy() > 0) {
             pCards.add(new String[]{"GOVT. SUBSIDY", "Rs." + formatAmt(q.getSubsidy()), "PM Surya Ghar benefit", "2", null});
         }
-        String discomMeter = isResidential ?  "Rs."+ q.getDiscomMeter() : "At Actual";
-        pCards.add(new String[]{"DISCOM METER Charge",  discomMeter, "Net Metering Charges", "1", null});
+        boolean showDiscom = true;
+        if (isResidential) {
+            try {
+                if (Double.parseDouble(q.getDiscomMeter()) <= 0) showDiscom = false;
+            } catch (Exception e) {}
+        }
+        if (showDiscom) {
+            String discomMeter = isResidential ? "Rs." + q.getDiscomMeter() : "At Actual";
+            pCards.add(new String[]{"DISCOM METER Charge", discomMeter, "Net Metering Charges", "1", null});
+        }
         if (q.getGedaRegisterCharge() > 0) {
             pCards.add(new String[]{"GEDA REG. CHARGE", "Rs." + formatAmt(q.getGedaRegisterCharge()), "Registration Charge", "1", null});
+        }
+        if (q.getExtraCabling() > 0) {
+            pCards.add(new String[]{"EXTRA CABLING", "Rs." + formatAmt(q.getExtraCabling()), "Additional Wiring", "1", null});
         }
         if (q.getPqHsCost() > 0) {
             pCards.add(new String[]{"PREMIUM STRUCTURE", "Rs." + formatAmt(q.getPqHsCost()), "Quality & Heighted Cost", "1", null});
@@ -1213,23 +1227,42 @@ public class QuotationServiceImpl implements QuotationService {
         systemTable.addCell(getCellColumn("Supply, erection, and commissioning of solar PV power plant with standard cable length", new Color(245, 245, 245)));
         systemTable.addCell(getCellColumn(String.valueOf(quotation.getKw()), new Color(245, 245, 245)));
         systemTable.addCell(getCellColumn("Rs." + quotation.getRateKw(),     new Color(245, 245, 245)));
-        systemTable.addCell(getCellColumn("Discom Meter Charges",            new Color(245, 245, 245)));
-        systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
-        systemTable.addCell(getCellColumn("Rs." + quotation.getDiscomMeter(), new Color(245, 245, 245)));
-        systemTable.addCell(getCellColumn("Premium Quality and Heighted Structure Cost", new Color(245, 245, 245)));
-        systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
-        systemTable.addCell(getCellColumn("Rs." + quotation.getPqHsCost(),  new Color(245, 245, 245)));
-        systemTable.addCell(getCellColumn("Geda Registration Charge",       new Color(245, 245, 245)));
-        systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
-        systemTable.addCell(getCellColumn("Rs." + quotation.getGedaRegisterCharge(), new Color(245, 245, 245)));
+        boolean showDiscom = true;
+        try {
+            if (quotation.getDiscomMeter() == null || Double.parseDouble(quotation.getDiscomMeter()) <= 0) showDiscom = false;
+        } catch (Exception e) {}
+        if (showDiscom) {
+            systemTable.addCell(getCellColumn("Discom Meter Charges",            new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("Rs." + quotation.getDiscomMeter(), new Color(245, 245, 245)));
+        }
+        if (quotation.getPqHsCost() > 0) {
+            systemTable.addCell(getCellColumn("Premium Quality and Heighted Structure Cost", new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("Rs." + quotation.getPqHsCost(),  new Color(245, 245, 245)));
+        }
+        if (quotation.getGedaRegisterCharge() > 0) {
+            systemTable.addCell(getCellColumn("Geda Registration Charge",       new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("Rs." + quotation.getGedaRegisterCharge(), new Color(245, 245, 245)));
+        }
+        if (quotation.getExtraCabling() > 0) {
+            systemTable.addCell(getCellColumn("Extra Cabling",       new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("Rs." + quotation.getExtraCabling(), new Color(245, 245, 245)));
+        }
         document.add(systemTable);
 
         PdfPTable priceTable = new PdfPTable(2);
         priceTable.setWidthPercentage(100); priceTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
-        priceTable.addCell(getCell("Customer Actual Payable", PdfPCell.ALIGN_LEFT,  new Color(50, 100, 200), Color.WHITE, true));
-        priceTable.addCell(getCell("Rs." + quotation.getActualPrice(), PdfPCell.ALIGN_RIGHT, new Color(50, 100, 200), Color.WHITE, true));
-        priceTable.addCell(getCell("Subsidy",                          PdfPCell.ALIGN_LEFT,  Color.LIGHT_GRAY, Color.BLACK, false));
-        priceTable.addCell(getCell("Rs." + quotation.getSubsidy(),     PdfPCell.ALIGN_RIGHT, Color.LIGHT_GRAY, Color.BLACK, false));
+        if (quotation.getActualPrice() > 0) {
+            priceTable.addCell(getCell("Customer Actual Payable", PdfPCell.ALIGN_LEFT,  new Color(50, 100, 200), Color.WHITE, true));
+            priceTable.addCell(getCell("Rs." + quotation.getActualPrice(), PdfPCell.ALIGN_RIGHT, new Color(50, 100, 200), Color.WHITE, true));
+        }
+        if (quotation.getSubsidy() > 0) {
+            priceTable.addCell(getCell("Subsidy",                          PdfPCell.ALIGN_LEFT,  Color.LIGHT_GRAY, Color.BLACK, false));
+            priceTable.addCell(getCell("Rs." + quotation.getSubsidy(),     PdfPCell.ALIGN_RIGHT, Color.LIGHT_GRAY, Color.BLACK, false));
+        }
         if (quotation.getDiscountAmount() > 0) {
             priceTable.addCell(getCell("Special Discount",             PdfPCell.ALIGN_LEFT,  new Color(245, 245, 245), Color.BLACK, true));
             priceTable.addCell(getCell(formatAmount(quotation.getDiscountAmount()), PdfPCell.ALIGN_RIGHT, new Color(245, 245, 245), Color.BLACK, true));
