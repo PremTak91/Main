@@ -25,4 +25,6 @@ public interface SiteDetailsRepository extends JpaRepository<SiteDetailsEntity, 
             @Param("endDate") java.time.LocalDateTime endDate, 
             @Param("siteOwner") String siteOwner,
             Pageable pageable);
+
+    java.util.List<SiteDetailsEntity> findTop5ByOrderByCreatedAtDesc();
 }

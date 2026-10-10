@@ -22,27 +22,27 @@
                     </a>
                 </li>
                 <li class="sidebar-heading">COMPANY MODULE</li>
-                <li class="nav-item" sec:authorize="hasAnyRole('SUPERADMIN', 'ADMIN', 'DEALER')">
+                <li class="nav-item" sec:authorize="hasAnyRole('SUPERADMIN', 'ADMIN', 'DEALER')" th:if="${enabledModules != null and enabledModules.contains('QUOTATIONS')}">
                     <a class="nav-link" th:href="@{/quts}">
                         <i class="fas fa-fw fa-file-invoice-dollar"></i> Quotation Generate
                     </a>
                 </li>
-                <li class="nav-item" sec:authorize="hasRole('DEALER')">
+                <li class="nav-item" sec:authorize="hasRole('DEALER')" th:if="${enabledModules != null and enabledModules.contains('QUOTATIONS')}">
                     <a class="nav-link" th:href="@{/quts/logs}">
                         <i class="fas fa-fw fa-history"></i> Quotation Logs
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" th:if="${enabledModules != null and enabledModules.contains('SOLAR_SITES')}">
                     <a class="nav-link" th:href="@{/sites}">
                         <i class="fas fa-fw fa-map-marked-alt"></i> Site Management
                     </a>
                 </li>
-                <li class="nav-item" sec:authorize="!hasRole('DEALER')">
+                <li class="nav-item" sec:authorize="!hasRole('DEALER')" th:if="${enabledModules != null and enabledModules.contains('ATTENDANCE')}">
                     <a class="nav-link" th:href="@{/timesheet}">
                         <i class="fas fa-fw fa-clock"></i> Timesheet
                     </a>
                 </li>
-                <li class="nav-item" sec:authorize="!hasRole('DEALER')">
+                <li class="nav-item" sec:authorize="!hasRole('DEALER')" th:if="${enabledModules != null and enabledModules.contains('WORK_UPDATES')}">
                     <a class="nav-link" th:href="@{/worklogs}">
                         <i class="fas fa-fw fa-clipboard-list"></i> Daily Work Updates
                     </a>
@@ -66,28 +66,31 @@
                     </a>
                     <div class="collapse" id="adminSubmenu">
                         <ul class="nav flex-column ms-3">
-                            <li class="nav-item"><a class="nav-link" th:href="@{/employee}">Employee Management</a></li>
-                            <li class="nav-item"><a class="nav-link" th:href="@{/leaveRole}">Leave Role</a></li>
-                            <li class="nav-item"><a class="nav-link" th:href="@{/leave/approval}">Leave Request Approval</a></li>
-                            <li class="nav-item"><a class="nav-link" th:href="@{/admin/documents}">Document Management</a></li>
-                            <li class="nav-item"><a class="nav-link" th:href="@{/quts/logs}">Quotation Logs</a></li>
+                            <li class="nav-item" th:if="${enabledModules != null and enabledModules.contains('EMPLOYEES')}"><a class="nav-link" th:href="@{/employee}">Employee Management</a></li>
+                            <li class="nav-item" th:if="${enabledModules != null and enabledModules.contains('LEAVE')}"><a class="nav-link" th:href="@{/leaveRole}">Leave Role</a></li>
+                            <li class="nav-item" th:if="${enabledModules != null and enabledModules.contains('LEAVE')}"><a class="nav-link" th:href="@{/leave/approval}">Leave Request Approval</a></li>
+                            <li class="nav-item" th:if="${enabledModules != null and enabledModules.contains('DOCUMENTS')}"><a class="nav-link" th:href="@{/admin/documents}">Document Management</a></li>
+                            <li class="nav-item" th:if="${enabledModules != null and enabledModules.contains('QUOTATIONS')}"><a class="nav-link" th:href="@{/quts/logs}">Quotation Logs</a></li>
                             <li class="nav-item" sec:authorize="hasRole('SUPERADMIN')">
                                 <a class="nav-link" th:href="@{/roles-permissions}">Roles & Permissions</a>
+                            </li>
+                            <li class="nav-item" sec:authorize="hasRole('SUPERADMIN')">
+                                <a class="nav-link" th:href="@{/companies}">Companies</a>
                             </li>
                         </ul>
                     </div>
                 </li>
-                <li class="nav-item" sec:authorize="!hasRole('DEALER')">
+                <li class="nav-item" sec:authorize="!hasRole('DEALER')" th:if="${enabledModules != null and enabledModules.contains('LEAVE')}">
                     <a class="nav-link" th:href="@{/leave}">
                         <i class="fas fa-fw fa-plane-departure"></i> Leave
                     </a>
                 </li>
-                <li class="nav-item" sec:authorize="!hasRole('DEALER')">
+                <li class="nav-item" sec:authorize="!hasRole('DEALER')" th:if="${enabledModules != null and enabledModules.contains('EXPENSES')}">
                     <a class="nav-link" th:href="@{/expenses}">
                         <i class="fas fa-fw fa-money-bill-wave"></i> Expenses
                     </a>
                 </li>
-                <li class="nav-item" sec:authorize="!hasRole('DEALER')">
+                <li class="nav-item" sec:authorize="!hasRole('DEALER')" th:if="${enabledModules != null and enabledModules.contains('INQUIRIES')}">
                     <a class="nav-link" th:href="@{/inquiry}">
                         <i class="fas fa-fw fa-keyboard"></i> Inquiry Entry
                     </a>

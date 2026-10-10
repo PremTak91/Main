@@ -83,15 +83,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             username = jwtUtil.getUsernameFromToken(token);
 
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                UsernamePasswordAuthenticationToken authToken =
-                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                try {
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                } catch (org.springframework.security.authentication.DisabledException ex) {
+                    clearJwtCookie(response);
+                    if (isAjaxRequest(request)) {
+                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\": \"Your company account is deactivated.\"}");
+                    } else {
+                        response.sendRedirect(request.getContextPath() + "/login?error=Deactivated");
+                    }
+                    return;
+                } catch (Exception ex) {
+                    clearJwtCookie(response);
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid user");
+                    return;
+                }
             }
         }
 
-        filterChain.doFilter(request, response);
+        try {
+            if (token != null && username != null) {
+                Long companyId = jwtUtil.getCompanyIdFromToken(token);
+                if (companyId != null) {
+                    com.web.nrs.config.TenantContext.setCurrentTenant(companyId);
+                }
+            }
+            filterChain.doFilter(request, response);
+        } finally {
+            com.web.nrs.config.TenantContext.clear();
+        }
     }
 
     /**

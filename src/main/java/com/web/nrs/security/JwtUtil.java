@@ -42,7 +42,7 @@ public class JwtUtil {
         key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username, Set<UserRoleEntity> userRoles, Optional<EmployeeEntity> employeeEntity) {
+    public String generateToken(String username, Set<UserRoleEntity> userRoles, Optional<EmployeeEntity> employeeEntity, Long companyId) {
 
         String userName = employeeEntity.isPresent() ? getUserName(employeeEntity.get().getFirstName(), employeeEntity.get().getMiddleName(), employeeEntity.get().getLastName()) : "";
         List<String> roles = userRoles.stream()
@@ -52,6 +52,7 @@ public class JwtUtil {
                 .setSubject(username)
                 .claim("roles", roles)
                 .claim("userName", userName)
+                .claim("companyId", companyId)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(SignatureAlgorithm.HS256, key)
@@ -67,6 +68,25 @@ public class JwtUtil {
                     .getBody()
                     .getSubject();
         } catch (JwtException e) {
+            return null;
+        }
+    }
+
+    public Long getCompanyIdFromToken(String token) {
+        try {
+            Object val = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .get("companyId");
+            if (val instanceof Number) {
+                return ((Number) val).longValue();
+            } else if (val != null) {
+                return Long.valueOf(val.toString());
+            }
+            return null;
+        } catch (Exception e) {
             return null;
         }
     }

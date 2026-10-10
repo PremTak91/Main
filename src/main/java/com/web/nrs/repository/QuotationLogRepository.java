@@ -27,4 +27,9 @@ public interface QuotationLogRepository extends JpaRepository<QuotationLogEntity
             Pageable pageable);
 
     boolean existsByQuotationNo(String quotationNo);
+
+    @Query("SELECT COUNT(q) FROM QuotationLogEntity q WHERE q.createdDate >= :startDate")
+    long countQuotationsSince(@Param("startDate") LocalDateTime startDate);
+
+    java.util.List<QuotationLogEntity> findTop5ByOrderByCreatedDateDesc();
 }

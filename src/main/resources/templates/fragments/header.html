@@ -17,11 +17,13 @@
 
                 <div class="ms-auto d-flex align-items-center flex-nowrap gap-2">
                     <button type="button" class="btn btn-outline-primary btn-sm rounded-pill"
-                        data-bs-toggle="modal" data-bs-target="#createPostModal" title="Create Post">
+                        data-bs-toggle="modal" data-bs-target="#createPostModal" title="Create Post"
+                        th:if="${enabledModules != null and enabledModules.contains('POST_ACTIVITY')}">
                         <i class="fas fa-edit me-1"></i> <span class="d-none d-md-inline">Post</span>
                     </button>
                     <button id="attendanceBtn" class="badge bg-danger rounded-pill border-0"
-                        onclick="toggleAttendance()">IN</button>
+                        onclick="toggleAttendance()"
+                        th:if="${enabledModules != null and enabledModules.contains('ATTENDANCE_PUNCH')}">IN</button>
                     
                     <!-- Notification Bell -->
                     <div class="dropdown" id="notificationDropdownContainer">
@@ -113,6 +115,45 @@
             </div>
         </div>
 
+        <!-- Subscription Expiry Alert Modal (triggers when <= 15 days remaining) -->
+        <div class="modal fade" id="subscriptionExpiryModal" tabindex="-1" aria-labelledby="subModalTitle" aria-hidden="true" th:if="${subscriptionAlert != null and subscriptionAlert.expiringSoon}">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+                    <div class="modal-header bg-warning text-dark border-0 py-3">
+                        <h5 class="modal-title fw-bold" id="subModalTitle">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Subscription Renewal Reminder
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4 text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-calendar-times text-warning" style="font-size: 3.5rem;"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2" th:if="${!subscriptionAlert.expired}">
+                            Your subscription is expiring soon!
+                        </h5>
+                        <h5 class="fw-bold text-danger mb-2" th:if="${subscriptionAlert.expired}">
+                            Your subscription has expired!
+                        </h5>
+                        <p class="text-muted mb-3">
+                            Your company subscription is scheduled to expire on 
+                            <strong class="text-dark" th:text="${subscriptionAlert.expiryDate}">2026-10-25</strong> 
+                            (<span class="fw-bold text-danger" th:text="${subscriptionAlert.daysRemaining + ' day(s) remaining'}">15 days remaining</span>).
+                        </p>
+                        <div class="alert alert-warning py-2 mb-0 small text-start">
+                            <i class="fas fa-info-circle me-1"></i>
+                            To renew your subscription without service interruption, please contact the <strong>Admin team</strong>.
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 bg-light d-flex justify-content-center py-3">
+                        <button type="button" class="btn btn-primary px-4 rounded-pill" data-bs-dismiss="modal">
+                            <i class="fas fa-check me-1"></i> I Understand
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Stomp & SockJS -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
@@ -120,6 +161,19 @@
         <script th:src="@{/js/attendance.js}"></script>
         <script th:src="@{/js/post.js}"></script>
         <script th:src="@{/js/notification.js}"></script>
+
+        <script th:if="${subscriptionAlert != null and subscriptionAlert.expiringSoon}">
+            document.addEventListener('DOMContentLoaded', function () {
+                if (!sessionStorage.getItem('subscriptionAlertShown')) {
+                    var el = document.getElementById('subscriptionExpiryModal');
+                    if (el && typeof bootstrap !== 'undefined') {
+                        var modal = new bootstrap.Modal(el);
+                        modal.show();
+                        sessionStorage.setItem('subscriptionAlertShown', 'true');
+                    }
+                }
+            });
+        </script>
     </div>
 </body>
 

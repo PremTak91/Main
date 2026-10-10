@@ -1,6 +1,7 @@
 package com.web.nrs.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.TenantId;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -61,4 +62,7 @@ public class EmployeeEntity {
                 .filter(s -> s != null && !s.isBlank())
                 .collect(Collectors.joining(" "));
     }
+    @TenantId
+    @Column(name = "company_id")
+    private Long companyId;
 }

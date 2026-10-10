@@ -19,6 +19,7 @@ import java.util.Set;
 @Access(AccessType.FIELD)
 public class LoginEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -41,4 +42,7 @@ public class LoginEntity {
     )
     @JsonIgnore
     private Set<UserRoleEntity> userRoles = new HashSet<>();
+
+    @Column(name = "company_id")
+    private Long companyId = 1L; // default to NRS
 }
