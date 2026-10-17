@@ -424,7 +424,7 @@ public class QuotationServiceImpl implements QuotationService {
             new Phrase("NRS Solar Solution  |  www.nrssolarsolution.com  |  Gujarat – MNRE Registered", fWhiteBold(9)),
             PW / 2, 32);
         txt(cb, Element.ALIGN_CENTER,
-            new Phrase("HP petrol pump, Shyam business park, 12, Aslali, Ahmedabad, Gujarat 382427  |  info@nrssolarsolution@gmail.com  | "+q.getSubmittedNumber(),
+            new Phrase("HP petrol pump, Shyam business park, 12, Aslali, Ahmedabad, Gujarat 382427  |  info.nrssolarsolution@gmail.com  | "+q.getSubmittedNumber(),
                 new Font(Font.HELVETICA, 8, Font.NORMAL, new Color(255, 235, 200))), PW / 2, 14);
     }
 
@@ -932,7 +932,24 @@ public class QuotationServiceImpl implements QuotationService {
             } catch (Exception e) {}
         }
         if (showDiscom) {
-            String discomMeter = isResidential ? "Rs." + q.getDiscomMeter() : "At Actual";
+            String discomMeter;
+            if (isResidential) {
+                discomMeter = "Rs." + q.getDiscomMeter();
+            } else {
+                String raw = q.getDiscomMeter() != null ? q.getDiscomMeter().trim() : "";
+                boolean isNumber = false;
+                if (!raw.isEmpty()) {
+                    try {
+                        Double.parseDouble(raw);
+                        isNumber = true;
+                    } catch (Exception ignored) {}
+                }
+                if (raw.isEmpty() || isNumber) {
+                    discomMeter = "Customer scope";
+                } else {
+                    discomMeter = raw;
+                }
+            }
             pCards.add(new String[]{"DISCOM METER Charge", discomMeter, "Net Metering Charges", "1", null});
         }
         if (q.getGedaRegisterCharge() > 0) {
@@ -956,7 +973,7 @@ public class QuotationServiceImpl implements QuotationService {
         
         pCards.add(new String[]{"YOUR ACTUAL COST", "Rs." + formatAmt(isResidential ? q.getEffectivePrice() : q.getActualPrice()), "After all deductions", "3", extraNote});
 
-        float pcW = (PW - 60 - 20) / 3f, pcH = 85, pcTopY = PH - 125;
+        float pcW = (PW - 60 - 20) / 3f, pcH = 82, pcTopY = PH - 116;
         float row2Y = pcTopY - pcH - 12;
 
         // Draw Row 1 (up to 3 cards)
@@ -981,37 +998,29 @@ public class QuotationServiceImpl implements QuotationService {
         }
 
         // ROI section
-        float roiY = row2Y - pcH - 20;
-        fillRound(cb, PRIMARY, 30, roiY - 24, PW - 60, 30, 6);
+        float roiY = (r2Count > 0) ? (row2Y - pcH - 14) : (pcTopY - pcH - 16);
+        fillRound(cb, PRIMARY, 30, roiY - 24, PW - 60, 24, 6);
         txt(cb, Element.ALIGN_LEFT,
-                new Phrase("  RETURN ON INVESTMENT (ROI) ESTIMATE", fWhiteBold(10)), 38, roiY - 8);
-        float rcW = (PW - 60) / 3f - 5, rcH = 65; // Slightly reduced height
+                new Phrase("  RETURN ON INVESTMENT (ROI) ESTIMATE", fWhiteBold(10)), 38, roiY - 10);
+        float rcW = (PW - 60) / 3f - 5, rcH = 54;
         String[]   roiVals   = {q.getPaybackPeriod(), "Rs.4,50,000+"};
         String[]   roiLabels = {"Payback Period", "25-Year Total Savings"};
         Color[]    roiColors = {ORANGE, GREEN, PRIMARY};
         for (int i = 0; i < roiVals.length; i++) {
-            drawRoiCard(cb, 30 + i * (rcW + 7.5f), roiY - 36 - rcH, rcW, rcH,
+            drawRoiCard(cb, 30 + i * (rcW + 7.5f), roiY - 32 - rcH, rcW, rcH,
                     roiVals[i], roiLabels[i], roiColors[i]);
         }
 
-        float emiSecY = roiY - 36 - rcH - 16;
-        float ecH = 74; // Slightly reduced height
-
-        float ptY = emiSecY;
-
-
-
-
-
+        float ptY = roiY - 32 - rcH - 12;
 
         // Payment schedule strip
-        float ptStripH = 54;
+        float ptStripH = 46;
         cb.setColorFill(Color.WHITE); cb.setColorStroke(new Color(200, 215, 240));
-        cb.setLineWidth(1f); cb.roundRectangle(30, ptY - ptStripH, PW - 60, ptStripH + 8, 8); cb.fillStroke();
-        txt(cb, Element.ALIGN_LEFT, new Phrase("PAYMENT SCHEDULE", fPrimary(10)), 42, ptY - 10);
+        cb.setLineWidth(1f); cb.roundRectangle(30, ptY - ptStripH, PW - 60, ptStripH, 8); cb.fillStroke();
+        txt(cb, Element.ALIGN_LEFT, new Phrase("PAYMENT SCHEDULE", fPrimary(10)), 42, ptY - ptStripH / 2f - 4f);
 
         // Calculate 3 evenly-spaced boxes in the right portion of the strip
-        float boxW = 115, boxH = 40, boxGap = 8;
+        float boxW = 115, boxH = 34, boxGap = 8;
         float totalBoxW = 3 * boxW + 2 * boxGap;
         float boxStartX = PW - 30 - totalBoxW;  // flush to right margin
         String[] ptP = {"20%", "75%", "5%"};
@@ -1021,80 +1030,123 @@ public class QuotationServiceImpl implements QuotationService {
             float bx = boxStartX + i * (boxW + boxGap);
             float by = ptY - ptStripH + (ptStripH - boxH) / 2f;
             fillRound(cb, ptC[i], bx, by, boxW, boxH, 6);
-            txt(cb, Element.ALIGN_CENTER, new Phrase(ptP[i], fWhiteBold(14)), bx + boxW / 2, by + boxH - 14);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(ptP[i], fWhiteBold(12)), bx + boxW / 2, by + boxH - 13);
             txt(cb, Element.ALIGN_CENTER,
                     new Phrase(ptL[i], new Font(Font.HELVETICA, 7, Font.BOLD, Color.WHITE)),
-                    bx + boxW / 2, by + 8);
+                    bx + boxW / 2, by + 5);
         }
 
         // --- NEW BANK DETAILS SECTION ---
-        float bankSecY = ptY - ptStripH - 24; // Adjusted to fit page
-        float bdH = 95; 
+        float bankSecY = ptY - ptStripH - 12;
+        float bdH = 84; 
         
         // Card Body Background
         cb.setColorFill(Color.WHITE); cb.setColorStroke(new Color(210, 220, 240));
         cb.setLineWidth(1f); cb.roundRectangle(30, bankSecY - bdH, PW - 60, bdH, 8); cb.fillStroke();
         
         // Blue Header for Bank Card
-        cb.setColorFill(PRIMARY); cb.roundRectangle(30, bankSecY - 30, PW - 60, 30, 8); cb.fill();
-        fillRect(cb, PRIMARY, 30, bankSecY - 30, PW - 60, 15); // Flatten the bottom curve cleanly
+        cb.setColorFill(PRIMARY); cb.roundRectangle(30, bankSecY - 24, PW - 60, 24, 8); cb.fill();
+        fillRect(cb, PRIMARY, 30, bankSecY - 24, PW - 60, 12); // Flatten the bottom curve cleanly
         
-        txt(cb, Element.ALIGN_LEFT, new Phrase("  OFFICIAL BANK DETAILS", fWhiteBold(11)), 38, bankSecY - 14);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("  OFFICIAL BANK DETAILS", fWhiteBold(10)), 38, bankSecY - 15);
         
         // Hybrid Layout: Full width for long strings, 2-Column for short strings
         float lCol = 50, rCol = PW / 2 + 10;
-        float detailY = bankSecY - 44; 
+        float detailY = bankSecY - 37; 
         
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Bank Name:", fDark(9.5f)), lCol, detailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("KALUPUR COMMERCIAL CO-OP BANK LTD", fPrimary(9.5f)), lCol + 80, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Bank Name:", fDark(9f)), lCol, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("KALUPUR COMMERCIAL CO-OP BANK LTD", fPrimary(9f)), lCol + 80, detailY);
         
-        detailY -= 16;
+        detailY -= 14;
         
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Account Name:", fDark(9.5f)), lCol, detailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("NRS SOLAR SOLUTION", fPrimary(9.5f)), lCol + 80, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Account Name:", fDark(9f)), lCol, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("NRS SOLAR SOLUTION", fPrimary(9f)), lCol + 80, detailY);
         
-        detailY -= 16;
+        detailY -= 14;
         
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Account No:", fDark(9.5f)), lCol, detailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("01920102458", fPrimary(9.5f)), lCol + 80, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Account No:", fDark(9f)), lCol, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("01920102458", fPrimary(9f)), lCol + 80, detailY);
         
-        txt(cb, Element.ALIGN_LEFT, new Phrase("IFSC Code:", fDark(9.5f)), rCol, detailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("KCCBOISP019", fPrimary(9.5f)), rCol + 65, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("IFSC Code:", fDark(9f)), rCol, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("KCCBOISP019", fPrimary(9f)), rCol + 65, detailY);
         
-        detailY -= 16;
+        detailY -= 14;
         
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Branch:", fDark(9.5f)), lCol, detailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("ISANPUR AHMEDABAD", fPrimary(9.5f)), lCol + 80, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Branch:", fDark(9f)), lCol, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("ISANPUR AHMEDABAD", fPrimary(9f)), lCol + 80, detailY);
+
+        // --- PAYMENT TERMS SECTION (UNDER BANK DETAILS) ---
+        float termSecY = bankSecY - bdH - 10;
+        float termH = 88;
+
+        // Card Body Background
+        cb.setColorFill(Color.WHITE); cb.setColorStroke(new Color(210, 220, 240));
+        cb.setLineWidth(1f); cb.roundRectangle(30, termSecY - termH, PW - 60, termH, 8); cb.fillStroke();
+
+        // Header for Payment Terms Card
+        cb.setColorFill(PRIMARY); cb.roundRectangle(30, termSecY - 22, PW - 60, 22, 8); cb.fill();
+        fillRect(cb, PRIMARY, 30, termSecY - 22, PW - 60, 11); // Flatten bottom curve
+        txt(cb, Element.ALIGN_LEFT, new Phrase("  PAYMENT TERMS", fWhiteBold(10)), 38, termSecY - 14);
+
+        // Terms content inside card
+        float termLineY = termSecY - 35;
+        txt(cb, Element.ALIGN_LEFT,
+                new Phrase("The cost of RTS System will be decided mutually. The Applicant shall pay the total cost to the vendor as under.", fDark(8.2f)),
+                44, termLineY);
+
+        termLineY -= 12;
+        cb.setColorFill(ORANGE); cb.circle(48, termLineY + 2.5f, 2f); cb.fill();
+        txt(cb, Element.ALIGN_LEFT,
+                new Phrase("20% as an advance on confirmation of the order.", fDark(8.2f)),
+                56, termLineY);
+
+        termLineY -= 11;
+        cb.setColorFill(ORANGE); cb.circle(48, termLineY + 2.5f, 2f); cb.fill();
+        txt(cb, Element.ALIGN_LEFT,
+                new Phrase("75% against Proforma Invoice (PI) before dispatch of solar panels, inverters and other BoS items.", fDark(8.2f)),
+                56, termLineY);
+
+        termLineY -= 11;
+        cb.setColorFill(ORANGE); cb.circle(48, termLineY + 2.5f, 2f); cb.fill();
+        txt(cb, Element.ALIGN_LEFT,
+                new Phrase("5% after installation and commissioning of the RTS system", fDark(8.2f)),
+                56, termLineY);
+
+        termLineY -= 13;
+        Phrase validityPhrase = new Phrase();
+        validityPhrase.add(new Chunk("Validity: ", fPrimary(8.5f)));
+        validityPhrase.add(new Chunk("This quotation is valid for 10 days from the date of issue.", fDark(8.2f)));
+        txt(cb, Element.ALIGN_LEFT, validityPhrase, 44, termLineY);
 
         // --- SUBMITTED BY DETAILS SECTION ---
-        float subSecY = bankSecY - bdH - 12; // 225 - 12 = 213
-        float sdH = 46; 
+        float subSecY = termSecY - termH - 8;
+        float sdH = 34; 
         
         // Card Body Background
         cb.setColorFill(Color.WHITE); cb.setColorStroke(new Color(210, 220, 240));
-        cb.setLineWidth(1f); cb.roundRectangle(30, subSecY - sdH, PW - 60, sdH, 8); cb.fillStroke();
+        cb.setLineWidth(1f); cb.roundRectangle(30, subSecY - sdH, PW - 60, sdH, 6); cb.fillStroke();
         
         // Accent line on the left side
         fillRect(cb, ORANGE, 30, subSecY - sdH, 4, sdH);
         
         // Text details inside the card
         float subDetailY = subSecY - sdH / 2f - 3f;
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Submitted By:", fDark(9.5f)), 45, subDetailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase(q.getSubmittedBy() != null ? q.getSubmittedBy() : "Amit Vyas", fPrimary(10f)), 130, subDetailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Submitted By:", fDark(9f)), 45, subDetailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase(q.getSubmittedBy() != null ? q.getSubmittedBy() : "Amit Vyas", fPrimary(9.5f)), 130, subDetailY);
         
-        txt(cb, Element.ALIGN_LEFT, new Phrase("Contact Number:", fDark(9.5f)), PW / 2 + 10, subDetailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase(q.getSubmittedNumber() != null ? q.getSubmittedNumber() : "+91-8866389038", fPrimary(10f)), PW / 2 + 110, subDetailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase("Contact Number:", fDark(9f)), PW / 2 + 10, subDetailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase(q.getSubmittedNumber() != null ? q.getSubmittedNumber() : "+91-8866389038", fPrimary(9.5f)), PW / 2 + 105, subDetailY);
 
         // Bottom CTA
-        fillRect(cb, ORANGE, 0, 0, PW, 62);
-        fillRect(cb, new Color(220, 60, 0), 0, 59, PW, 3);
+        fillRect(cb, ORANGE, 0, 0, PW, 58);
+        fillRect(cb, new Color(220, 60, 0), 0, 55, PW, 3);
         txt(cb, Element.ALIGN_CENTER,
-                new Phrase("Book Now  -  Limited PM Surya Ghar Subsidy Available!", fWhiteBold(14)),
-                PW / 2, 36);
+                new Phrase("Book Now  -  Limited PM Surya Ghar Subsidy Available!", fWhiteBold(13)),
+                PW / 2, 33);
         txt(cb, Element.ALIGN_CENTER,
-                new Phrase("Call / WhatsApp: "+q.getSubmittedNumber()+"  |  www.nrssolarsolution.com",
-                        new Font(Font.HELVETICA, 9, Font.NORMAL, new Color(255, 240, 210))),
-                PW / 2, 16);
+                new Phrase("Call / WhatsApp: " + (q.getSubmittedNumber() != null ? q.getSubmittedNumber() : "+91-8866389038") + "  |  www.nrssolarsolution.com",
+                        new Font(Font.HELVETICA, 8.5f, Font.NORMAL, new Color(255, 240, 210))),
+                PW / 2, 14);
     }
 
     private static void drawPriceCard(PdfContentByte cb, float x, float y, float w, float h,
@@ -1104,26 +1156,33 @@ public class QuotationServiceImpl implements QuotationService {
         fillRect(cb, accent, x, y + h - 5, w, 5);
         Color textColor = Color.WHITE;
         if (title != null && !title.isEmpty()) {
-            txt(cb, Element.ALIGN_CENTER, new Phrase(title, new Font(Font.HELVETICA, 7, Font.BOLD, textColor)), x + w / 2, y + h - 20);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(title, new Font(Font.HELVETICA, 7.5f, Font.BOLD, textColor)), x + w / 2, y + h - 17);
         }
+        
+        boolean hasExtra = extraNote != null && !extraNote.isEmpty();
         
         if (value.length() > 18) {
             int mid = value.indexOf(' ', value.length() / 2 - 3);
             if (mid == -1) mid = value.length() / 2;
             String line1 = value.substring(0, mid).trim();
             String line2 = value.substring(mid).trim();
-            txt(cb, Element.ALIGN_CENTER, new Phrase(line1, new Font(Font.HELVETICA, 13, Font.BOLD, textColor)), x + w / 2, y + h / 2 + 12);
-            txt(cb, Element.ALIGN_CENTER, new Phrase(line2, new Font(Font.HELVETICA, 13, Font.BOLD, textColor)), x + w / 2, y + h / 2 - 6);
+            float vTop = hasExtra ? (y + h - 34) : (y + h - 36);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(line1, new Font(Font.HELVETICA, 12, Font.BOLD, textColor)), x + w / 2, vTop);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(line2, new Font(Font.HELVETICA, 12, Font.BOLD, textColor)), x + w / 2, vTop - 13);
         } else {
-            txt(cb, Element.ALIGN_CENTER, new Phrase(value, new Font(Font.HELVETICA, 17, Font.BOLD, textColor)), x + w / 2, y + h / 2 + 6);
+            if (hasExtra) {
+                txt(cb, Element.ALIGN_CENTER, new Phrase(value, new Font(Font.HELVETICA, 14.5f, Font.BOLD, textColor)), x + w / 2, y + h - 37);
+            } else {
+                txt(cb, Element.ALIGN_CENTER, new Phrase(value, new Font(Font.HELVETICA, 16.5f, Font.BOLD, textColor)), x + w / 2, y + h - 41);
+            }
         }
 
-        if (extraNote != null && !extraNote.isEmpty()) {
-            txt(cb, Element.ALIGN_CENTER, new Phrase(extraNote, new Font(Font.HELVETICA, 8, Font.BOLD, textColor)), x + w / 2, y + h / 2 - 10);
+        if (hasExtra) {
+            txt(cb, Element.ALIGN_CENTER, new Phrase(extraNote, new Font(Font.HELVETICA, 7.5f, Font.BOLD, textColor)), x + w / 2, y + 26);
         }
 
         if (note != null && !note.isEmpty()) {
-            txt(cb, Element.ALIGN_CENTER, new Phrase(note,  new Font(Font.HELVETICA, 7, Font.BOLD, textColor)), x + w / 2, y + 10);
+            txt(cb, Element.ALIGN_CENTER, new Phrase(note,  new Font(Font.HELVETICA, 7, Font.BOLD, textColor)), x + w / 2, y + 11);
         }
     }
 
@@ -1132,8 +1191,8 @@ public class QuotationServiceImpl implements QuotationService {
         cb.setColorFill(Color.WHITE); cb.setColorStroke(new Color(210, 220, 240));
         cb.setLineWidth(1f); cb.roundRectangle(x, y, w, h, 8); cb.fillStroke();
         fillRect(cb, accent, x, y + h - 5, w, 5);
-        txt(cb, Element.ALIGN_CENTER, new Phrase(value, new Font(Font.HELVETICA, 18, Font.BOLD, accent)), x + w / 2, y + h / 2 + 8);
-        txt(cb, Element.ALIGN_CENTER, new Phrase(label, new Font(Font.HELVETICA, 8, Font.NORMAL, DARK)),  x + w / 2, y + 10);
+        txt(cb, Element.ALIGN_CENTER, new Phrase(value, new Font(Font.HELVETICA, 16.5f, Font.BOLD, accent)), x + w / 2, y + 26);
+        txt(cb, Element.ALIGN_CENTER, new Phrase(label, new Font(Font.HELVETICA, 8.5f, Font.NORMAL, DARK)),  x + w / 2, y + 10);
     }
 
     private static void drawEmiCard(PdfContentByte cb, float x, float y, float w, float h,
