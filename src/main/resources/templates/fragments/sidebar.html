@@ -9,9 +9,11 @@
                 aria-label="Close"></button>
         </div>
         <div class="sidebar-header" style="padding: 1.5rem 1rem;">
-            <img th:src="@{/images/NRS_brand.png}" alt="NRS Solar Solution Logo" style="max-width: 120px; height: auto; filter: drop-shadow(0px 0px 6px rgba(255, 255, 255, 0.3));">
-            <div class="nrs-logo-text" style="font-size: 1.6rem; margin-top: 0.3rem; font-family: 'Montserrat', sans-serif; font-weight: 700; line-height: 1; color: #ffffff;">NRS</div>
-            <div class="nrs-logo-subtext" style="font-size: 0.75rem; letter-spacing: 0.05em; margin-top: 0.1rem; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #ffffff;">SOLAR SOLUTION</div>
+            <img th:src="${currentCompany != null and currentCompany.logo != null and !currentCompany.logo.isEmpty() ? (currentCompany.logo.startsWith('http') ? currentCompany.logo : (currentCompany.logo.startsWith('/NRS') ? currentCompany.logo : '/NRS' + (currentCompany.logo.startsWith('/') ? currentCompany.logo : '/' + currentCompany.logo))) : '/NRS/images/NRS_brand.png'}" 
+                 th:alt="${currentCompany != null ? currentCompany.name : 'Company Logo'}" 
+                 style="max-width: 120px; max-height: 55px; height: auto; filter: drop-shadow(0px 0px 6px rgba(255, 255, 255, 0.3)); object-fit: contain;">
+            <div class="nrs-logo-text" th:text="${currentCompany != null ? currentCompany.name : 'NRS'}" style="font-size: 1.35rem; margin-top: 0.3rem; font-family: 'Montserrat', sans-serif; font-weight: 700; line-height: 1.1; color: #ffffff;">NRS</div>
+            <div class="nrs-logo-subtext" th:text="${currentCompany != null and currentCompany.tagline != null and !currentCompany.tagline.isEmpty() ? currentCompany.tagline : 'SOLAR SOLUTION'}" style="font-size: 0.72rem; letter-spacing: 0.05em; margin-top: 0.1rem; font-family: 'Montserrat', sans-serif; font-weight: 600; color: #ffffff;">SOLAR SOLUTION</div>
         </div>
 
         <div class="offcanvas-body p-0">

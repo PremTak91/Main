@@ -35,6 +35,9 @@ public class CompanyController {
     }
 
     // SuperAdmin only
+    @Autowired
+    private com.web.nrs.service.CloudinaryStorageService cloudinaryStorageService;
+
     @PostMapping
     @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<?> createCompany(@RequestBody Map<String, String> request) {
@@ -46,17 +49,45 @@ public class CompanyController {
             return ResponseEntity.badRequest().body("Name, adminEmail, and adminPassword are required");
         }
 
-        CompanyEntity company = companyService.createCompany(name, adminEmail, adminPassword);
+        CompanyEntity company = companyService.createCompany(request);
         return ResponseEntity.ok(company);
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<?> updateCompany(@PathVariable Long id, @RequestBody Map<String, String> request) {
-        String name = request.get("name");
-        String status = request.get("status");
-        CompanyEntity company = companyService.updateCompany(id, name, status);
+        CompanyEntity company = companyService.updateCompany(id, request);
         return ResponseEntity.ok(company);
+    }
+
+    @PostMapping("/{id}/logo")
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    public ResponseEntity<?> uploadLogo(@PathVariable Long id, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            String objectKey = cloudinaryStorageService.compressAndUploadImage("company_logos", file);
+            String logoUrl = cloudinaryStorageService.generateUrl(objectKey);
+            java.util.Map<String, String> map = new java.util.HashMap<>();
+            map.put("logo", logoUrl);
+            companyService.updateCompany(id, map);
+            return ResponseEntity.ok(java.util.Map.of("logoUrl", logoUrl));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to upload logo: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/policy")
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    public ResponseEntity<?> uploadPolicyDocument(@PathVariable Long id, @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            java.util.Map<String, String> uploadResult = cloudinaryStorageService.uploadDocument("company_policies", file);
+            String policyUrl = uploadResult.get("url");
+            java.util.Map<String, String> map = new java.util.HashMap<>();
+            map.put("policyDoc", policyUrl);
+            companyService.updateCompany(id, map);
+            return ResponseEntity.ok(java.util.Map.of("policyUrl", policyUrl));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Failed to upload policy document: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}/dashboard")

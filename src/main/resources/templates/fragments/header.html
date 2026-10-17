@@ -12,7 +12,7 @@
                 </button>
 
                 <a class="navbar-brand d-lg-none py-0 me-auto" th:href="@{/home}">
-                    <img th:src="@{/images/NRS_brand.png}" alt="NRS Logo" height="40" class="d-inline-block align-text-top">
+                    <img th:src="${currentCompany != null and currentCompany.logo != null and !currentCompany.logo.isEmpty() ? (currentCompany.logo.startsWith('http') ? currentCompany.logo : (currentCompany.logo.startsWith('/NRS') ? currentCompany.logo : '/NRS' + (currentCompany.logo.startsWith('/') ? currentCompany.logo : '/' + currentCompany.logo))) : '/NRS/images/NRS_brand.png'}" alt="Logo" height="38" class="d-inline-block align-text-top" style="max-width: 100px; object-fit: contain;">
                 </a>
 
                 <div class="ms-auto d-flex align-items-center flex-nowrap gap-2">

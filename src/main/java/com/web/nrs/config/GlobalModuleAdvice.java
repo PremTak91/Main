@@ -25,6 +25,18 @@ public class GlobalModuleAdvice {
     @Autowired
     private CompanySubscriptionRepository subscriptionRepository;
 
+    @Autowired
+    private com.web.nrs.repository.CompanyRepository companyRepository;
+
+    @ModelAttribute("currentCompany")
+    public com.web.nrs.entity.CompanyEntity populateCurrentCompany() {
+        Long companyId = TenantContext.getCurrentTenant();
+        if (companyId != null) {
+            return companyRepository.findById(companyId).orElse(null);
+        }
+        return null;
+    }
+
     @ModelAttribute("enabledModules")
     public Set<String> populateEnabledModules() {
         Long companyId = TenantContext.getCurrentTenant();

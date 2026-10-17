@@ -18,4 +18,8 @@ public interface EmployeeRepository  extends JpaRepository<EmployeeEntity, Long>
     java.util.List<EmployeeEntity> findDealers();
 
     java.util.List<EmployeeEntity> findTop5ByOrderByIdDesc();
+
+    long countByCompanyId(Long companyId);
+
+    java.util.List<EmployeeEntity> findTop5ByCompanyIdOrderByIdDesc(Long companyId);
 }

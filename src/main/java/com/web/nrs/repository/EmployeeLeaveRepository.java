@@ -27,4 +27,9 @@ public interface EmployeeLeaveRepository extends JpaRepository<EmployeeLeaveEnti
     long countPendingLeaves();
 
     List<EmployeeLeaveEntity> findTop5ByOrderByCreatedAtDesc();
+
+    @Query("SELECT COUNT(e) FROM EmployeeLeaveEntity e WHERE e.companyId = :companyId AND UPPER(e.status) = 'PENDING'")
+    long countPendingLeavesByCompanyId(@Param("companyId") Long companyId);
+
+    List<EmployeeLeaveEntity> findTop5ByCompanyIdOrderByCreatedAtDesc(Long companyId);
 }

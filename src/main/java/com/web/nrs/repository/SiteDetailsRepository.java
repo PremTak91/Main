@@ -27,4 +27,8 @@ public interface SiteDetailsRepository extends JpaRepository<SiteDetailsEntity, 
             Pageable pageable);
 
     java.util.List<SiteDetailsEntity> findTop5ByOrderByCreatedAtDesc();
+
+    long countByCompanyId(Long companyId);
+
+    java.util.List<SiteDetailsEntity> findTop5ByCompanyIdOrderByCreatedAtDesc(Long companyId);
 }

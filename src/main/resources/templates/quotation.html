@@ -163,7 +163,7 @@
                             </div>
                             <div class="col-md-4" sec:authorize="!hasRole('DEALER')">
                                 <label for="submittedNumber" class="form-label">Submitted Number:</label>
-                                <input type="text" class="form-control" id="submittedNumber" placeholder="Enter Submitted Number" value="+91-8866389038" required>
+                                <input type="text" class="form-control" id="submittedNumber" placeholder="Enter Submitted Number" th:value="${currentCompany != null and currentCompany.phone != null and !currentCompany.phone.isEmpty() ? currentCompany.phone : '+91-8866389038'}" value="+91-8866389038" required>
                             </div>
                         </div>
 						<div class="row g-3 mt-2">

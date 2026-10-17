@@ -56,39 +56,69 @@
                 </div>
 
                 <div class="row mb-4">
-                    <!-- Basic Info -->
-                    <div class="col-md-6 mb-3">
+                    <!-- Company Profile Info -->
+                    <div class="col-md-7 mb-3">
                         <div class="card h-100">
-                            <div class="card-header bg-white fw-bold">Company Information</div>
+                            <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-building text-primary me-2"></i>Company & Branding Profile</span>
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editCompanyModal">
+                                    <i class="fas fa-edit me-1"></i> Edit Details
+                                </button>
+                            </div>
                             <div class="card-body">
-                                <ul class="list-group list-group-flush">
-                                    <li class="list-group-item d-flex justify-content-between">
-                                        <span class="text-muted">Company Name:</span>
-                                        <span class="fw-bold" id="infoName">Loading...</span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between">
-                                        <span class="text-muted">Company Code (ID):</span>
-                                        <span class="fw-bold" id="infoId">Loading...</span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between">
-                                        <span class="text-muted">Status:</span>
-                                        <span class="fw-bold" id="infoStatus">Loading...</span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between">
-                                        <span class="text-muted">Location:</span>
-                                        <span class="fw-bold" id="infoLocation">N/A (Not configured)</span>
-                                    </li>
-                                    <li class="list-group-item d-flex justify-content-between">
-                                        <span class="text-muted">Created Date:</span>
-                                        <span class="fw-bold" id="infoCreatedAt">Loading...</span>
-                                    </li>
-                                </ul>
+                                <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                                    <div id="infoLogoContainer" class="me-3 p-1 border rounded bg-white shadow-sm" style="width: 80px; height: 60px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                        <i class="fas fa-building fa-2x text-muted"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="fw-bold mb-0" id="infoName">Loading...</h5>
+                                        <div class="text-muted small" id="infoTagline"></div>
+                                        <div class="mt-1">
+                                            <span class="badge bg-secondary me-1" id="infoIdBadge">ID: -</span>
+                                            <span id="infoStatusBadge"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row g-2 small">
+                                    <div class="col-sm-6">
+                                        <span class="text-muted d-block">Quotation Phone:</span>
+                                        <span class="fw-semibold" id="infoPhone">-</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-muted d-block">Quotation Email:</span>
+                                        <span class="fw-semibold" id="infoEmail">-</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-muted d-block">Official Website:</span>
+                                        <span class="fw-semibold" id="infoWebsite">-</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <span class="text-muted d-block">Created Date:</span>
+                                        <span class="fw-semibold" id="infoCreatedAt">-</span>
+                                    </div>
+                                    <div class="col-12">
+                                        <span class="text-muted d-block">Footer Copyright:</span>
+                                        <span class="fw-semibold text-secondary" id="infoCopyright">-</span>
+                                    </div>
+                                    <div class="col-12">
+                                        <span class="text-muted d-block">Office Address:</span>
+                                        <span class="fw-semibold" id="infoAddress">-</span>
+                                    </div>
+                                    <div class="col-12 mt-2 pt-2 border-top">
+                                        <span class="text-muted d-block fw-bold text-primary"><i class="fas fa-university me-1"></i>Quotation Bank Details:</span>
+                                        <span class="fw-semibold" id="infoBankDetails">-</span>
+                                    </div>
+                                    <div class="col-12 mt-2 pt-2 border-top">
+                                        <span class="text-muted d-block fw-bold text-primary"><i class="fas fa-file-contract me-1"></i>Company Policy Document:</span>
+                                        <span id="infoPolicyDoc">-</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Primary Admin Info -->
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-5 mb-3">
                         <div class="card h-100">
                             <div class="card-header bg-white fw-bold">Primary Admin User</div>
                             <div class="card-body" id="adminInfoBody">
@@ -248,30 +278,144 @@
 
     <!-- Edit Company Modal -->
     <div class="modal fade" id="editCompanyModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Edit Company</h5>
+                    <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2 text-primary"></i>Edit Company Profile & Branding</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="editCompanyForm">
-                        <div class="mb-3">
-                            <label class="form-label">Company Name *</label>
-                            <input type="text" class="form-control" name="editName" id="editName" required>
+                        <!-- Basic Setup -->
+                        <div class="card mb-3 border-light bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary mb-3"><i class="fas fa-building me-2"></i>Company Identity & Status</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-8">
+                                        <label class="form-label">Company Name *</label>
+                                        <input type="text" class="form-control" name="editName" id="editName" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Status *</label>
+                                        <select class="form-select" name="editStatus" id="editStatus">
+                                            <option value="ACTIVE">ACTIVE</option>
+                                            <option value="INACTIVE">INACTIVE</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Company Tagline</label>
+                                        <input type="text" class="form-control" name="editTagline" id="editTagline" placeholder="Your Trusted Solar Partner in Gujarat">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Status *</label>
-                            <select class="form-select" name="editStatus" id="editStatus">
-                                <option value="ACTIVE">ACTIVE</option>
-                                <option value="INACTIVE">INACTIVE</option>
-                            </select>
+
+                        <!-- Logo Section -->
+                        <div class="card mb-3 border-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary mb-3"><i class="fas fa-image me-2"></i>Company Logo</h6>
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-md-8">
+                                        <label class="form-label">Logo URL</label>
+                                        <input type="text" class="form-control" name="editLogo" id="editLogo" placeholder="https://res.cloudinary.com/... or /images/logo.png">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label d-block">&nbsp;</label>
+                                        <div class="input-group">
+                                            <input type="file" class="form-control form-control-sm d-none" id="logoFileInput" accept="image/*" onchange="uploadCompanyLogo()">
+                                            <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="$('#logoFileInput').click()">
+                                                <i class="fas fa-upload me-1"></i> Upload Image
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Policy Document Section -->
+                        <div class="card mb-3 border-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary mb-3"><i class="fas fa-file-pdf me-2"></i>Company Policy Document (PDF)</h6>
+                                <div class="row g-2 align-items-center">
+                                    <div class="col-md-8">
+                                        <label class="form-label">Policy Document URL</label>
+                                        <input type="text" class="form-control" name="editPolicyDoc" id="editPolicyDoc" placeholder="https://res.cloudinary.com/... or leave blank for default">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label d-block">&nbsp;</label>
+                                        <div class="input-group">
+                                            <input type="file" class="form-control form-control-sm d-none" id="policyFileInput" accept="application/pdf" onchange="uploadCompanyPolicy()">
+                                            <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="$('#policyFileInput').click()">
+                                                <i class="fas fa-file-upload me-1"></i> Upload PDF
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Branding & Quotation Contacts -->
+                        <div class="card mb-3 border-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary mb-3"><i class="fas fa-address-book me-2"></i>Quotation & Official Contact Details</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Quotation / Contact Number</label>
+                                        <input type="text" class="form-control" name="editPhone" id="editPhone" placeholder="+91-8866389038">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Quotation / Official Email</label>
+                                        <input type="email" class="form-control" name="editEmail" id="editEmail" placeholder="info.nrssolarsolution@gmail.com">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Official Website</label>
+                                        <input type="text" class="form-control" name="editWebsite" id="editWebsite" placeholder="www.nrssolarsolution.com">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Footer Copyright Text</label>
+                                        <input type="text" class="form-control" name="editCopyrightText" id="editCopyrightText" placeholder="Copyright © 2026 NRS Group. All rights reserved.">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Office Address</label>
+                                        <textarea class="form-control" name="editAddress" id="editAddress" rows="2" placeholder="HP petrol pump, Shyam business park, 12, Aslali, Ahmedabad, Gujarat 382427"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bank Details -->
+                        <div class="card mb-2 border-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary mb-3"><i class="fas fa-university me-2"></i>Official Bank Details (Quotation PDF)</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Bank Name</label>
+                                        <input type="text" class="form-control" name="editBankName" id="editBankName" placeholder="KALUPUR COMMERCIAL CO-OP BANK LTD">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Account Name</label>
+                                        <input type="text" class="form-control" name="editAccountName" id="editAccountName" placeholder="NRS SOLAR SOLUTION">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Account Number</label>
+                                        <input type="text" class="form-control" name="editAccountNo" id="editAccountNo" placeholder="01920102458">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">IFSC Code</label>
+                                        <input type="text" class="form-control" name="editIfscCode" id="editIfscCode" placeholder="KCCBOISP019">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Branch Name</label>
+                                        <input type="text" class="form-control" name="editBranch" id="editBranch" placeholder="ISANPUR AHMEDABAD">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="submitEditCompany()">Save Changes</button>
+                    <button type="button" class="btn btn-primary px-4" onclick="submitEditCompany()"><i class="fas fa-save me-1"></i>Save Changes</button>
                 </div>
             </div>
         </div>
@@ -457,14 +601,45 @@
                     
                     $('#dashboardTitle').text(c.name + (isCompanyDeleted ? ' (DELETED)' : '') + ' - 360° Dashboard');
                     $('#infoName').text(c.name);
-                    $('#infoId').text(c.id);
+                    $('#infoIdBadge').text('ID: ' + c.id);
+                    $('#infoTagline').text(c.tagline || '');
+                    $('#infoPhone').text(c.phone || 'N/A');
+                    $('#infoEmail').text(c.email || 'N/A');
+                    $('#infoWebsite').text(c.website || 'N/A');
+                    $('#infoCopyright').text(c.copyrightText || ('Copyright © ' + c.name));
+                    $('#infoAddress').text(c.address || 'N/A');
+
+                    var logoUrl = c.logo;
+                    if (logoUrl && !logoUrl.startsWith('http://') && !logoUrl.startsWith('https://')) {
+                        if (!logoUrl.startsWith('/NRS')) {
+                            logoUrl = '/NRS' + (logoUrl.startsWith('/') ? logoUrl : '/' + logoUrl);
+                        }
+                    }
+                    if (logoUrl) {
+                        $('#infoLogoContainer').html('<img src="' + logoUrl + '" alt="Logo" style="max-height: 52px; max-width: 72px; object-fit: contain;">');
+                    } else {
+                        $('#infoLogoContainer').html('<i class="fas fa-building fa-2x text-muted"></i>');
+                    }
+
+                    if (c.bankName || c.accountNo) {
+                        var bText = (c.bankName || '') + (c.accountNo ? ' | A/C: ' + c.accountNo : '') + (c.ifscCode ? ' | IFSC: ' + c.ifscCode : '') + (c.branch ? ' | ' + c.branch : '');
+                        $('#infoBankDetails').text(bText);
+                    } else {
+                        $('#infoBankDetails').text('N/A (Not configured)');
+                    }
+
+                    if (c.policyDoc) {
+                        $('#infoPolicyDoc').html('<a href="' + c.policyDoc + '" target="_blank" class="text-primary fw-bold text-decoration-none"><i class="fas fa-file-pdf me-1 text-danger"></i>View Custom Policy PDF</a>');
+                    } else {
+                        $('#infoPolicyDoc').html('<span class="text-muted"><i class="fas fa-file-pdf me-1 text-secondary"></i>Default Policy (NRS_Company_Policy_2025.pdf)</span>');
+                    }
                     
                     if (isCompanyDeleted) {
-                        $('#infoStatus').html('<span class="badge bg-danger">DELETED</span>');
+                        $('#infoStatusBadge').html('<span class="badge bg-danger">DELETED</span>');
                         $('#deleteCompanyBtn').html('<i class="fas fa-trash-restore"></i> Restore').removeClass('btn-danger').addClass('btn-success');
                         $('#toggleStatusBtn').prop('disabled', true);
                     } else {
-                        $('#infoStatus').html('<span class="badge ' + (c.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary') + '">' + c.status + '</span>');
+                        $('#infoStatusBadge').html('<span class="badge ' + (c.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary') + '">' + c.status + '</span>');
                         $('#deleteCompanyBtn').html('<i class="fas fa-trash"></i> Delete').removeClass('btn-success').addClass('btn-danger');
                         $('#toggleStatusBtn').prop('disabled', false);
                     }
@@ -477,8 +652,21 @@
                         $('#toggleStatusBtn').html('<i class="fas fa-check-circle"></i> Reactivate').removeClass('btn-outline-danger').addClass('btn-success');
                     }
                     
-                    $('#editName').val(c.name);
-                    $('#editStatus').val(c.status);
+                    $('#editName').val(c.name || '');
+                    $('#editStatus').val(c.status || 'ACTIVE');
+                    $('#editLogo').val(c.logo || '');
+                    $('#editPolicyDoc').val(c.policyDoc || '');
+                    $('#editTagline').val(c.tagline || '');
+                    $('#editPhone').val(c.phone || '');
+                    $('#editEmail').val(c.email || '');
+                    $('#editWebsite').val(c.website || '');
+                    $('#editCopyrightText').val(c.copyrightText || '');
+                    $('#editAddress').val(c.address || '');
+                    $('#editBankName').val(c.bankName || '');
+                    $('#editAccountName').val(c.accountName || '');
+                    $('#editAccountNo').val(c.accountNo || '');
+                    $('#editIfscCode').val(c.ifscCode || '');
+                    $('#editBranch').val(c.branch || '');
 
                     if (data.primaryAdmin) {
                         $('#adminInfoBody').html(`
@@ -603,7 +791,20 @@
         function submitEditCompany() {
             var data = {
                 name: $('#editName').val(),
-                status: $('#editStatus').val()
+                status: $('#editStatus').val(),
+                logo: $('#editLogo').val(),
+                policyDoc: $('#editPolicyDoc').val(),
+                phone: $('#editPhone').val(),
+                email: $('#editEmail').val(),
+                website: $('#editWebsite').val(),
+                tagline: $('#editTagline').val(),
+                copyrightText: $('#editCopyrightText').val(),
+                address: $('#editAddress').val(),
+                bankName: $('#editBankName').val(),
+                accountName: $('#editAccountName').val(),
+                accountNo: $('#editAccountNo').val(),
+                ifscCode: $('#editIfscCode').val(),
+                branch: $('#editBranch').val()
             };
 
             $.ajax({
@@ -612,12 +813,64 @@
                 contentType: 'application/json',
                 data: JSON.stringify(data),
                 success: function (res) {
-                    alert('Company updated successfully!');
+                    alert('Company profile updated successfully!');
                     $('#editCompanyModal').modal('hide');
                     loadCompanyDashboard();
                 },
                 error: function (err) {
                     alert('Error updating company: ' + (err.responseText || ''));
+                }
+            });
+        }
+
+        function uploadCompanyLogo() {
+            var fileInput = document.getElementById('logoFileInput');
+            if (!fileInput.files || fileInput.files.length === 0) return;
+            var file = fileInput.files[0];
+            var formData = new FormData();
+            formData.append('file', file);
+
+            $.ajax({
+                url: '/NRS/api/companies/' + companyId + '/logo',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    alert('Logo uploaded successfully!');
+                    if (res && res.logoUrl) {
+                        $('#editLogo').val(res.logoUrl);
+                    }
+                    loadCompanyDashboard();
+                },
+                error: function (err) {
+                    alert('Failed to upload logo: ' + (err.responseText || ''));
+                }
+            });
+        }
+
+        function uploadCompanyPolicy() {
+            var fileInput = document.getElementById('policyFileInput');
+            if (!fileInput.files || fileInput.files.length === 0) return;
+            var file = fileInput.files[0];
+            var formData = new FormData();
+            formData.append('file', file);
+
+            $.ajax({
+                url: '/NRS/api/companies/' + companyId + '/policy',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    alert('Policy document uploaded successfully!');
+                    if (res && res.policyUrl) {
+                        $('#editPolicyDoc').val(res.policyUrl);
+                    }
+                    loadCompanyDashboard();
+                },
+                error: function (err) {
+                    alert('Failed to upload policy document: ' + (err.responseText || ''));
                 }
             });
         }

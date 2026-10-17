@@ -32,4 +32,11 @@ public interface QuotationLogRepository extends JpaRepository<QuotationLogEntity
     long countQuotationsSince(@Param("startDate") LocalDateTime startDate);
 
     java.util.List<QuotationLogEntity> findTop5ByOrderByCreatedDateDesc();
+
+    long countByCompanyId(Long companyId);
+
+    @Query("SELECT COUNT(q) FROM QuotationLogEntity q WHERE q.companyId = :companyId AND q.createdDate >= :startDate")
+    long countQuotationsByCompanyIdSince(@Param("companyId") Long companyId, @Param("startDate") LocalDateTime startDate);
+
+    java.util.List<QuotationLogEntity> findTop5ByCompanyIdOrderByCreatedDateDesc(Long companyId);
 }

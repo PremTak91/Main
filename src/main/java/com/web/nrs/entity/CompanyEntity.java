@@ -25,12 +25,52 @@ public class CompanyEntity {
     @Column
     private String status;
 
+    @Column
+    private String logo;
+
+    @Column
+    private String email;
+
+    @Column
+    private String phone;
+
+    @Column
+    private String website;
+
+    @Column(columnDefinition = "TEXT")
+    private String address;
+
+    @Column
+    private String tagline;
+
+    @Column(name = "copyright_text")
+    private String copyrightText;
+
+    @Column(name = "bank_name")
+    private String bankName;
+
+    @Column(name = "account_name")
+    private String accountName;
+
+    @Column(name = "account_no")
+    private String accountNo;
+
+    @Column(name = "ifsc_code")
+    private String ifscCode;
+
+    @Column
+    private String branch;
+
+    @Column(name = "policy_doc")
+    private String policyDoc;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean deleted = false;
 

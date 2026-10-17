@@ -64,31 +64,109 @@
 
     <!-- Add Company Modal -->
     <div class="modal fade" id="addCompanyModal" tabindex="-1" aria-labelledby="addCompanyModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addCompanyModalLabel">Add New Company</h5>
+                    <h5 class="modal-title fw-bold" id="addCompanyModalLabel"><i class="fas fa-building me-2 text-primary"></i>Add New Company</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="addCompanyForm">
-                        <div class="mb-3">
-                            <label class="form-label">Company Name *</label>
-                            <input type="text" class="form-control" name="name" required>
+                        <!-- Basic Credentials -->
+                        <div class="card mb-3 border-light bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary mb-3"><i class="fas fa-key me-2"></i>Account & Admin Setup</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-12">
+                                        <label class="form-label">Company Name *</label>
+                                        <input type="text" class="form-control" name="name" placeholder="e.g. NRS Solar Solution" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Admin Email *</label>
+                                        <input type="email" class="form-control" name="adminEmail" placeholder="admin@example.com" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Admin Password *</label>
+                                        <input type="password" class="form-control" name="adminPassword" placeholder="••••••••" required>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Admin Email *</label>
-                            <input type="email" class="form-control" name="adminEmail" required>
+
+                        <!-- Branding & Contact -->
+                        <div class="card mb-3 border-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary mb-3"><i class="fas fa-id-card me-2"></i>Branding & Quotation Details</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Company Logo (Image URL)</label>
+                                        <input type="text" class="form-control" name="logo" placeholder="https://res.cloudinary.com/... or /images/logo.png">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Quotation / Contact Number</label>
+                                        <input type="text" class="form-control" name="phone" placeholder="+91-9876543210">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Quotation / Official Email</label>
+                                        <input type="email" class="form-control" name="email" placeholder="sales@mycompany.com">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Official Website</label>
+                                        <input type="text" class="form-control" name="website" placeholder="www.mycompany.com">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Company Tagline</label>
+                                        <input type="text" class="form-control" name="tagline" placeholder="Your Trusted Solar Partner">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Footer Copyright Text</label>
+                                        <input type="text" class="form-control" name="copyrightText" placeholder="Copyright © 2026 MyCompany. All rights reserved.">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Registered Office Address</label>
+                                        <textarea class="form-control" name="address" rows="2" placeholder="Office / Shop Address printed on quotations"></textarea>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Company Policy Document (PDF URL)</label>
+                                        <input type="text" class="form-control" name="policyDoc" placeholder="https://res.cloudinary.com/... or leave blank for default">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Admin Password *</label>
-                            <input type="password" class="form-control" name="adminPassword" required>
+
+                        <!-- Official Bank Details -->
+                        <div class="card mb-2 border-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary mb-3"><i class="fas fa-university me-2"></i>Official Bank Details (Quotation PDF)</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Bank Name</label>
+                                        <input type="text" class="form-control" name="bankName" placeholder="e.g. HDFC BANK LTD">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Account Name</label>
+                                        <input type="text" class="form-control" name="accountName" placeholder="e.g. MY COMPANY PVT LTD">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Account Number</label>
+                                        <input type="text" class="form-control" name="accountNo" placeholder="e.g. 50200012345678">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">IFSC Code</label>
+                                        <input type="text" class="form-control" name="ifscCode" placeholder="e.g. HDFC0001234">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Branch Name</label>
+                                        <input type="text" class="form-control" name="branch" placeholder="e.g. AHMEDABAD MAIN">
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="submitNewCompany()">Save Company</button>
+                    <button type="button" class="btn btn-primary px-4" onclick="submitNewCompany()"><i class="fas fa-check-circle me-1"></i>Save Company</button>
                 </div>
             </div>
         </div>
@@ -133,8 +211,26 @@
             var data = {
                 name: $('input[name="name"]').val(),
                 adminEmail: $('input[name="adminEmail"]').val(),
-                adminPassword: $('input[name="adminPassword"]').val()
+                adminPassword: $('input[name="adminPassword"]').val(),
+                logo: $('input[name="logo"]').val(),
+                phone: $('input[name="phone"]').val(),
+                email: $('input[name="email"]').val(),
+                website: $('input[name="website"]').val(),
+                tagline: $('input[name="tagline"]').val(),
+                copyrightText: $('input[name="copyrightText"]').val(),
+                address: $('textarea[name="address"]').val(),
+                bankName: $('input[name="bankName"]').val(),
+                accountName: $('input[name="accountName"]').val(),
+                accountNo: $('input[name="accountNo"]').val(),
+                ifscCode: $('input[name="ifscCode"]').val(),
+                branch: $('input[name="branch"]').val(),
+                policyDoc: $('input[name="policyDoc"]').val()
             };
+
+            if (!data.name || !data.adminEmail || !data.adminPassword) {
+                alert('Please fill in Company Name, Admin Email, and Admin Password.');
+                return;
+            }
 
             $.ajax({
                 url: '/NRS/api/companies',

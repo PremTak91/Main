@@ -57,10 +57,44 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     @Transactional
     public CompanyEntity createCompany(String name, String adminEmail, String adminPassword) {
+        java.util.Map<String, String> map = new java.util.HashMap<>();
+        map.put("name", name);
+        map.put("adminEmail", adminEmail);
+        map.put("adminPassword", adminPassword);
+        return createCompany(map);
+    }
+
+    @Override
+    @Transactional
+    public CompanyEntity createCompany(java.util.Map<String, String> data) {
+        String name = data.get("name");
+        String adminEmail = data.get("adminEmail");
+        String adminPassword = data.get("adminPassword");
+
         // 1. Create Company (Factory step 1)
         CompanyEntity company = new CompanyEntity();
         company.setName(name);
         company.setStatus("ACTIVE");
+        company.setLogo(data.get("logo"));
+        company.setEmail(data.get("email"));
+        company.setPhone(data.get("phone"));
+        company.setWebsite(data.get("website"));
+        company.setAddress(data.get("address"));
+        company.setTagline(data.get("tagline"));
+
+        String copyright = data.get("copyrightText");
+        if (copyright == null || copyright.trim().isEmpty()) {
+            copyright = "Copyright © " + name;
+        }
+        company.setCopyrightText(copyright);
+
+        company.setBankName(data.get("bankName"));
+        company.setAccountName(data.get("accountName"));
+        company.setAccountNo(data.get("accountNo"));
+        company.setIfscCode(data.get("ifscCode"));
+        company.setBranch(data.get("branch"));
+        company.setPolicyDoc(data.get("policyDoc"));
+
         company = companyRepository.save(company);
 
         // 2. Create Admin Login (Factory step 2)
@@ -106,10 +140,38 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     @Transactional
     public CompanyEntity updateCompany(Long id, String name, String status) {
+        java.util.Map<String, String> map = new java.util.HashMap<>();
+        if (name != null) map.put("name", name);
+        if (status != null) map.put("status", status);
+        return updateCompany(id, map);
+    }
+
+    @Override
+    @Transactional
+    public CompanyEntity updateCompany(Long id, java.util.Map<String, String> data) {
         CompanyEntity company = companyRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Company not found"));
-        if (name != null) company.setName(name);
-        if (status != null) company.setStatus(status);
+        
+        if (data.containsKey("name") && data.get("name") != null && !data.get("name").trim().isEmpty()) {
+            company.setName(data.get("name").trim());
+        }
+        if (data.containsKey("status") && data.get("status") != null && !data.get("status").trim().isEmpty()) {
+            company.setStatus(data.get("status").trim());
+        }
+        if (data.containsKey("logo")) company.setLogo(data.get("logo"));
+        if (data.containsKey("email")) company.setEmail(data.get("email"));
+        if (data.containsKey("phone")) company.setPhone(data.get("phone"));
+        if (data.containsKey("website")) company.setWebsite(data.get("website"));
+        if (data.containsKey("address")) company.setAddress(data.get("address"));
+        if (data.containsKey("tagline")) company.setTagline(data.get("tagline"));
+        if (data.containsKey("copyrightText")) company.setCopyrightText(data.get("copyrightText"));
+        if (data.containsKey("bankName")) company.setBankName(data.get("bankName"));
+        if (data.containsKey("accountName")) company.setAccountName(data.get("accountName"));
+        if (data.containsKey("accountNo")) company.setAccountNo(data.get("accountNo"));
+        if (data.containsKey("ifscCode")) company.setIfscCode(data.get("ifscCode"));
+        if (data.containsKey("branch")) company.setBranch(data.get("branch"));
+        if (data.containsKey("policyDoc")) company.setPolicyDoc(data.get("policyDoc"));
+
         return companyRepository.save(company);
     }
 
@@ -164,20 +226,20 @@ public class CompanyServiceImpl implements CompanyService {
         try {
             com.web.nrs.config.TenantContext.setCurrentTenant(companyId);
             
-            // Efficient aggregate queries
-            dto.setTotalEmployees(employeeRepository.count());
-            dto.setSolarSites(siteDetailsRepository.count());
-            dto.setQuotations(quotationLogRepository.count());
-            dto.setExpenses(expensesRepository.count());
-            dto.setPendingLeaves(employeeLeaveRepository.countPendingLeaves());
+            // Explicit company-filtered aggregate queries
+            dto.setTotalEmployees(employeeRepository.countByCompanyId(companyId));
+            dto.setSolarSites(siteDetailsRepository.countByCompanyId(companyId));
+            dto.setQuotations(quotationLogRepository.countByCompanyId(companyId));
+            dto.setExpenses(expensesRepository.countByCompanyId(companyId));
+            dto.setPendingLeaves(employeeLeaveRepository.countPendingLeavesByCompanyId(companyId));
             dto.setActiveUsers(loginRepository.countByCompanyId(companyId));
 
             java.time.LocalDateTime startOfMonth = java.time.LocalDate.now().withDayOfMonth(1).atStartOfDay();
-            dto.setQuotationsThisMonth(quotationLogRepository.countQuotationsSince(startOfMonth));
-            dto.setExpensesThisMonth(expensesRepository.countExpensesSince(startOfMonth));
+            dto.setQuotationsThisMonth(quotationLogRepository.countQuotationsByCompanyIdSince(companyId, startOfMonth));
+            dto.setExpensesThisMonth(expensesRepository.countExpensesByCompanyIdSince(companyId, startOfMonth));
 
-            // 2. Employees (Recent)
-            for (com.web.nrs.entity.EmployeeEntity emp : employeeRepository.findTop5ByOrderByIdDesc()) {
+            // 2. Employees (Recent for this company)
+            for (com.web.nrs.entity.EmployeeEntity emp : employeeRepository.findTop5ByCompanyIdOrderByIdDesc(companyId)) {
                 LocalDateTime time = emp.getAuditTimeStamp() != null ? emp.getAuditTimeStamp() : (company.getCreatedAt() != null ? company.getCreatedAt() : LocalDateTime.now());
                 String action = emp.getAuditTimeStamp() != null ? "Employee updated" : "Employee onboarded";
                 activities.add(com.web.nrs.dto.CompanyDashboardDTO.ActivityDTO.builder()
@@ -189,8 +251,8 @@ public class CompanyServiceImpl implements CompanyService {
                         .build());
             }
 
-            // 3. Solar Sites (Recent)
-            for (com.web.nrs.entity.SiteDetailsEntity site : siteDetailsRepository.findTop5ByOrderByCreatedAtDesc()) {
+            // 3. Solar Sites (Recent for this company)
+            for (com.web.nrs.entity.SiteDetailsEntity site : siteDetailsRepository.findTop5ByCompanyIdOrderByCreatedAtDesc(companyId)) {
                 LocalDateTime time = site.getCreatedAt() != null ? site.getCreatedAt() : LocalDateTime.now();
                 activities.add(com.web.nrs.dto.CompanyDashboardDTO.ActivityDTO.builder()
                         .description("Solar Site created: " + site.getCustomerName() + " (" + site.getSiteStatus() + ")")
@@ -201,8 +263,8 @@ public class CompanyServiceImpl implements CompanyService {
                         .build());
             }
 
-            // 4. Quotations (Recent)
-            for (com.web.nrs.entity.QuotationLogEntity q : quotationLogRepository.findTop5ByOrderByCreatedDateDesc()) {
+            // 4. Quotations (Recent for this company)
+            for (com.web.nrs.entity.QuotationLogEntity q : quotationLogRepository.findTop5ByCompanyIdOrderByCreatedDateDesc(companyId)) {
                 LocalDateTime time = q.getCreatedDate() != null ? q.getCreatedDate() : LocalDateTime.now();
                 activities.add(com.web.nrs.dto.CompanyDashboardDTO.ActivityDTO.builder()
                         .description("Quotation generated: #" + q.getQuotationNo() + " for " + q.getCustomerName())
@@ -213,8 +275,8 @@ public class CompanyServiceImpl implements CompanyService {
                         .build());
             }
 
-            // 5. Expenses (Recent)
-            for (com.web.nrs.entity.ExpensesEntity exp : expensesRepository.findTop5ByOrderByCreatedAtDesc()) {
+            // 5. Expenses (Recent for this company)
+            for (com.web.nrs.entity.ExpensesEntity exp : expensesRepository.findTop5ByCompanyIdOrderByCreatedAtDesc(companyId)) {
                 LocalDateTime time = exp.getCreatedAt() != null ? exp.getCreatedAt() : LocalDateTime.now();
                 activities.add(com.web.nrs.dto.CompanyDashboardDTO.ActivityDTO.builder()
                         .description("Expense submitted: " + exp.getExpenseType() + " (₹" + exp.getTotalAmount() + ")")
@@ -225,8 +287,8 @@ public class CompanyServiceImpl implements CompanyService {
                         .build());
             }
 
-            // 6. Leaves (Recent)
-            for (com.web.nrs.entity.EmployeeLeaveEntity leave : employeeLeaveRepository.findTop5ByOrderByCreatedAtDesc()) {
+            // 6. Leaves (Recent for this company)
+            for (com.web.nrs.entity.EmployeeLeaveEntity leave : employeeLeaveRepository.findTop5ByCompanyIdOrderByCreatedAtDesc(companyId)) {
                 LocalDateTime time = leave.getCreatedAt() != null ? leave.getCreatedAt() : LocalDateTime.now();
                 String action = "Approved".equalsIgnoreCase(leave.getStatus()) ? "Leave approved" : "Leave requested";
                 activities.add(com.web.nrs.dto.CompanyDashboardDTO.ActivityDTO.builder()

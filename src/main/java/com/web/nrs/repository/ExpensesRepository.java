@@ -123,4 +123,11 @@ public interface ExpensesRepository extends JpaRepository<ExpensesEntity, Long> 
     long countExpensesSince(@Param("startDate") LocalDateTime startDate);
 
     List<ExpensesEntity> findTop5ByOrderByCreatedAtDesc();
+
+    long countByCompanyId(Long companyId);
+
+    @Query("SELECT COUNT(e) FROM ExpensesEntity e WHERE e.companyId = :companyId AND e.createdAt >= :startDate")
+    long countExpensesByCompanyIdSince(@Param("companyId") Long companyId, @Param("startDate") LocalDateTime startDate);
+
+    List<ExpensesEntity> findTop5ByCompanyIdOrderByCreatedAtDesc(Long companyId);
 }
