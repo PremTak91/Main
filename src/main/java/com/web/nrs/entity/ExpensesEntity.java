@@ -1,6 +1,7 @@
 package com.web.nrs.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.TenantId;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -62,4 +63,7 @@ public class ExpensesEntity {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+    @TenantId
+    @Column(name = "company_id")
+    private Long companyId;
 }

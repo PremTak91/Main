@@ -1,6 +1,7 @@
 package com.web.nrs.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.TenantId;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -42,4 +43,7 @@ public class EmployeeAttendanceEntity {
 
     @Column(name = "attendance_date")
     private LocalDate attendanceDate;
+    @TenantId
+    @Column(name = "company_id")
+    private Long companyId;
 }

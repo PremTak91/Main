@@ -1,6 +1,7 @@
 package com.web.nrs.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.TenantId;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -36,4 +37,7 @@ public class PostActivityEntity {
     protected void onCreate() {
         auditTimeStamp = LocalDateTime.now();
     }
+    @TenantId
+    @Column(name = "company_id")
+    private Long companyId;
 }

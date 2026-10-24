@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NRS Solar Solution - Company List</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+        integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body>
+
+    <div class="dashboard-wrapper">
+
+        <div th:replace="fragments/sidebar :: sidebarMenu"> </div>
+
+        <div class="d-flex flex-column w-100">
+
+            <div th:replace="fragments/header :: headerPart"> </div>
+
+            <main class="main-content-area flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0">Company Management</h3>
+                    <div class="d-flex align-items-center">
+                        <div class="form-check form-switch me-3 mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch" id="showDeletedToggle" onchange="loadCompanies()">
+                            <label class="form-check-label text-muted" for="showDeletedToggle">Show Deleted</label>
+                        </div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCompanyModal">
+                            <i class="fas fa-plus"></i> Add New Company
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card p-4 mb-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Company Name</th>
+                                    <th>Status</th>
+                                    <th>Created At</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="companyTableBody">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </main>
+
+            <div th:replace="fragments/footer :: footerPart"> </div>
+        </div>
+    </div>
+
+    <!-- Add Company Modal -->
+    <div class="modal fade" id="addCompanyModal" tabindex="-1" aria-labelledby="addCompanyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="addCompanyModalLabel"><i class="fas fa-building me-2 text-primary"></i>Add New Company</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addCompanyForm">
+                        <!-- Basic Credentials -->
+                        <div class="card mb-3 border-light bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary mb-3"><i class="fas fa-key me-2"></i>Account & Admin Setup</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-12">
+                                        <label class="form-label">Company Name *</label>
+                                        <input type="text" class="form-control" name="name" placeholder="e.g. NRS Solar Solution" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Admin Email *</label>
+                                        <input type="email" class="form-control" name="adminEmail" placeholder="admin@example.com" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Admin Password *</label>
+                                        <input type="password" class="form-control" name="adminPassword" placeholder="••••••••" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Branding & Contact -->
+                        <div class="card mb-3 border-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary mb-3"><i class="fas fa-id-card me-2"></i>Branding & Quotation Details</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Company Logo (Image URL)</label>
+                                        <input type="text" class="form-control" name="logo" placeholder="https://res.cloudinary.com/... or /images/logo.png">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Quotation / Contact Number</label>
+                                        <input type="text" class="form-control" name="phone" placeholder="+91-9876543210">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Quotation / Official Email</label>
+                                        <input type="email" class="form-control" name="email" placeholder="sales@mycompany.com">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Official Website</label>
+                                        <input type="text" class="form-control" name="website" placeholder="www.mycompany.com">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Company Tagline</label>
+                                        <input type="text" class="form-control" name="tagline" placeholder="Your Trusted Solar Partner">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Footer Copyright Text</label>
+                                        <input type="text" class="form-control" name="copyrightText" placeholder="Copyright © 2026 MyCompany. All rights reserved.">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Registered Office Address</label>
+                                        <textarea class="form-control" name="address" rows="2" placeholder="Office / Shop Address printed on quotations"></textarea>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Company Policy Document (PDF URL)</label>
+                                        <input type="text" class="form-control" name="policyDoc" placeholder="https://res.cloudinary.com/... or leave blank for default">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Official Bank Details -->
+                        <div class="card mb-2 border-light">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold text-primary mb-3"><i class="fas fa-university me-2"></i>Official Bank Details (Quotation PDF)</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Bank Name</label>
+                                        <input type="text" class="form-control" name="bankName" placeholder="e.g. HDFC BANK LTD">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Account Name</label>
+                                        <input type="text" class="form-control" name="accountName" placeholder="e.g. MY COMPANY PVT LTD">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Account Number</label>
+                                        <input type="text" class="form-control" name="accountNo" placeholder="e.g. 50200012345678">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">IFSC Code</label>
+                                        <input type="text" class="form-control" name="ifscCode" placeholder="e.g. HDFC0001234">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Branch Name</label>
+                                        <input type="text" class="form-control" name="branch" placeholder="e.g. AHMEDABAD MAIN">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary px-4" onclick="submitNewCompany()"><i class="fas fa-check-circle me-1"></i>Save Company</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <div th:replace="fragments/commonJquery :: commonJquery"> </div>
+
+    <script>
+        $(document).ready(function () {
+            loadCompanies();
+        });
+
+        function loadCompanies() {
+            var includeDeleted = $('#showDeletedToggle').is(':checked');
+            $.ajax({
+                url: '/NRS/api/companies?includeDeleted=' + includeDeleted,
+                type: 'GET',
+                success: function (data) {
+                    var tbody = $('#companyTableBody');
+                    tbody.empty();
+                    data.forEach(function (company) {
+                        var statusBadge = company.deleted ? '<span class="badge bg-danger">DELETED</span>' : '<span class="badge bg-success">' + company.status + '</span>';
+                        tbody.append(
+                            '<tr style="cursor: pointer;" ondblclick="window.location.href=\'/NRS/companies/' + company.id + '/dashboard\'">' +
+                            '<td>' + company.id + '</td>' +
+                            '<td>' + company.name + '</td>' +
+                            '<td>' + statusBadge + '</td>' +
+                            '<td>' + (company.createdAt ? company.createdAt.substring(0, 10) : '') + '</td>' +
+                            '<td><a href="/NRS/companies/' + company.id + '/dashboard" class="btn btn-sm btn-outline-primary">View</a></td>' +
+                            '</tr>'
+                        );
+                    });
+                },
+                error: function (error) {
+                    console.error("Error loading companies", error);
+                }
+            });
+        }
+
+        function submitNewCompany() {
+            var data = {
+                name: $('input[name="name"]').val(),
+                adminEmail: $('input[name="adminEmail"]').val(),
+                adminPassword: $('input[name="adminPassword"]').val(),
+                logo: $('input[name="logo"]').val(),
+                phone: $('input[name="phone"]').val(),
+                email: $('input[name="email"]').val(),
+                website: $('input[name="website"]').val(),
+                tagline: $('input[name="tagline"]').val(),
+                copyrightText: $('input[name="copyrightText"]').val(),
+                address: $('textarea[name="address"]').val(),
+                bankName: $('input[name="bankName"]').val(),
+                accountName: $('input[name="accountName"]').val(),
+                accountNo: $('input[name="accountNo"]').val(),
+                ifscCode: $('input[name="ifscCode"]').val(),
+                branch: $('input[name="branch"]').val(),
+                policyDoc: $('input[name="policyDoc"]').val()
+            };
+
+            if (!data.name || !data.adminEmail || !data.adminPassword) {
+                alert('Please fill in Company Name, Admin Email, and Admin Password.');
+                return;
+            }
+
+            $.ajax({
+                url: '/NRS/api/companies',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function (res) {
+                    alert('Company created successfully!');
+                    $('#addCompanyModal').modal('hide');
+                    document.getElementById("addCompanyForm").reset();
+                    loadCompanies();
+                },
+                error: function (err) {
+                    alert('Error creating company: ' + (err.responseText || ''));
+                }
+            });
+        }
+    </script>
+</body>
+</html>

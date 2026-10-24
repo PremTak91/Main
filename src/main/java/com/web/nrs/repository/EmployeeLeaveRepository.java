@@ -22,4 +22,14 @@ public interface EmployeeLeaveRepository extends JpaRepository<EmployeeLeaveEnti
     Long sumApprovedLeaveDaysForYear(@Param("empMaintainerId") Long empMaintainerId, @Param("year") Integer year);
     
     List<EmployeeLeaveEntity> findByEmpMaintainerIdInOrderByCreatedAtDesc(List<Long> empMaintainerIds);
+
+    @Query("SELECT COUNT(e) FROM EmployeeLeaveEntity e WHERE UPPER(e.status) = 'PENDING'")
+    long countPendingLeaves();
+
+    List<EmployeeLeaveEntity> findTop5ByOrderByCreatedAtDesc();
+
+    @Query("SELECT COUNT(e) FROM EmployeeLeaveEntity e WHERE e.companyId = :companyId AND UPPER(e.status) = 'PENDING'")
+    long countPendingLeavesByCompanyId(@Param("companyId") Long companyId);
+
+    List<EmployeeLeaveEntity> findTop5ByCompanyIdOrderByCreatedAtDesc(Long companyId);
 }

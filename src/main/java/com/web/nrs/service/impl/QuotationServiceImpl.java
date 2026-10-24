@@ -28,6 +28,7 @@ public class QuotationServiceImpl implements QuotationService {
     private final DocumentSequenceService documentSequenceService;
     private final QuotationLogRepository quotationLogRepository;
     private final com.web.nrs.repository.EmployeeRepository employeeRepository;
+    private final com.web.nrs.repository.CompanyRepository companyRepository;
 
     // ===== BRAND COLORS =====
     private static final Color PRIMARY   = new Color(0x0B, 0x2C, 0x5F);
@@ -161,32 +162,54 @@ public class QuotationServiceImpl implements QuotationService {
         PdfWriter writer = PdfWriter.getInstance(doc, out);
         doc.open();
 
+        com.web.nrs.entity.CompanyEntity company = null;
+        Long tenantId = com.web.nrs.config.TenantContext.getCurrentTenant();
+        if (tenantId != null) {
+            company = companyRepository.findById(tenantId).orElse(null);
+        }
+        if (company == null) {
+            try {
+                org.springframework.security.core.Authentication auth = 
+                        org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
+                    String email = auth.getName();
+                    java.util.Optional<com.web.nrs.entity.EmployeeEntity> empOpt = employeeRepository.findEmployeeByEmail(email);
+                    if (empOpt.isPresent() && empOpt.get().getCompanyId() != null) {
+                        company = companyRepository.findById(empOpt.get().getCompanyId()).orElse(null);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+        if (company == null) {
+            company = companyRepository.findById(1L).orElse(null);
+        }
+
         if ("Single Page".equalsIgnoreCase(q.getPdfType())) {
             addQuotationPage(doc, writer, q);
             if (q.isIncludeAdditionalInfo()) {
                 doc.newPage();
-                pageAdditionalInfo(doc, writer, q, false, 2);
+                pageAdditionalInfo(doc, writer, q, false, 2, company);
             }
         } else {
-            page1(doc, writer, q);
+            page1(doc, writer, q, company);
             doc.newPage();
-            page2(doc, writer, q.getSubmittedNumber());
+            page2(doc, writer, q.getSubmittedNumber(), company);
             doc.newPage();
-            page3(doc, writer, q);
+            page3(doc, writer, q, company);
             
             int currentPage = 4;
             
             if (q.isIncludeAdditionalInfo()) {
                 doc.setMargins(40, 40, 100, 60);
                 doc.newPage();
-                pageAdditionalInfo(doc, writer, q, true, currentPage++);
+                pageAdditionalInfo(doc, writer, q, true, currentPage++, company);
                 doc.setMargins(0, 0, 0, 0); // reset margins for next full-bleed pages
             }
             
             doc.newPage();
-            page4(doc, writer, q, currentPage++);
+            page4(doc, writer, q, currentPage++, company);
             doc.newPage();
-            page5(doc, writer, q, currentPage);
+            page5(doc, writer, q, currentPage, company);
             doc.setMargins(40, 40, 50, 30);
             doc.newPage();
         }
@@ -237,17 +260,42 @@ public class QuotationServiceImpl implements QuotationService {
 
 
 
+    // ── helper: load company logo (URL, classpath, or default fallback) ───
+    private Image getCompanyLogo(com.web.nrs.entity.CompanyEntity company) {
+        if (company != null && company.getLogo() != null && !company.getLogo().trim().isEmpty()) {
+            String logoPath = company.getLogo().trim();
+            try {
+                if (logoPath.startsWith("http://") || logoPath.startsWith("https://")) {
+                    return Image.getInstance(new java.net.URL(logoPath));
+                } else if (logoPath.startsWith("data:image")) {
+                    String base64Data = logoPath.substring(logoPath.indexOf(",") + 1);
+                    byte[] bytes = java.util.Base64.getDecoder().decode(base64Data);
+                    return Image.getInstance(bytes);
+                } else {
+                    return loadImg(logoPath);
+                }
+            } catch (Exception ignored) {}
+        }
+        try {
+            return loadImg("static/images/nrslogo.png");
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     // ── helper: page header bar ───────────────────────────────────────────────
-    private static void pageHeader(PdfContentByte cb, String title, String subtitle, int pageNum) {
+    private void pageHeader(PdfContentByte cb, String title, String subtitle, int pageNum, com.web.nrs.entity.CompanyEntity company) {
         // Change header background to soft light gray so the PNG logo blends seamlessly
         fillRect(cb, LIGHT_BG, 0, PH - 90, PW, 90);
         fillRect(cb, ORANGE,  0, PH - 93, PW, 3);
         
         try {
-            Image logo = loadImg("static/images/nrslogo.png");
-            logo.scaleToFit(140, 62);
-            logo.setAbsolutePosition(20, PH - 76);
-            cb.addImage(logo);
+            Image logo = getCompanyLogo(company);
+            if (logo != null) {
+                logo.scaleToFit(140, 62);
+                logo.setAbsolutePosition(20, PH - 76);
+                cb.addImage(logo);
+            }
         } catch (Exception ignored) {}
         
         // Use primary color for text since background is now white
@@ -273,7 +321,7 @@ public class QuotationServiceImpl implements QuotationService {
     // ======================================================
     // PAGE 1 – PREMIUM COVER
     // ======================================================
-    private void page1(Document doc, PdfWriter writer, SolarQuotation q) throws Exception {
+    private void page1(Document doc, PdfWriter writer, SolarQuotation q, com.web.nrs.entity.CompanyEntity company) throws Exception {
         PdfContentByte cb = writer.getDirectContent();
 
         // Full-page deep blue background
@@ -288,10 +336,14 @@ public class QuotationServiceImpl implements QuotationService {
         cb.moveTo(PW - 140, PH); cb.lineTo(PW, PH); cb.lineTo(PW, PH - 140);
         cb.closePath(); cb.fill();
 
-        // NRS logo (PNG)
+        // Dynamic Company logo
         try {
-            Image logo = loadImg("static/images/nrslogo.png");
-            logo.scaleToFit(160, 75); logo.setAbsolutePosition(20, PH - 80); cb.addImage(logo);
+            Image logo = getCompanyLogo(company);
+            if (logo != null) {
+                logo.scaleToFit(160, 75);
+                logo.setAbsolutePosition(20, PH - 80);
+                cb.addImage(logo);
+            }
         } catch (Exception ignored) {}
 
 
@@ -418,13 +470,19 @@ public class QuotationServiceImpl implements QuotationService {
         }
 
         // Bottom orange footer
+        String compName = company != null && company.getName() != null && !company.getName().isEmpty() ? company.getName() : "NRS Solar Solution";
+        String compWeb = company != null && company.getWebsite() != null && !company.getWebsite().isEmpty() ? company.getWebsite() : "www.nrssolarsolution.com";
+        String compAddress = company != null && company.getAddress() != null && !company.getAddress().isEmpty() ? company.getAddress() : "HP petrol pump, Shyam business park, 12, Aslali, Ahmedabad, Gujarat 382427";
+        String compEmail = company != null && company.getEmail() != null && !company.getEmail().isEmpty() ? company.getEmail() : "info.nrssolarsolution@gmail.com";
+        String compPhone = q.getSubmittedNumber() != null && !q.getSubmittedNumber().isEmpty() ? q.getSubmittedNumber() : (company != null && company.getPhone() != null ? company.getPhone() : "+91-8866389038");
+
         fillRect(cb, ORANGE, 0, 0, PW, 60);
         fillRect(cb, new Color(220, 60, 0), 0, 57, PW, 3);
         txt(cb, Element.ALIGN_CENTER,
-            new Phrase("NRS Solar Solution  |  www.nrssolarsolution.com  |  Gujarat – MNRE Registered", fWhiteBold(9)),
+            new Phrase(compName + "  |  " + compWeb + "  |  Gujarat – MNRE Registered", fWhiteBold(9)),
             PW / 2, 32);
         txt(cb, Element.ALIGN_CENTER,
-            new Phrase("HP petrol pump, Shyam business park, 12, Aslali, Ahmedabad, Gujarat 382427  |  info.nrssolarsolution@gmail.com  | "+q.getSubmittedNumber(),
+            new Phrase(compAddress + "  |  " + compEmail + "  | " + compPhone,
                 new Font(Font.HELVETICA, 8, Font.NORMAL, new Color(255, 235, 200))), PW / 2, 14);
     }
 
@@ -447,11 +505,18 @@ public class QuotationServiceImpl implements QuotationService {
     // ======================================================
     // PAGE 2 – WHY SOLAR + COMPANY TRUST
     // ======================================================
-    private void page2(Document doc, PdfWriter writer, String contactPersonNumber) throws Exception {
+    private void page2(Document doc, PdfWriter writer, String contactPersonNumber, com.web.nrs.entity.CompanyEntity company) throws Exception {
         PdfContentByte cb = writer.getDirectContent();
         fillRect(cb, LIGHT_BG, 0, 0, PW, PH);
-        pageHeader(cb, "Why Solar?  Why NRS?",
-            "Smart decisions backed by clean energy and trusted service", 2);
+
+        String compName = company != null && company.getName() != null && !company.getName().isEmpty() ? company.getName() : "NRS Solar Solution";
+        String compTagline = company != null && company.getTagline() != null && !company.getTagline().isEmpty() ? company.getTagline() : "Your Trusted Solar Partner in Gujarat";
+        String compWeb = company != null && company.getWebsite() != null && !company.getWebsite().isEmpty() ? company.getWebsite() : "www.nrssolarsolution.com";
+        String compPhone = contactPersonNumber != null && !contactPersonNumber.isEmpty() ? contactPersonNumber : (company != null && company.getPhone() != null ? company.getPhone() : "+91-8866389038");
+
+        String shortName = compName.length() > 22 ? compName.substring(0, 19) + "..." : compName;
+        pageHeader(cb, "Why Solar?  Why " + shortName + "?",
+            "Smart decisions backed by clean energy and trusted service", 2, company);
 
         float colW = PW / 2 - 40;
         float lx   = 30, rx = PW / 2 + 10, topY = PH - 120;
@@ -472,15 +537,16 @@ public class QuotationServiceImpl implements QuotationService {
 
         // RIGHT header
         fillRound(cb, PRIMARY, rx, topY - 24, colW, 28, 6);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("  WHY CHOOSE NRS SOLAR", fWhiteBold(10)), rx + 8, topY - 10);
+        String rightHeader = compName.length() > 20 ? ("  WHY CHOOSE " + compName.toUpperCase().substring(0, 18) + "..") : ("  WHY CHOOSE " + compName.toUpperCase());
+        txt(cb, Element.ALIGN_LEFT, new Phrase(rightHeader, fWhiteBold(10)), rx + 8, topY - 10);
 
         // Company card — height increased to 160 to prevent overlap with stats
         float compCardH = 160;
         cb.setColorFill(Color.WHITE); cb.setColorStroke(new Color(220, 228, 240));
         cb.setLineWidth(1f); cb.roundRectangle(rx, topY - 30 - compCardH, colW, compCardH, 8); cb.fillStroke();
-        txt(cb, Element.ALIGN_LEFT, new Phrase("NRS Solar Solution",       fPrimary(13)), rx + 12, topY - 50);
+        txt(cb, Element.ALIGN_LEFT, new Phrase(compName, fPrimary(13)), rx + 12, topY - 50);
         txt(cb, Element.ALIGN_LEFT,
-            new Phrase("Your Trusted Solar Partner in Gujarat",
+            new Phrase(compTagline,
                 new Font(Font.HELVETICA, 9, Font.ITALIC, DARK)), rx + 12, topY - 66);
         fillRect(cb, new Color(220, 228, 240), rx + 12, topY - 77, colW - 24, 1);
 
@@ -516,7 +582,7 @@ public class QuotationServiceImpl implements QuotationService {
 
         bottomStrip(cb,
             "Authorized Dealer  |  GEDA Empanelled  |  Trusted by 500+ Families",
-            "www.nrssolarsolution.com  |  "+contactPersonNumber);
+            compWeb + "  |  " + compPhone);
     }
 
     private static void drawBenefitCard(PdfContentByte cb, float x, float y, float w, String title, String desc) {
@@ -549,12 +615,12 @@ public class QuotationServiceImpl implements QuotationService {
     // ======================================================
     // PAGE 3 – SOLAR PANEL FULL VISUAL & SPECS
     // ======================================================
-    private void page3(Document doc, PdfWriter writer, SolarQuotation q) throws Exception {
+    private void page3(Document doc, PdfWriter writer, SolarQuotation q, com.web.nrs.entity.CompanyEntity company) throws Exception {
         PdfContentByte cb = writer.getDirectContent();
         fillRect(cb, Color.WHITE, 0, 0, PW, PH);
 
         // 1. Standard Page Header
-        pageHeader(cb, "Solar Panel Specifications", "High Output - High Durability, Zero Compromise", 3);
+        pageHeader(cb, "Solar Panel Specifications", "High Output - High Durability, Zero Compromise", 3, company);
 
         // 2. Cyan / Teal Banner Background
         float bTop = PH - 90;
@@ -770,11 +836,11 @@ public class QuotationServiceImpl implements QuotationService {
     // ======================================================
     // PAGE - NET METERING INFOGRAPHIC + DOCUMENTS
     // ======================================================
-    private void page4(Document doc, PdfWriter writer, SolarQuotation q, int pageNum) throws Exception {
+    private void page4(Document doc, PdfWriter writer, SolarQuotation q, int pageNum, com.web.nrs.entity.CompanyEntity company) throws Exception {
         PdfContentByte cb = writer.getDirectContent();
         fillRect(cb, LIGHT_BG, 0, 0, PW, PH);
         pageHeader(cb, "Net Metering Process",
-                "How your solar system connects with the power grid", pageNum);
+                "How your solar system connects with the power grid", pageNum, company);
 
         // Step flow
         float stepW = (PW - 60) / 4f, stepH = 130, stepTopY = PH - 125;
@@ -861,8 +927,9 @@ public class QuotationServiceImpl implements QuotationService {
             sY -= (rowH + 8);
         }
 
+        String compName = company != null && company.getName() != null && !company.getName().isEmpty() ? company.getName() : "NRS";
         bottomStrip(cb,
-                "Net Metering takes 30-90 days  |  NRS handles end-to-end process for you",
+                "Net Metering takes 30-90 days  |  " + compName + " handles end-to-end process for you",
                 "We assist with documentation, inspection & DISCOM coordination");
     }
 
@@ -906,13 +973,13 @@ public class QuotationServiceImpl implements QuotationService {
     // ======================================================
     // PAGE 5 – FINANCIAL SUMMARY
     // ======================================================
-    private void page5(Document doc, PdfWriter writer, SolarQuotation q, int pageNum) throws Exception {
+    private void page5(Document doc, PdfWriter writer, SolarQuotation q, int pageNum, com.web.nrs.entity.CompanyEntity company) throws Exception {
 
         boolean isResidential = q.getSolarType().equals(ConstantUtils.SOLAR_TYPE_RESIDENTIAL);
         PdfContentByte cb = writer.getDirectContent();
         fillRect(cb, LIGHT_BG, 0, 0, PW, PH);
         pageHeader(cb, "Your Solar Investment Summary",
-                "Transparent pricing  |  Maximum subsidy  |  Best value", pageNum);
+                "Transparent pricing  |  Maximum subsidy  |  Best value", pageNum, company);
 
 
 
@@ -1051,29 +1118,37 @@ public class QuotationServiceImpl implements QuotationService {
         txt(cb, Element.ALIGN_LEFT, new Phrase("  OFFICIAL BANK DETAILS", fWhiteBold(10)), 38, bankSecY - 15);
         
         // Hybrid Layout: Full width for long strings, 2-Column for short strings
+        String bankName = company != null && company.getBankName() != null && !company.getBankName().isEmpty() ? company.getBankName() : "KALUPUR COMMERCIAL CO-OP BANK LTD";
+        String accountName = company != null && company.getAccountName() != null && !company.getAccountName().isEmpty() ? company.getAccountName() : "NRS SOLAR SOLUTION";
+        String accountNo = company != null && company.getAccountNo() != null && !company.getAccountNo().isEmpty() ? company.getAccountNo() : "01920102458";
+        String ifscCode = company != null && company.getIfscCode() != null && !company.getIfscCode().isEmpty() ? company.getIfscCode() : "KCCBOISP019";
+        String branch = company != null && company.getBranch() != null && !company.getBranch().isEmpty() ? company.getBranch() : "ISANPUR AHMEDABAD";
+        String compWeb = company != null && company.getWebsite() != null && !company.getWebsite().isEmpty() ? company.getWebsite() : "www.nrssolarsolution.com";
+        String compPhone = q.getSubmittedNumber() != null && !q.getSubmittedNumber().isEmpty() ? q.getSubmittedNumber() : (company != null && company.getPhone() != null ? company.getPhone() : "+91-8866389038");
+
         float lCol = 50, rCol = PW / 2 + 10;
         float detailY = bankSecY - 37; 
         
         txt(cb, Element.ALIGN_LEFT, new Phrase("Bank Name:", fDark(9f)), lCol, detailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("KALUPUR COMMERCIAL CO-OP BANK LTD", fPrimary(9f)), lCol + 80, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase(bankName, fPrimary(9f)), lCol + 80, detailY);
         
         detailY -= 14;
         
         txt(cb, Element.ALIGN_LEFT, new Phrase("Account Name:", fDark(9f)), lCol, detailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("NRS SOLAR SOLUTION", fPrimary(9f)), lCol + 80, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase(accountName, fPrimary(9f)), lCol + 80, detailY);
         
         detailY -= 14;
         
         txt(cb, Element.ALIGN_LEFT, new Phrase("Account No:", fDark(9f)), lCol, detailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("01920102458", fPrimary(9f)), lCol + 80, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase(accountNo, fPrimary(9f)), lCol + 80, detailY);
         
         txt(cb, Element.ALIGN_LEFT, new Phrase("IFSC Code:", fDark(9f)), rCol, detailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("KCCBOISP019", fPrimary(9f)), rCol + 65, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase(ifscCode, fPrimary(9f)), rCol + 65, detailY);
         
         detailY -= 14;
         
         txt(cb, Element.ALIGN_LEFT, new Phrase("Branch:", fDark(9f)), lCol, detailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase("ISANPUR AHMEDABAD", fPrimary(9f)), lCol + 80, detailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase(branch, fPrimary(9f)), lCol + 80, detailY);
 
         // --- PAYMENT TERMS SECTION (UNDER BANK DETAILS) ---
         float termSecY = bankSecY - bdH - 10;
@@ -1135,7 +1210,7 @@ public class QuotationServiceImpl implements QuotationService {
         txt(cb, Element.ALIGN_LEFT, new Phrase(q.getSubmittedBy() != null ? q.getSubmittedBy() : "Amit Vyas", fPrimary(9.5f)), 130, subDetailY);
         
         txt(cb, Element.ALIGN_LEFT, new Phrase("Contact Number:", fDark(9f)), PW / 2 + 10, subDetailY);
-        txt(cb, Element.ALIGN_LEFT, new Phrase(q.getSubmittedNumber() != null ? q.getSubmittedNumber() : "+91-8866389038", fPrimary(9.5f)), PW / 2 + 105, subDetailY);
+        txt(cb, Element.ALIGN_LEFT, new Phrase(compPhone, fPrimary(9.5f)), PW / 2 + 105, subDetailY);
 
         // Bottom CTA
         fillRect(cb, ORANGE, 0, 0, PW, 58);
@@ -1144,7 +1219,7 @@ public class QuotationServiceImpl implements QuotationService {
                 new Phrase("Book Now  -  Limited PM Surya Ghar Subsidy Available!", fWhiteBold(13)),
                 PW / 2, 33);
         txt(cb, Element.ALIGN_CENTER,
-                new Phrase("Call / WhatsApp: " + (q.getSubmittedNumber() != null ? q.getSubmittedNumber() : "+91-8866389038") + "  |  www.nrssolarsolution.com",
+                new Phrase("Call / WhatsApp: " + compPhone + "  |  " + compWeb,
                         new Font(Font.HELVETICA, 8.5f, Font.NORMAL, new Color(255, 240, 210))),
                 PW / 2, 14);
     }
@@ -1446,12 +1521,12 @@ public class QuotationServiceImpl implements QuotationService {
     // ======================================================
     // PAGE - ADDITIONAL INFO (Material & Warranty)
     // ======================================================
-    private static void pageAdditionalInfo(Document doc, PdfWriter writer, SolarQuotation q, boolean isStandardized, int pageNum) throws Exception {
+    private void pageAdditionalInfo(Document doc, PdfWriter writer, SolarQuotation q, boolean isStandardized, int pageNum, com.web.nrs.entity.CompanyEntity company) throws Exception {
         PdfContentByte cb = writer.getDirectContent();
         
         if (isStandardized) {
             fillRect(cb, LIGHT_BG, 0, 0, PW, PH);
-            pageHeader(cb, "Material & Specification", "Detailed breakdown of system components", pageNum);
+            pageHeader(cb, "Material & Specification", "Detailed breakdown of system components", pageNum, company);
         } else {
             ClassPathResource header = new ClassPathResource("static/images/NRS_pdf_header.jpg");
             Image logo = Image.getInstance(header.getInputStream().readAllBytes());

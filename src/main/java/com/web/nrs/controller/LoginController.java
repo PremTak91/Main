@@ -49,7 +49,15 @@ public class LoginController {
         Optional<LoginEntity> user = loginService.findByUsername(loginRequest.getUsername());
         Optional<EmployeeEntity> employeeEntity = employeeService.getEmployeeByEmailId(loginRequest.getUsername());
 
-        String token = jwtUtil.generateToken(loginRequest.getUsername(), user.get().getUserRoles(),employeeEntity);
+        Long companyId = user.map(LoginEntity::getCompanyId).orElse(null);
+        if (companyId == null && employeeEntity.isPresent()) {
+            companyId = employeeEntity.get().getCompanyId();
+        }
+        if (companyId == null) {
+            companyId = 1L;
+        }
+
+        String token = jwtUtil.generateToken(loginRequest.getUsername(), user.get().getUserRoles(), employeeEntity, companyId);
         if (token != null) {
             // Set token as HttpOnly cookie
             Cookie cookie = new Cookie("jwtToken", token);

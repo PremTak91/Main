@@ -1,6 +1,7 @@
 package com.web.nrs.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.TenantId;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -43,4 +44,7 @@ public class HolidayEntity {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+    @TenantId
+    @Column(name = "company_id")
+    private Long companyId;
 }

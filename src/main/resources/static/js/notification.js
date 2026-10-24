@@ -4,12 +4,38 @@
 
 let stompClient = null;
 let currentUserId = null; // Ideally passed via meta tag or fetched
+let isPageUnloading = false;
+let reconnectTimer = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     fetchUnreadCount();
     fetchNotifications();
     connectWebSocket();
     registerFcmToken();
+});
+
+window.addEventListener('beforeunload', function() {
+    isPageUnloading = true;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    if (stompClient && stompClient.connected) {
+        try { stompClient.disconnect(); } catch (e) {}
+    }
+});
+
+window.addEventListener('pagehide', function() {
+    isPageUnloading = true;
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    if (stompClient && stompClient.connected) {
+        try { stompClient.disconnect(); } catch (e) {}
+    }
+});
+
+window.addEventListener('pageshow', function(event) {
+    if (event.persisted) {
+        // Page restored from browser back-forward cache
+        isPageUnloading = false;
+        connectWebSocket();
+    }
 });
 
 function registerFcmToken() {
@@ -27,21 +53,33 @@ function registerFcmToken() {
 }
 
 function connectWebSocket() {
-    const socket = new SockJS('/NRS/ws-notifications');
-    stompClient = Stomp.over(socket);
-    stompClient.debug = null; // Disable debug logging in production
+    if (isPageUnloading) return;
+    if (stompClient && stompClient.connected) return;
 
-    stompClient.connect({}, function (frame) {
-        console.log('Connected to Notification WebSocket');
-        stompClient.subscribe('/user/queue/notifications', function (message) {
-            const notification = JSON.parse(message.body);
-            handleIncomingNotification(notification);
+    try {
+        const socket = new SockJS('/NRS/ws-notifications');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null; // Disable debug logging in production
+
+        stompClient.connect({}, function (frame) {
+            console.log('Connected to Notification WebSocket');
+            stompClient.subscribe('/user/queue/notifications', function (message) {
+                const notification = JSON.parse(message.body);
+                handleIncomingNotification(notification);
+            });
+        }, function(error) {
+            if (!isPageUnloading) {
+                console.warn('Notification WebSocket disconnected. Retrying in 5s...');
+                if (reconnectTimer) clearTimeout(reconnectTimer);
+                reconnectTimer = setTimeout(connectWebSocket, 5000);
+            }
         });
-    }, function(error) {
-        console.error('WebSocket connection error:', error);
-        // Attempt to reconnect after a delay
-        setTimeout(connectWebSocket, 5000);
-    });
+    } catch (e) {
+        if (!isPageUnloading) {
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(connectWebSocket, 5000);
+        }
+    }
 }
 
 function handleIncomingNotification(notification) {

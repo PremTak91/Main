@@ -1,6 +1,7 @@
 package com.web.nrs.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.TenantId;
 import lombok.*;
 import java.time.LocalDateTime;
 
@@ -78,4 +79,7 @@ public class QuotationLogEntity {
 
     @Column(name = "extra_cabling")
     private Double extraCabling;
+    @TenantId
+    @Column(name = "company_id")
+    private Long companyId;
 }
