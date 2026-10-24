@@ -1001,7 +1001,7 @@ public class QuotationServiceImpl implements QuotationService {
         if (showDiscom) {
             String discomMeter;
             if (isResidential) {
-                discomMeter = "Rs." + q.getDiscomMeter();
+                discomMeter = "Rs." + formatAmt(q.getDiscomMeter());
             } else {
                 String raw = q.getDiscomMeter() != null ? q.getDiscomMeter().trim() : "";
                 boolean isNumber = false;
@@ -1360,7 +1360,7 @@ public class QuotationServiceImpl implements QuotationService {
         systemTable.addCell(getHeaderCell("Rate/KW (INR, incl GST)", new Color(230, 240, 250)));
         systemTable.addCell(getCellColumn("Supply, erection, and commissioning of solar PV power plant with standard cable length", new Color(245, 245, 245)));
         systemTable.addCell(getCellColumn(String.valueOf(quotation.getKw()), new Color(245, 245, 245)));
-        systemTable.addCell(getCellColumn("Rs." + quotation.getRateKw(),     new Color(245, 245, 245)));
+        systemTable.addCell(getCellColumn("Rs." + formatAmt(quotation.getRateKw()),     new Color(245, 245, 245)));
         boolean showDiscom = true;
         try {
             if (quotation.getDiscomMeter() == null || Double.parseDouble(quotation.getDiscomMeter()) <= 0) showDiscom = false;
@@ -1368,22 +1368,22 @@ public class QuotationServiceImpl implements QuotationService {
         if (showDiscom) {
             systemTable.addCell(getCellColumn("Discom Meter Charges",            new Color(245, 245, 245)));
             systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
-            systemTable.addCell(getCellColumn("Rs." + quotation.getDiscomMeter(), new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("Rs." + formatAmt(quotation.getDiscomMeter()), new Color(245, 245, 245)));
         }
         if (quotation.getPqHsCost() > 0) {
             systemTable.addCell(getCellColumn("Premium Quality and Heighted Structure Cost", new Color(245, 245, 245)));
             systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
-            systemTable.addCell(getCellColumn("Rs." + quotation.getPqHsCost(),  new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("Rs." + formatAmt(quotation.getPqHsCost()),  new Color(245, 245, 245)));
         }
         if (quotation.getGedaRegisterCharge() > 0) {
             systemTable.addCell(getCellColumn("Geda Registration Charge",       new Color(245, 245, 245)));
             systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
-            systemTable.addCell(getCellColumn("Rs." + quotation.getGedaRegisterCharge(), new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("Rs." + formatAmt(quotation.getGedaRegisterCharge()), new Color(245, 245, 245)));
         }
         if (quotation.getExtraCabling() > 0) {
             systemTable.addCell(getCellColumn("Extra Cabling",       new Color(245, 245, 245)));
             systemTable.addCell(getCellColumn("",                               new Color(245, 245, 245)));
-            systemTable.addCell(getCellColumn("Rs." + quotation.getExtraCabling(), new Color(245, 245, 245)));
+            systemTable.addCell(getCellColumn("Rs." + formatAmt(quotation.getExtraCabling()), new Color(245, 245, 245)));
         }
         document.add(systemTable);
 
@@ -1391,18 +1391,18 @@ public class QuotationServiceImpl implements QuotationService {
         priceTable.setWidthPercentage(100); priceTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
         if (quotation.getActualPrice() > 0) {
             priceTable.addCell(getCell("Customer Actual Payable", PdfPCell.ALIGN_LEFT,  new Color(50, 100, 200), Color.WHITE, true));
-            priceTable.addCell(getCell("Rs." + quotation.getActualPrice(), PdfPCell.ALIGN_RIGHT, new Color(50, 100, 200), Color.WHITE, true));
+            priceTable.addCell(getCell("Rs." + formatAmt(quotation.getActualPrice()), PdfPCell.ALIGN_RIGHT, new Color(50, 100, 200), Color.WHITE, true));
         }
         if (quotation.getSubsidy() > 0) {
             priceTable.addCell(getCell("Subsidy",                          PdfPCell.ALIGN_LEFT,  Color.LIGHT_GRAY, Color.BLACK, false));
-            priceTable.addCell(getCell("Rs." + quotation.getSubsidy(),     PdfPCell.ALIGN_RIGHT, Color.LIGHT_GRAY, Color.BLACK, false));
+            priceTable.addCell(getCell("Rs." + formatAmt(quotation.getSubsidy()),     PdfPCell.ALIGN_RIGHT, Color.LIGHT_GRAY, Color.BLACK, false));
         }
         if (quotation.getDiscountAmount() > 0) {
             priceTable.addCell(getCell("Special Discount",             PdfPCell.ALIGN_LEFT,  new Color(245, 245, 245), Color.BLACK, true));
-            priceTable.addCell(getCell(formatAmount(quotation.getDiscountAmount()), PdfPCell.ALIGN_RIGHT, new Color(245, 245, 245), Color.BLACK, true));
+            priceTable.addCell(getCell("Rs." + formatAmt(quotation.getDiscountAmount()), PdfPCell.ALIGN_RIGHT, new Color(245, 245, 245), Color.BLACK, true));
         }
         priceTable.addCell(getCell("Effective Price", PdfPCell.ALIGN_LEFT,  new Color(245, 245, 245), Color.BLACK, true));
-        priceTable.addCell(getCell(formatAmount(quotation.getEffectivePrice()), PdfPCell.ALIGN_RIGHT, new Color(245, 245, 245), Color.BLACK, true));
+        priceTable.addCell(getCell("Rs." + formatAmt(quotation.getEffectivePrice()), PdfPCell.ALIGN_RIGHT, new Color(245, 245, 245), Color.BLACK, true));
         document.add(priceTable);
 
         // Bank + Documents side-by-side
@@ -1505,17 +1505,57 @@ public class QuotationServiceImpl implements QuotationService {
         return cell;
     }
 
+    private static String formatIndianCurrency(double amount, boolean includeDecimals) {
+        if (Double.isNaN(amount) || Double.isInfinite(amount)) {
+            return "0";
+        }
+        boolean isNegative = amount < 0;
+        long integerPart;
+        String decimalStr = "";
+
+        if (includeDecimals) {
+            long rounded = Math.round(Math.abs(amount) * 100.0);
+            integerPart = rounded / 100;
+            decimalStr = String.format(".%02d", rounded % 100);
+        } else {
+            integerPart = Math.round(Math.abs(amount));
+        }
+
+        String str = String.valueOf(integerPart);
+        if (str.length() <= 3) {
+            return (isNegative ? "-" : "") + str + decimalStr;
+        }
+
+        String lastThree = str.substring(str.length() - 3);
+        String remaining = str.substring(0, str.length() - 3);
+
+        StringBuilder sb = new StringBuilder();
+        while (remaining.length() > 2) {
+            sb.insert(0, "," + remaining.substring(remaining.length() - 2));
+            remaining = remaining.substring(0, remaining.length() - 2);
+        }
+        sb.insert(0, remaining);
+        sb.append(",").append(lastThree);
+
+        return (isNegative ? "-" : "") + sb.toString() + decimalStr;
+    }
+
     private static String formatAmount(double amount) {
-        java.text.NumberFormat format = java.text.NumberFormat.getNumberInstance(new java.util.Locale("en", "IN"));
-        format.setMinimumFractionDigits(2);
-        format.setMaximumFractionDigits(2);
-        return format.format(amount);
+        return formatIndianCurrency(amount, true);
     }
     
     private static String formatAmt(double amount) {
-        java.text.NumberFormat format = java.text.NumberFormat.getNumberInstance(new java.util.Locale("en", "IN"));
-        format.setMaximumFractionDigits(0);
-        return format.format(amount);
+        return formatIndianCurrency(amount, false);
+    }
+
+    private static String formatAmt(String rawValue) {
+        if (rawValue == null || rawValue.trim().isEmpty()) return "";
+        try {
+            double val = Double.parseDouble(rawValue.trim());
+            return formatIndianCurrency(val, false);
+        } catch (Exception e) {
+            return rawValue;
+        }
     }
 
     // ======================================================
