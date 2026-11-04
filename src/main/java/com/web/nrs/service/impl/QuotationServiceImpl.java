@@ -232,10 +232,26 @@ public class QuotationServiceImpl implements QuotationService {
         quotationLogRepository.deleteById(id);
     }
 
-    // ── helper: load Image from classpath ─────────────────────────────────────
+    // ── IN-MEMORY IMAGE CACHE FOR LIGHTNING-FAST PDF RENDERING ──────────
+    private static final java.util.Map<String, byte[]> STATIC_IMG_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Map<String, byte[]> REMOTE_LOGO_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+    private static volatile byte[] cachedApprovalsPngBytes = null;
+
+    // ── helper: load Image from classpath with in-memory caching ──────────────
     private static Image loadImg(String path) throws Exception {
-        ClassPathResource r = new ClassPathResource(path);
-        return Image.getInstance(r.getInputStream().readAllBytes());
+        byte[] bytes = STATIC_IMG_CACHE.computeIfAbsent(path, p -> {
+            try {
+                ClassPathResource r = new ClassPathResource(p);
+                return r.getInputStream().readAllBytes();
+            } catch (Exception e) {
+                return null;
+            }
+        });
+        if (bytes == null) {
+            ClassPathResource r = new ClassPathResource(path);
+            bytes = r.getInputStream().readAllBytes();
+        }
+        return Image.getInstance(bytes);
     }
 
     // ── helper: draw filled rect ───────────────────────────────────────────────
@@ -258,15 +274,20 @@ public class QuotationServiceImpl implements QuotationService {
         ColumnText.showTextAligned(cb, align, ph, x, y, 0);
     }
 
-
-
-    // ── helper: load company logo (URL, classpath, or default fallback) ───
+    // ── helper: get company logo with caching across all pages and requests ──
     private Image getCompanyLogo(com.web.nrs.entity.CompanyEntity company) {
         if (company != null && company.getLogo() != null && !company.getLogo().trim().isEmpty()) {
             String logoPath = company.getLogo().trim();
             try {
                 if (logoPath.startsWith("http://") || logoPath.startsWith("https://")) {
-                    return Image.getInstance(new java.net.URL(logoPath));
+                    byte[] bytes = REMOTE_LOGO_CACHE.get(logoPath);
+                    if (bytes == null) {
+                        try (java.io.InputStream in = new java.net.URL(logoPath).openStream()) {
+                            bytes = in.readAllBytes();
+                            REMOTE_LOGO_CACHE.put(logoPath, bytes);
+                        }
+                    }
+                    return Image.getInstance(bytes);
                 } else if (logoPath.startsWith("data:image")) {
                     String base64Data = logoPath.substring(logoPath.indexOf(",") + 1);
                     byte[] bytes = java.util.Base64.getDecoder().decode(base64Data);
@@ -760,28 +781,31 @@ public class QuotationServiceImpl implements QuotationService {
         float appMaxH = Math.max(50f, appTop - appBot); // Guaranteed safe area
         
         try {
-            // Load as BufferedImage to dynamically erase the ugly baked-in gray gradient!
-            java.awt.image.BufferedImage bImg = javax.imageio.ImageIO.read(new org.springframework.core.io.ClassPathResource("static/images/approvals.png").getInputStream());
-            
-            // Loop through every pixel to detect and wipe out the light-gray shadow artifact
-            for (int y = 0; y < bImg.getHeight(); y++) {
-                for (int x = 0; x < bImg.getWidth(); x++) {
-                    int rgb = bImg.getRGB(x, y);
-                    Color c = new Color(rgb, true);
-                    int r = c.getRed(), g = c.getGreen(), b = c.getBlue();
-                    
-                    // The artifact has darker gray patches originally thought.
-                    // Lowered tracking threshold to 150 but added a pure gray/shadow check 
-                    // (prevents deleting the colorful red MNRE stamp)
-                    if (r > 150 && g > 150 && b > 150 && Math.abs(r-g) < 25 && Math.abs(g-b) < 25 && Math.abs(r-b) < 25) {
-                        bImg.setRGB(x, y, Color.WHITE.getRGB());
+            // Cache processed approvals image so the 248,000-pixel RGB filter runs only once across the entire server lifecycle!
+            byte[] approvalsBytes = cachedApprovalsPngBytes;
+            if (approvalsBytes == null) {
+                synchronized (QuotationServiceImpl.class) {
+                    approvalsBytes = cachedApprovalsPngBytes;
+                    if (approvalsBytes == null) {
+                        java.awt.image.BufferedImage bImg = javax.imageio.ImageIO.read(new org.springframework.core.io.ClassPathResource("static/images/approvals.png").getInputStream());
+                        for (int y = 0; y < bImg.getHeight(); y++) {
+                            for (int x = 0; x < bImg.getWidth(); x++) {
+                                int rgb = bImg.getRGB(x, y);
+                                Color c = new Color(rgb, true);
+                                int r = c.getRed(), g = c.getGreen(), b = c.getBlue();
+                                if (r > 150 && g > 150 && b > 150 && Math.abs(r-g) < 25 && Math.abs(g-b) < 25 && Math.abs(r-b) < 25) {
+                                    bImg.setRGB(x, y, Color.WHITE.getRGB());
+                                }
+                            }
+                        }
+                        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                        javax.imageio.ImageIO.write(bImg, "png", baos);
+                        approvalsBytes = baos.toByteArray();
+                        cachedApprovalsPngBytes = approvalsBytes;
                     }
                 }
             }
-            
-            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-            javax.imageio.ImageIO.write(bImg, "png", baos);
-            Image approvalsImg = Image.getInstance(baos.toByteArray());
+            Image approvalsImg = Image.getInstance(approvalsBytes);
             
             // scaleToFit strictly preserves aspect ratio, preventing any squashing/stretching
             approvalsImg.scaleToFit(PW - 50, appMaxH); 
@@ -1299,8 +1323,7 @@ public class QuotationServiceImpl implements QuotationService {
     // QUOTATION DATA PAGE  (original – UNCHANGED)
     // ======================================================
     private static void addQuotationPage(Document document, PdfWriter writer, SolarQuotation quotation) throws Exception {
-        ClassPathResource header = new ClassPathResource("static/images/NRS_pdf_header.jpg");
-        Image logo = Image.getInstance(header.getInputStream().readAllBytes());
+        Image logo = loadImg("static/images/NRS_pdf_header.jpg");
         logo.scaleToFit(480, 90); logo.setAlignment(Image.ALIGN_CENTER);
         document.add(logo);
         document.add(createHalfLineSpace());
@@ -1468,8 +1491,7 @@ public class QuotationServiceImpl implements QuotationService {
         document.add(ppTable);
 
         // Draw footer absolutely via DirectContent so it NEVER triggers a page break
-        ClassPathResource footer2 = new ClassPathResource("static/images/NRS_quts_footer.jpg");
-        Image footerImg = Image.getInstance(footer2.getInputStream().readAllBytes());
+        Image footerImg = loadImg("static/images/NRS_quts_footer.jpg");
         footerImg.scaleAbsolute(490f, 9f);
         footerImg.setAbsolutePosition((PW - 490f) / 2, 10f); // Draw 10f from bottom
         PdfContentByte cb = writer.getDirectContent();
@@ -1568,8 +1590,7 @@ public class QuotationServiceImpl implements QuotationService {
             fillRect(cb, LIGHT_BG, 0, 0, PW, PH);
             pageHeader(cb, "Material & Specification", "Detailed breakdown of system components", pageNum, company);
         } else {
-            ClassPathResource header = new ClassPathResource("static/images/NRS_pdf_header.jpg");
-            Image logo = Image.getInstance(header.getInputStream().readAllBytes());
+            Image logo = loadImg("static/images/NRS_pdf_header.jpg");
             logo.scaleToFit(480, 90); logo.setAlignment(Image.ALIGN_CENTER);
             doc.add(logo);
             doc.add(createHalfLineSpace());
@@ -1641,8 +1662,7 @@ public class QuotationServiceImpl implements QuotationService {
         if (isStandardized) {
             bottomStrip(cb, "WAAREE Premium Panels  |  Official Partner  |  Top Tier Equipment", "Backed by 30-Year Performance Guarantee from Manufacturer");
         } else {
-            ClassPathResource footer2 = new ClassPathResource("static/images/NRS_quts_footer.jpg");
-            Image footerImg = Image.getInstance(footer2.getInputStream().readAllBytes());
+            Image footerImg = loadImg("static/images/NRS_quts_footer.jpg");
             footerImg.scaleAbsolute(490f, 9f); footerImg.setAlignment(Image.ALIGN_CENTER);
             
             // To ensure it appears at the bottom like addQuotationPage, we can position it absolutely
